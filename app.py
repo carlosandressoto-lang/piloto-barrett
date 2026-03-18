@@ -8,7 +8,7 @@ st.set_page_config(page_title="LDR Barrett - Confa", layout="wide")
 
 # --- 2. CONEXIÓN CON GEMINI (PLAN GRATUITO - NOMBRE OFICIAL) ---
 # REEMPLAZA CON TU API KEY
-genai.configure(api_key="AIzaSyBBlmnKRd0DGx7CKCXOiOWdiZUe1ocCWwk")
+genai.configure(api_key="AIzaSyB_llfm1vZ7fZkubkkbMBwup5WCXVw36yY")
 
 # Usamos el nombre de modelo más estable para el plan gratuito
 # Si este falla, el bloque de abajo tiene un respaldo automático
