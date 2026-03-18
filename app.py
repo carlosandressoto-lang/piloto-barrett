@@ -3,114 +3,107 @@ import pandas as pd
 import plotly.graph_objects as go
 import google.generativeai as genai
 
-# --- 1. CONFIGURACIÓN ---
+# --- 1. CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(page_title="LDR Barrett - Confa", layout="wide")
 
-# --- 2. CONEXIÓN IA (2.5-FLASH-8B) ---
+# --- 2. CONEXIÓN IA (SOLUCIÓN 404) ---
+# REEMPLAZA CON TU API KEY
 API_KEY = "AIzaSyB_llfm1vZ7fZkubkkbMBwup5WCXVw36yY"
+
 try:
     genai.configure(api_key=API_KEY)
-    model = genai.GenerativeModel('gemini-2.5-flash') # Tu modelo de éxito
+    # Nombre del modelo sin el prefijo 'models/' para evitar error 404 en Streamlit
+    model = genai.GenerativeModel('gemini-2.5-flash')
 except Exception as e:
-    st.error(f"Error IA: {e}")
+    st.error(f"Error de configuración IA: {e}")
 
-# --- 3. CARGA DE DATOS (MÉTODO SEGURO) ---
-@st.cache_data
-def load_data():
-    # Cargamos el archivo asegurando los separadores correctos
+# --- 3. CARGA DE DATOS ---
+try:
     df = pd.read_csv('Resultados_Gerentes.csv', sep=';', decimal=',')
-    # Limpiamos nombres de columnas y datos de texto
     df.columns = df.columns.str.strip()
-    df['Nombre_Lider'] = df['Nombre_Lider'].astype(str).str.strip()
-    # Convertimos los niveles a números
-    for col in [c for c in df.columns if 'L' in c]:
-        df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
-    return df
-
-df = load_data()
-
-# --- 4. SELECTOR DE LÍDER (CONTROL DE ERRORES) ---
-st.title("🏛️ Consultoría de Liderazgo Barrett - Confa")
-
-# Obtenemos la lista de nombres. Si sale 0.0 es porque el CSV no leyó bien los strings.
-nombres_lideres = df['Nombre_Lider'].unique().tolist()
-
-if not nombres_lideres:
-    st.error("No se encontraron nombres en la columna 'Nombre_Lider'. Revisa el CSV.")
-else:
-    lider_sel = st.selectbox("👤 Seleccione el Líder:", nombres_lideres)
-    d = df[df['Nombre_Lider'] == lider_sel].iloc[0]
-
-    # --- 5. LÓGICA ESCALA 1-4 ---
-    def scale_1_4(v):
-        if v < 65: return 1
-        if v < 75: return 2
-        if v < 85: return 3
-        return 4
-
-    # --- 6. GRÁFICOS RELOJ DE ARENA (SIMÉTRICOS) ---
-    st.subheader("⏳ Relojes de Arena (Nivel de Desarrollo 1 a 4)")
+    df['Nombre_Lider'] = df['Nombre_Lider'].str.strip()
     
-    def render_hourglass(vals, titulo, color):
-        v4 = [scale_1_4(x) for x in vals]
-        levels = ['L1 Crisis', 'L2 Relac.', 'L3 Desemp.', 'L4 Facil.', 'L5 Autént.', 'L6 Mentor', 'L7 Vision.']
-        
-        fig = go.Figure()
-        # Forma simétrica (diamante)
-        fig.add_trace(go.Scatter(
-            x=v4 + [-x for x in v4[::-1]], 
-            y=levels + levels[::-1],
-            fill='toself',
-            fillcolor=color,
-            line=dict(color='white', width=1),
-            hoverinfo='none'
-        ))
-        
-        for i, val in enumerate(v4):
-            fig.add_annotation(x=0, y=levels[i], text=str(val), showarrow=False, font=dict(color="white"))
+    # Limpieza de valores numéricos
+    cols_niveles = [c for c in df.columns if 'L' in c and any(x in c for x in ['AUTO', 'INDIV', 'ORG'])]
+    for col in cols_niveles:
+        df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+except Exception as e:
+    st.error(f"Error cargando el archivo: {e}")
+    st.stop()
 
-        fig.update_layout(
-            title=dict(text=titulo, x=0.5),
-            xaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[-5, 5]),
-            height=450, margin=dict(l=20, r=20, t=40, b=20), template="plotly_dark"
-        )
-        return fig
+# --- 4. INTERFAZ Y SELECCIÓN ---
+st.title("🏛️ Dashboard de Liderazgo Barrett - Confa")
+lider_sel = st.selectbox("Seleccione el líder para el análisis:", df['Nombre_Lider'].unique())
+d = df[df['Nombre_Lider'] == lider_sel].iloc[0]
 
+# --- 5. VISUALIZACIÓN: RELOJES DE ARENA (BARRAS) ---
+st.subheader("Distribución de Energía por Niveles de Conciencia")
+c1, c2, c3 = st.columns(3)
+
+def dibujar_barras(vals, titulo, color):
+    # Definimos los niveles (L7 arriba, L1 abajo)
+    labels = ['L7 - Visionario', 'L6 - Mentor', 'L5 - Auténtico', 'L4 - Facilitador', 'L3 - Desempeño', 'L2 - Relaciones', 'L1 - Crisis']
+    # Invertimos el orden de los datos que vienen del CSV (L1 a L7) para que coincidan con la visual
+    v_plot = [vals[6], vals[5], vals[4], vals[3], vals[2], vals[1], vals[0]]
+    
+    fig = go.Figure(go.Bar(
+        x=v_plot, 
+        y=labels, 
+        orientation='h', 
+        marker_color=color,
+        text=[f"{round(v,1)}%" for v in v_plot],
+        textposition='inside'
+    ))
+    fig.update_layout(
+        title=titulo, 
+        xaxis_range=[0, 105], 
+        height=400, 
+        margin=dict(l=0, r=10, t=40, b=20),
+        yaxis=dict(autorange="reversed") # Asegura que L7 quede arriba
+    )
+    return fig
+
+with c1:
     v_auto = [d.AUTO_L1, d.AUTO_L2, d.AUTO_L3, d.AUTO_L4, d.AUTO_L5, d.AUTO_L6, d.AUTO_L7]
+    st.plotly_chart(dibujar_barras(v_auto, "Autovaloración", "#3498db"), use_container_width=True)
+with c2:
     v_ind = [d.INDIV_L1, d.INDIV_L2, d.INDIV_L3, d.INDIV_L4, d.INDIV_L5, d.INDIV_L6, d.INDIV_L7]
+    st.plotly_chart(dibujar_barras(v_ind, "Ponderado Individual", "#2ecc71"), use_container_width=True)
+with c3:
     v_org = [d.ORG_L1, d.ORG_L2, d.ORG_L3, d.ORG_L4, d.ORG_L5, d.ORG_L6, d.ORG_L7]
+    st.plotly_chart(dibujar_barras(v_org, "Promedio Organizacional", "#95a5a6"), use_container_width=True)
 
-    c1, c2, c3 = st.columns(3)
-    with c1: st.plotly_chart(render_hourglass(v_auto, "Auto-Desarrollo", "rgba(59, 130, 246, 0.7)"), use_container_width=True)
-    with c2: st.plotly_chart(render_hourglass(v_ind, "Desarrollo Individual", "rgba(16, 185, 129, 0.7)"), use_container_width=True)
-    with c3: st.plotly_chart(render_hourglass(v_org, "Cultura Organizacional", "rgba(148, 163, 184, 0.7)"), use_container_width=True)
+# --- 6. RADAR DE ALINEACIÓN ---
+st.divider()
+st.subheader("Radar de Alineación Estratégica")
+fig_radar = go.Figure()
+categorias = ['L1','L2','L3','L4','L5','L6','L7']
 
-    # --- 7. RADAR DE ALINEACIÓN ---
-    st.divider()
-    st.subheader("🎯 Radar de Alineación Estratégica (%)")
-    fig_radar = go.Figure()
-    cats = ['L1','L2','L3','L4','L5','L6','L7']
-    fig_radar.add_trace(go.Scatterpolar(r=v_auto, theta=cats, fill='toself', name='Auto'))
-    fig_radar.add_trace(go.Scatterpolar(r=v_ind, theta=cats, fill='toself', name='Indiv'))
-    fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 100])), height=400, template="plotly_dark")
-    st.plotly_chart(fig_radar, use_container_width=True)
+fig_radar.add_trace(go.Scatterpolar(r=v_auto, theta=categorias, fill='toself', name='Autovaloración', line_color='#3498db'))
+fig_radar.add_trace(go.Scatterpolar(r=v_ind, theta=categorias, fill='toself', name='Ponderado Individual', line_color='#2ecc71'))
+fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 100])), showlegend=True, height=500)
+st.plotly_chart(fig_radar, use_container_width=True)
 
-    # --- 8. INFORME IA CONSULTOR SENIOR ---
-    st.divider()
-    if st.button("🚀 GENERAR INFORME ESTRATÉGICO"):
-        PROMPT = f"""
-        Actúa como un Consultor Master Barrett. Analiza los resultados de liderazgo de {lider_sel}.
-        Datos JSON: {d.to_json()}
-        
-        INSTRUCCIONES:
-        1. Contextualiza cada nivel según Richard Barrett (L1 a L7).
-        2. Aplica rúbrica: 0-65 Bajo, 66-75 Medio, 76-85 Alto, 86-100 Superior.
-        3. Analiza la forma del Reloj de Arena (si el desarrollo está en la base o en la cima).
-        4. Define estilo predominante y 3 metas de evolución.
-        """
-        try:
-            with st.spinner('Procesando datos...'):
-                response = model.generate_content(PROMPT)
-                st.markdown(response.text)
-        except Exception as e:
-            st.error(f"Error IA: {e}")
+# --- 7. BOTÓN DE INFORME IA ---
+st.divider()
+if st.button("✨ Generar Informe Ejecutivo con IA"):
+    prompt = f"""
+    Actúa como experto en el modelo de Barrett. Analiza los resultados de {lider_sel}.
+    Datos: {d.to_json()}
+    Genera un informe que incluya:
+    1. Estilo predominante.
+    2. Brechas entre Autovaloración e Individual.
+    3. Recomendaciones de desarrollo.
+    Responde en español, tono ejecutivo y profesional.
+    """
+    
+    try:
+        with st.spinner('Analizando con IA...'):
+            # Llamada directa al modelo sin prefijos de versión
+            response = model.generate_content(prompt)
+            st.success("Análisis generado exitosamente")
+            st.markdown("### Informe Ejecutivo")
+            st.write(response.text)
+    except Exception as e:
+        st.error(f"Error de la IA: {e}")
+        st.info("Nota: Si persiste el 404, asegúrate de que el archivo requirements.txt tenga 'google-generativeai>=0.7.2'")
