@@ -7,7 +7,7 @@ import google.generativeai as genai
 st.set_page_config(page_title="LDR Barrett - Informe Ejecutivo", layout="wide")
 
 # --- CONEXIÓN CON EL CEREBRO (GEMINI) ---
-genai.configure(api_key="AIzaSyCnQab4vqvlDeo07erKSXvanVBjZY94De4")
+genai.configure(api_key="AIzaSyCvoIkCyad19aAxLdIt7JF-3k_kc6btJts")
 model = genai.GenerativeModel('gemini-1.5-flash')
 
 # --- MARCO TEÓRICO INTEGRADO (Basado en tus fuentes) ---
