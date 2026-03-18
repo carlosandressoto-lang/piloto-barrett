@@ -18,7 +18,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- 2. CONEXIÓN IA ---
-API_KEY = "TU_API_KEY_AQUI" # Pon tu clave real aquí
+API_KEY = "AIzaSyB_llfm1vZ7fZkubkkbMBwup5WCXVw36yY" # Pon tu clave real aquí
 try:
     genai.configure(api_key=API_KEY)
     model = genai.GenerativeModel('gemini-2.5-flash')
