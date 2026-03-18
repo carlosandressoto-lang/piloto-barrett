@@ -24,9 +24,9 @@ Modelo de Liderazgo de Barrett:
 
 # --- CARGA DE DATOS ---
 try:
-    df = pd.read_csv('Resultados_Gerentes.csv')
-except:
-    st.error("Error: Asegúrate de que el archivo 'Resultados_Gerentes.csv' esté en GitHub.")
+    df = pd.read_csv('Resultados_Gerentes.csv', sep=';', decimal=',') # Agregamos el separador y el decimal
+except Exception as e:
+    st.error(f"Error real detectado: {e}") # Esto nos mostrará el error verdadero si persiste
     st.stop()
 
 # --- INTERFAZ DE USUARIO ---
