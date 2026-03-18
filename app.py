@@ -13,7 +13,7 @@ API_KEY = "AIzaSyB_llfm1vZ7fZkubkkbMBwup5WCXVw36yY"
 try:
     genai.configure(api_key=API_KEY)
     # Nombre del modelo sin el prefijo 'models/' para evitar error 404 en Streamlit
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    model = genai.GenerativeModel('gemini-2.5-flash')
 except Exception as e:
     st.error(f"Error de configuración IA: {e}")
 
