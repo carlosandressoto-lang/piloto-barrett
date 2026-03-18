@@ -3,122 +3,107 @@ import pandas as pd
 import plotly.graph_objects as go
 import google.generativeai as genai
 
-# --- 1. CONFIGURACIÓN ---
+# --- 1. CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(page_title="LDR Barrett - Confa", layout="wide")
 
-# Estilo para imitar el reporte ejecutivo (Fondo blanco, texto negro)
-st.markdown("""
-<style>
-    .main { background-color: white !important; color: black !important; font-family: 'Helvetica', sans-serif; }
-    h1, h2, h3, h4, h5, h6, p, label, .stMarkdown { color: black !important; }
-    .block-container { padding-top: 1rem; }
-</style>
-""", unsafe_allow_html=True)
+# --- 2. CONEXIÓN IA (SOLUCIÓN 404) ---
+# REEMPLAZA CON TU API KEY
+API_KEY = "TU_API_KEY_AQUI"
 
-# --- 2. CONEXIÓN IA ---
-API_KEY = "AIzaSyB_llfm1vZ7fZkubkkbMBwup5WCXVw36yY"
 try:
     genai.configure(api_key=API_KEY)
+    # Nombre del modelo sin el prefijo 'models/' para evitar error 404 en Streamlit
     model = genai.GenerativeModel('gemini-2.5-flash')
 except Exception as e:
-    st.error(f"Error IA: {e}")
+    st.error(f"Error de configuración IA: {e}")
 
 # --- 3. CARGA DE DATOS ---
-@st.cache_data
-def load_data():
-    try:
-        df = pd.read_csv('Resultados_Gerentes.csv', sep=';', decimal=',')
-        df.columns = df.columns.str.strip()
-        df['Nombre_Lider'] = df['Nombre_Lider'].str.strip()
-        cols_niveles = [c for c in df.columns if 'L' in c]
-        for col in cols_niveles:
-            df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
-        return df
-    except Exception as e:
-        st.error(f"Error cargando archivo: {e}")
-        return None
+try:
+    df = pd.read_csv('Resultados_Gerentes.csv', sep=';', decimal=',')
+    df.columns = df.columns.str.strip()
+    df['Nombre_Lider'] = df['Nombre_Lider'].str.strip()
+    
+    # Limpieza de valores numéricos
+    cols_niveles = [c for c in df.columns if 'L' in c and any(x in c for x in ['AUTO', 'INDIV', 'ORG'])]
+    for col in cols_niveles:
+        df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+except Exception as e:
+    st.error(f"Error cargando el archivo: {e}")
+    st.stop()
 
-df = load_data()
-
-# --- 4. SELECCIÓN ---
-st.title("🏛️ Índice del equilibrio - Dashboard LDR Barrett")
-lider_sel = st.selectbox("Seleccione el líder:", df['Nombre_Lider'].unique())
+# --- 4. INTERFAZ Y SELECCIÓN ---
+st.title("🏛️ Dashboard de Liderazgo Barrett - Confa")
+lider_sel = st.selectbox("Seleccione el líder para el análisis:", df['Nombre_Lider'].unique())
 d = df[df['Nombre_Lider'] == lider_sel].iloc[0]
 
-# --- 5. VISUALIZACIÓN TIPO REPORTE OFICIAL ---
-st.divider()
+# --- 5. VISUALIZACIÓN: RELOJES DE ARENA (BARRAS) ---
+st.subheader("Distribución de Energía por Niveles de Conciencia")
+c1, c2, c3 = st.columns(3)
 
-v_auto = [d.AUTO_L1, d.AUTO_L2, d.AUTO_L3, d.AUTO_L4, d.AUTO_L5, d.AUTO_L6, d.AUTO_L7]
-v_ind = [d.INDIV_L1, d.INDIV_L2, d.INDIV_L3, d.INDIV_L4, d.INDIV_L5, d.INDIV_L6, d.INDIV_L7]
-v_org = [d.ORG_L1, d.ORG_L2, d.ORG_L3, d.ORG_L4, d.ORG_L5, d.ORG_L6, d.ORG_L7]
-
-levels_barrett = ['L7 - Visionario', 'L6 - Mentor', 'L5 - Auténtico', 'L4 - Facilitador', 'L3 - Desempeño', 'L2 - Relaciones', 'L1 - Crisis']
-
-# Layout: Icono Teórico + 3 Gráficos de Resultados
-col_icon, col1, col2, col3 = st.columns([0.8, 1, 1, 1])
-
-# --- COLUMNA 0: ICONO RELOJ DE ARENA (SINTAXIS CORREGIDA) ---
-with col_icon:
-    # Variable corregida: sin espacio
-    anchos_hourglass = [5, 4, 3, 2.2, 3, 4, 5] 
-    colores_barrett = ["#6F42C1", "#6F42C1", "#6F42C1", "#28A745", "#FD7E14", "#FD7E14", "#FD7E14"]
-    
-    fig_icon = go.Figure(go.Funnel(
-        y=levels_barrett,
-        x=anchos_hourglass,
-        textinfo="none",
-        marker={"color": colores_barrett, "line": {"width": 1, "color": "white"}},
-        connector={"line": {"color": "white", "width": 1}, "fillcolor": "rgba(200, 200, 200, 0.1)"}
-    ))
-    
-    # Anotaciones laterales de agrupación (Liderazgo, Transición, Gerencia)
-    fig_icon.add_annotation(x=5.5, y='L6 - Mentor', text="LIDERAZGO", showarrow=False, textangle=-90, font=dict(color="#6F42C1", size=12, weight="bold"))
-    fig_icon.add_annotation(x=5.5, y='L4 - Facilitador', text="TRANSICIÓN", showarrow=False, textangle=-90, font=dict(color="#28A745", size=12, weight="bold"))
-    fig_icon.add_annotation(x=5.5, y='L2 - Relaciones', text="GERENCIA", showarrow=False, textangle=-90, font=dict(color="#FD7E14", size=12, weight="bold"))
-
-    fig_icon.update_layout(
-        template="plotly_white", height=500, margin=dict(l=0, r=50, t=20, b=0),
-        xaxis=dict(visible=False, range=[0, 7]),
-        yaxis=dict(autorange="reversed", tickfont=dict(size=10, color='black')),
-        plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)'
-    )
-    st.plotly_chart(fig_icon, use_container_width=True)
-
-# --- COLUMNAS 1, 2, 3: RESULTADOS (SINTAXIS SEGURA) ---
-def dibujar_barras_estilo(vals, titulo):
-    labels_short = ['L7', 'L6', 'L5', 'L4', 'L3', 'L2', 'L1']
+def dibujar_barras(vals, titulo, color):
+    # Definimos los niveles (L7 arriba, L1 abajo)
+    labels = ['L7 - Visionario', 'L6 - Mentor', 'L5 - Auténtico', 'L4 - Facilitador', 'L3 - Desempeño', 'L2 - Relaciones', 'L1 - Crisis']
+    # Invertimos el orden de los datos que vienen del CSV (L1 a L7) para que coincidan con la visual
     v_plot = [vals[6], vals[5], vals[4], vals[3], vals[2], vals[1], vals[0]]
-    colores = ["#6F42C1", "#6F42C1", "#6F42C1", "#28A745", "#FD7E14", "#FD7E14", "#FD7E14"]
     
-    fig = go.Figure()
-    for i in range(len(v_plot)):
-        # Barra izquierda
-        fig.add_trace(go.Bar(y=[labels_short[i]], x=[-v_plot[i]], orientation='h', marker_color=colores[i], hoverinfo='none', showlegend=False))
-        # Barra derecha con texto %
-        fig.add_trace(go.Bar(y=[labels_short[i]], x=[v_plot[i]], orientation='h', marker_color=colores[i], 
-                             text=[f"{round(v_plot[i],1)}%"], textposition='inside', textfont=dict(color='white'), hoverinfo='none', showlegend=False))
-
+    fig = go.Figure(go.Bar(
+        x=v_plot, 
+        y=labels, 
+        orientation='h', 
+        marker_color=color,
+        text=[f"{round(v,1)}%" for v in v_plot],
+        textposition='inside'
+    ))
     fig.update_layout(
-        title=dict(text=titulo, x=0.5, font=dict(size=16, color='black')),
-        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[-110, 110]),
-        yaxis=dict(showgrid=True, gridcolor='#F1F5F9', autorange="reversed", tickfont=dict(size=11, color='black')),
-        barmode='overlay', height=500, margin=dict(l=0, r=0, t=40, b=0), template="plotly_white",
-        plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)'
+        title=titulo, 
+        xaxis_range=[0, 105], 
+        height=400, 
+        margin=dict(l=0, r=10, t=40, b=20),
+        yaxis=dict(autorange="reversed") # Asegura que L7 quede arriba
     )
     return fig
 
-with col1: st.plotly_chart(dibujar_barras_estilo(v_auto, "Auto-Percepción"), use_container_width=True)
-with col2: st.plotly_chart(dibujar_barras_estilo(v_ind, "Valores Observados"), use_container_width=True)
-with col3: st.plotly_chart(dibujar_barras_estilo(v_org, "Valores Organizacionales"), use_container_width=True)
+with c1:
+    v_auto = [d.AUTO_L1, d.AUTO_L2, d.AUTO_L3, d.AUTO_L4, d.AUTO_L5, d.AUTO_L6, d.AUTO_L7]
+    st.plotly_chart(dibujar_barras(v_auto, "Autovaloración", "#3498db"), use_container_width=True)
+with c2:
+    v_ind = [d.INDIV_L1, d.INDIV_L2, d.INDIV_L3, d.INDIV_L4, d.INDIV_L5, d.INDIV_L6, d.INDIV_L7]
+    st.plotly_chart(dibujar_barras(v_ind, "Ponderado Individual", "#2ecc71"), use_container_width=True)
+with c3:
+    v_org = [d.ORG_L1, d.ORG_L2, d.ORG_L3, d.ORG_L4, d.ORG_L5, d.ORG_L6, d.ORG_L7]
+    st.plotly_chart(dibujar_barras(v_org, "Promedio Organizacional", "#95a5a6"), use_container_width=True)
 
-# --- 6. INFORME IA ---
+# --- 6. RADAR DE ALINEACIÓN ---
 st.divider()
-if st.button("🚀 GENERAR INFORME ESTRATÉGICO"):
-    prompt = f"Actúa como consultor Barrett. Analiza a {lider_sel} con estos datos: {d.to_json()}. Usa los 7 niveles y la rúbrica de 0-100."
+st.subheader("Radar de Alineación Estratégica")
+fig_radar = go.Figure()
+categorias = ['L1','L2','L3','L4','L5','L6','L7']
+
+fig_radar.add_trace(go.Scatterpolar(r=v_auto, theta=categorias, fill='toself', name='Autovaloración', line_color='#3498db'))
+fig_radar.add_trace(go.Scatterpolar(r=v_ind, theta=categorias, fill='toself', name='Ponderado Individual', line_color='#2ecc71'))
+fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 100])), showlegend=True, height=500)
+st.plotly_chart(fig_radar, use_container_width=True)
+
+# --- 7. BOTÓN DE INFORME IA ---
+st.divider()
+if st.button("✨ Generar Informe Ejecutivo con IA"):
+    prompt = f"""
+    Actúa como experto en el modelo de Barrett. Analiza los resultados de {lider_sel}.
+    Datos: {d.to_json()}
+    Genera un informe que incluya:
+    1. Estilo predominante.
+    2. Brechas entre Autovaloración e Individual.
+    3. Recomendaciones de desarrollo.
+    Responde en español, tono ejecutivo y profesional.
+    """
+    
     try:
-        with st.spinner('Procesando análisis...'):
+        with st.spinner('Analizando con IA...'):
+            # Llamada directa al modelo sin prefijos de versión
             response = model.generate_content(prompt)
-            st.markdown(f"## Informe Ejecutivo: {lider_sel}")
+            st.success("Análisis generado exitosamente")
+            st.markdown("### Informe Ejecutivo")
             st.write(response.text)
     except Exception as e:
-        st.error(f"Error IA: {e}")
+        st.error(f"Error de la IA: {e}")
+        st.info("Nota: Si persiste el 404, asegúrate de que el archivo requirements.txt tenga 'google-generativeai>=0.7.2'")
