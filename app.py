@@ -3,173 +3,115 @@ import pandas as pd
 import plotly.graph_objects as go
 import google.generativeai as genai
 
-# --- 1. CONFIGURACIÓN DE PÁGINA ---
+# --- 1. CONFIGURACIÓN ---
 st.set_page_config(page_title="LDR Barrett - Confa", layout="wide")
-
-# Estilo CSS para que la leyenda teórica se vea impecable y profesional
-st.markdown("""
-<style>
-    .main { background-color: #0e1117; color: white; }
-    h1, h2, h3, p, span { color: white !important; }
-    .stMarkdown { color: white !important; }
-    /* Estilo para las etiquetas de categoría Barrett a la izquierda */
-    .barrett-label { font-family: sans-serif; text-align: right; font-weight: bold; }
-</style>
-""", unsafe_allow_html=True)
 
 # --- 2. CONEXIÓN IA ---
 API_KEY = "AIzaSyB_llfm1vZ7fZkubkkbMBwup5WCXVw36yY"
-
 try:
     genai.configure(api_key=API_KEY)
     model = genai.GenerativeModel('gemini-2.5-flash')
 except Exception as e:
-    st.error(f"Error de configuración IA: {e}")
+    st.error(f"Error IA: {e}")
 
 # --- 3. CARGA DE DATOS ---
 try:
     df = pd.read_csv('Resultados_Gerentes.csv', sep=';', decimal=',')
     df.columns = df.columns.str.strip()
     df['Nombre_Lider'] = df['Nombre_Lider'].str.strip()
-    
-    cols_niveles = [c for c in df.columns if 'L' in c and any(x in c for x in ['AUTO', 'INDIV', 'ORG'])]
-    for col in cols_niveles:
+    for col in [c for c in df.columns if 'L' in c]:
         df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
 except Exception as e:
-    st.error(f"Error cargando el archivo: {e}")
+    st.error(f"Error cargando archivo: {e}")
     st.stop()
 
-# --- 4. INTERFAZ Y SELECCIÓN ---
+# --- 4. SELECCIÓN ---
 st.title("🏛️ Dashboard de Liderazgo Barrett - Confa")
-lider_sel = st.selectbox("Seleccione el líder para el análisis:", df['Nombre_Lider'].unique())
+lider_sel = st.selectbox("Seleccione el líder:", df['Nombre_Lider'].unique())
 d = df[df['Nombre_Lider'] == lider_sel].iloc[0]
 
-
-# ==============================================================================
-# --- 5. NUEVA SECCIÓN: LEYENDA TEÓRICA BARRETT (ESTILO FOTO) ---
-# Creamos un layout de 2 columnas: Leyenda Teórica (izquierda) y Selector/Gráficos (derecha)
-# ==============================================================================
+# --- 5. VISUALIZACIÓN ESTILO "JENNIFER GARCÍA" ---
 st.divider()
 
-# Columna estrecha para el reloj teórico, columna ancha para el resto
-col_teoria, col_graficos = st.columns([0.7, 3])
+# Definimos los datos de las 3 columnas principales
+v_auto = [d.AUTO_L1, d.AUTO_L2, d.AUTO_L3, d.AUTO_L4, d.AUTO_L5, d.AUTO_L6, d.AUTO_L7]
+v_ind = [d.INDIV_L1, d.INDIV_L2, d.INDIV_L3, d.INDIV_L4, d.INDIV_L5, d.INDIV_L6, d.INDIV_L7]
+v_org = [d.ORG_L1, d.ORG_L2, d.ORG_L3, d.ORG_L4, d.ORG_L5, d.ORG_L6, d.ORG_L7]
 
-with col_teoria:
-    st.subheader("Modelo Barrett")
+# Layout de 4 columnas: Icono Teórico | Auto | Individual | Org
+col_icono, col1, col2, col3 = st.columns([0.6, 1, 1, 1])
+
+# --- COLUMNA 0: ICONO RELOJ DE ARENA TEÓRICO (LIDERAZGO, TRANSICIÓN, GERENCIA) ---
+with col_icono:
+    # Creamos un gráfico de barras constante para simular el reloj de la foto
+    labels_teoricas = ['L7', 'L6', 'L5', 'L4', 'L3', 'L2', 'L1']
+    # Anchos para simular la forma del reloj (ancho arriba y abajo, estrecho al medio)
+    anchos = [4, 3, 2, 1.5, 2, 3, 4] 
+    colores_teoricos = ['#6F42C1','#6F42C1','#6F42C1','#28A745','#FD7E14','#FD7E14','#FD7E14']
     
-    # Renderizamos el reloj teórico de arena manual usando Markdown y HTML para control total
-    st.markdown("""
-    <div style="display: flex; flex-direction: column; align-items: flex-end; margin-right: 10px;">
-        
-        <div style="height: 140px; display: flex; align-items: center; justify-content: flex-end;">
-            <span class="barrett-label" style="color: #6F42C1;">Liderazgo<br><small>(L5-L7)</small></span>
-        </div>
-        
-        <div style="height: 60px; display: flex; align-items: center; justify-content: flex-end;">
-            <span class="barrett-label" style="color: #28A745;">Transición<br><small>(L4)</small></span>
-        </div>
-        
-        <div style="height: 140px; display: flex; align-items: center; justify-content: flex-end; margin-top: 10px;">
-            <span class="barrett-label" style="color: #FD7E14;">Gerencia<br><small>(L1-L3)</small></span>
-        </div>
-        
-    </div>
-    """, unsafe_allow_html=True)
-
-with col_graficos:
-    # Dentro de esta columna ancha colocamos tus gráficos funcionales
+    fig_icono = go.Figure()
+    # Barras simétricas para crear la forma de copa/reloj
+    fig_icono.add_trace(go.Bar(y=labels_teoricas, x=anchos, orientation='h', marker_color=colores_teoricos, hoverinfo='none'))
+    fig_icono.add_trace(go.Bar(y=labels_teoricas, x=[-x for x in anchos], orientation='h', marker_color=colores_teoricos, hoverinfo='none'))
     
-    # --- VISUALIZACIÓN 1: BARRAS ORIGINALES (%) ---
-    st.subheader("Distribución de Energía por Niveles de Conciencia (%)")
-    c1, c2, c3 = st.columns(3)
+    # Anotaciones de Texto (Liderazgo, Transición, Gerencia)
+    fig_icono.add_annotation(x=0, y='L6', text="LIDERAZGO", showarrow=False, font=dict(color="white", size=10))
+    fig_icono.add_annotation(x=0, y='L4', text="TRANSICIÓN", showarrow=False, font=dict(color="white", size=10))
+    fig_icono.add_annotation(x=0, y='L2', text="GERENCIA", showarrow=False, font=dict(color="white", size=10))
 
-    def dibujar_barras(vals, titulo, color):
-        labels = ['L7 - Visionario', 'L6 - Mentor', 'L5 - Auténtico', 'L4 - Facilitador', 'L3 - Desempeño', 'L2 - Relaciones', 'L1 - Crisis']
-        v_plot = [vals[6], vals[5], vals[4], vals[3], vals[2], vals[1], vals[0]]
-        fig = go.Figure(go.Bar(x=v_plot, y=labels, orientation='h', marker_color=color, text=[f"{round(v,1)}%" for v in v_plot], textposition='inside'))
-        fig.update_layout(title=titulo, xaxis_range=[0, 105], height=350, margin=dict(l=0, r=10, t=40, b=20), yaxis=dict(autorange="reversed"))
-        # Estilo oscuro para que resalte
-        fig.update_layout(template="plotly_dark", plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
-        return fig
+    fig_icono.update_layout(
+        template="plotly_dark", height=450, barmode='relative',
+        xaxis=dict(visible=False, range=[-5, 5]),
+        yaxis=dict(showgrid=False, autorange="reversed"),
+        margin=dict(l=0, r=0, t=10, b=10), plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)',
+        showlegend=False
+    )
+    st.plotly_chart(fig_icono, use_container_width=True)
 
-    v_auto = [d.AUTO_L1, d.AUTO_L2, d.AUTO_L3, d.AUTO_L4, d.AUTO_L5, d.AUTO_L6, d.AUTO_L7]
-    v_ind = [d.INDIV_L1, d.INDIV_L2, d.INDIV_L3, d.INDIV_L4, d.INDIV_L5, d.INDIV_L6, d.INDIV_L7]
-    v_org = [d.ORG_L1, d.ORG_L2, d.ORG_L3, d.ORG_L4, d.ORG_L5, d.ORG_L6, d.ORG_L7]
+# --- COLUMNAS 1, 2, 3: TUS GRÁFICOS DE BARRAS FUNCIONALES ---
+def dibujar_barras_estilo(vals, titulo, color_base):
+    labels = ['L7 Vision.', 'L6 Mentor', 'L5 Autént.', 'L4 Facil.', 'L3 Desemp.', 'L2 Relac.', 'L1 Crisis']
+    v_plot = [vals[6], vals[5], vals[4], vals[3], vals[2], vals[1], vals[0]]
+    
+    # Colores dinámicos según el nivel (estilo Jennifer)
+    colores = ['#6F42C1','#6F42C1','#6F42C1','#28A745','#FD7E14','#FD7E14','#FD7E14']
+    
+    fig = go.Figure(go.Bar(
+        x=v_plot, y=labels, orientation='h', 
+        marker_color=colores, # Usamos los colores por categoría
+        text=[f"{round(v,1)}%" for v in v_plot], textposition='inside'
+    ))
+    fig.update_layout(
+        title=titulo, xaxis_range=[0, 105], height=450, template="plotly_dark",
+        margin=dict(l=0, r=10, t=40, b=20), yaxis=dict(autorange="reversed"),
+        plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)'
+    )
+    return fig
 
-    with c1: st.plotly_chart(dibujar_barras(v_auto, "Autovaloración", "#3498db"), use_container_width=True)
-    with c2: st.plotly_chart(dibujar_barras(v_ind, "Ponderado Individual", "#2ecc71"), use_container_width=True)
-    with c3: st.plotly_chart(dibujar_barras(v_org, "Promedio Organizacional", "#95a5a6"), use_container_width=True)
+with col1: st.plotly_chart(dibujar_barras_estilo(v_auto, "Auto-Percepción"), use_container_width=True)
+with col2: st.plotly_chart(dibujar_barras_estilo(v_ind, "Valores Observados"), use_container_width=True)
+with col3: st.plotly_chart(dibujar_barras_estilo(v_org, "Valores Deseados (Org)"), use_container_width=True)
 
-    # --- VISUALIZACIÓN 2: RELOJES DE ARENA (DIAMANTE ESCALA 1-4) ---
-    st.divider()
-    st.subheader("⏳ Nivel de Desarrollo Barrett (Escala 1 a 4)")
-
-    def a_escala_4(v):
-        if v < 65: return 1
-        if v < 75: return 2
-        if v < 85: return 3
-        return 4
-
-    def dibujar_reloj_diamante(vals, titulo, color):
-        v4 = [a_escala_4(x) for x in vals]
-        labels = ['L1 Crisis', 'L2 Relac.', 'L3 Desemp.', 'L4 Facil.', 'L5 Autént.', 'L6 Mentor', 'L7 Vision.']
-        # Crear simetría para forma de diamante
-        fig = go.Figure(go.Scatter(x=v4 + [-x for x in v4[::-1]], y=labels + labels[::-1], fill='toself', fillcolor=color, line=dict(color='white', width=1)))
-        for i, val in enumerate(v4):
-            fig.add_annotation(x=0, y=labels[i], text=str(val), showarrow=False, font=dict(color="white"))
-        fig.update_layout(title=dict(text=titulo, x=0.5), xaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[-5, 5]), height=400, margin=dict(l=20, r=20, t=40, b=20), template="plotly_dark")
-        # Fondo transparente para integrar
-        fig.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
-        return fig
-
-    rd1, rd2, rd3 = st.columns(3)
-    with rd1: st.plotly_chart(dibujar_reloj_diamante(v_auto, "Desarrollo Auto", "rgba(52, 152, 219, 0.7)"), use_container_width=True)
-    with rd2: st.plotly_chart(dibujar_reloj_diamante(v_ind, "Desarrollo Individual", "rgba(46, 204, 113, 0.7)"), use_container_width=True)
-    with rd3: st.plotly_chart(dibujar_reloj_diamante(v_org, "Desarrollo Org.", "rgba(149, 165, 166, 0.7)"), use_container_width=True)
-
-
-# --- 6. RADAR Y BOTÓN DE INFORME IA (FUERA DE COLUMNAS PARA QUE OCUPE TODO EL ANCHO) ---
+# --- 6. RADAR Y BOTÓN IA ---
 st.divider()
-st.subheader("Radar de Alineación Estratégica")
 col_radar, col_button = st.columns([2, 1])
 
 with col_radar:
+    st.subheader("Radar de Alineación Estratégica")
     fig_radar = go.Figure()
-    categorias = ['L1','L2','L3','L4','L5','L6','L7']
-    fig_radar.add_trace(go.Scatterpolar(r=v_auto, theta=categorias, fill='toself', name='Autovaloración', line_color='#3498db'))
-    fig_radar.add_trace(go.Scatterpolar(r=v_ind, theta=categorias, fill='toself', name='Ponderado Individual', line_color='#2ecc71'))
+    cats = ['L1','L2','L3','L4','L5','L6','L7']
+    fig_radar.add_trace(go.Scatterpolar(r=v_auto, theta=cats, fill='toself', name='Auto', line_color='#3498db'))
+    fig_radar.add_trace(go.Scatterpolar(r=v_ind, theta=cats, fill='toself', name='Individual', line_color='#2ecc71'))
     fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 100])), height=450, template="plotly_dark")
     st.plotly_chart(fig_radar, use_container_width=True)
 
 with col_button:
     st.write("") # Espaciador
-    st.write("") # Espaciador
     if st.button("✨ Generar Informe Ejecutivo con IA"):
-        prompt = f"""
-        Actúa como un experto consultor senior en el modelo de los 7 niveles de conciencia de Richard Barrett. 
-        Analiza los resultados del diagnóstico 360 del líder {lider_sel} para el comité ejecutivo de Confa.
-
-        DATOS: {d.to_json()}
-
-        TEORÍA DE REFERENCIA:
-        L1 (Crisis/Viabilidad): Salud financiera, seguridad. | L2 (Relaciones): Armonía, respeto. | L3 (Desempeño): Eficiencia, sistemas.
-        L4 (Evolución/Facilitador): Empoderamiento, cambio. | L5 (Alineación/Auténtico): Confianza, integridad.
-        L6 (Colaboración/Mentor): Alianzas, desarrollo de otros. | L7 (Servicio/Visionario): Ética, legado.
-
-        RÚBRICA DE EVALUACIÓN:
-        0-65: Bajo | 65-75: Medio | 75-85: Alto | 85-100: Superior
-
-        ESTRUCTURA DEL INFORME:
-        1. DESCRIPCIÓN POR NIVELES: Analiza de L1 a L7 usando el Ponderado Individual bajo la teoría de Barrett.
-        2. ANÁLISIS DE AUTOVALORACIÓN: Evalúa sesgos entre cómo se percibe el líder vs cómo lo ven.
-        3. ANÁLISIS DE PONDERADO INDIVIDUAL: Competencia real observada según rúbrica.
-        4. MATRIZ DE MADUREZ: Alineación entre el líder y la cultura organizacional.
-        5. PERFIL DE LIDERAZGO: Define el estilo predominante y 3 acciones estratégicas para el equilibrio de los niveles.
-        """
+        prompt = f"Analiza los resultados de {lider_sel} bajo el modelo Barrett: {d.to_json()}. Tono ejecutivo, español."
         try:
-            with st.spinner('Procesando análisis de alta dirección...'):
+            with st.spinner('Analizando...'):
                 response = model.generate_content(prompt)
-                st.success("Análisis completado")
                 st.markdown(response.text)
         except Exception as e:
-            st.error(f"Error de la IA: {e}")
+            st.error(f"Error IA: {e}")
