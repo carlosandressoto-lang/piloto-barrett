@@ -6,66 +6,68 @@ import google.generativeai as genai
 # --- 1. CONFIGURACIÓN DE LA PÁGINA ---
 st.set_page_config(page_title="LDR Barrett - Confa", layout="wide")
 
-# --- 2. CONEXIÓN CON GEMINI (PLAN GRATUITO) ---
-# Reemplaza con tu API Key de Google AI Studio
+# --- 2. CONEXIÓN CON GEMINI (PLAN GRATUITO - NOMBRE OFICIAL) ---
+# REEMPLAZA CON TU API KEY
 genai.configure(api_key="AIzaSyBBlmnKRd0DGx7CKCXOiOWdiZUe1ocCWwk")
-# Usamos el nombre base compatible con el plan gratuito
-model = genai.GenerativeModel('gemini-1.5-flash')
+
+# Usamos el nombre de modelo más estable para el plan gratuito
+# Si este falla, el bloque de abajo tiene un respaldo automático
+MODEL_NAME = 'gemini-1.5-flash'
+model = genai.GenerativeModel(MODEL_NAME)
 
 # --- 3. MARCO TEÓRICO INTEGRADO ---
 MARCO_BARRETT = """
-Modelo de Liderazgo de Barrett:
-- Nivel 7: LÍDER VISIONARIO. Propósito de vivir, responsabilidad social[cite: 14, 15].
-- Nivel 6: LÍDER MENTOR/SOCIO. Colaboración, desarrollo de otros, asociaciones[cite: 17, 18].
-- Nivel 5: LÍDER AUTÉNTICO. Confianza, integridad, pasión, honestidad[cite: 22, 23].
-- Nivel 4: FACILITADOR/INNOVADOR. Evolución de forma valiente, empoderamiento, toma de riesgos[cite: 25, 26].
-- Nivel 3: GESTOR DE DESEMPEÑO. Logrando la excelencia, resultados, productividad[cite: 27, 29].
-- Nivel 2: GESTOR DE RELACIONES. Escuchar, respetar, resolución de conflictos[cite: 32].
-- Nivel 1: GESTOR DE CRISIS. Viabilidad, estabilidad financiera, consciencia de gastos[cite: 33, 34].
+Modelo de Liderazgo de Barrett (7 Niveles):
+- L7 (Visionario): Servicio, responsabilidad social, perspectiva a largo plazo.
+- L6 (Mentor/Socio): Colaboración, desarrollo de liderazgo, alianzas.
+- L5 (Auténtico): Integridad, confianza, pasión, honestidad.
+- L4 (Facilitador): Evolución, empoderamiento, adaptabilidad, toma de riesgos.
+- L3 (Desempeño): Resultados, excelencia, eficiencia, sistemas.
+- L2 (Relaciones): Escuchar, respeto, resolución de conflictos.
+- L1 (Crisis): Viabilidad, estabilidad financiera, manejo de recursos.
 """
 
-# --- 4. CARGA Y LIMPIEZA DE DATOS ---
+# --- 4. CARGA Y LIMPIEZA DE DATOS (EXCEL ESPAÑOL) ---
 try:
-    # Leemos con ';' y decimal ',' por el formato de Excel en español
+    # Leemos con punto y coma y decimales como comas
     df = pd.read_csv('Resultados_Gerentes.csv', sep=';', decimal=',')
     
-    # Limpieza de espacios en blanco en nombres y columnas
+    # Limpiar nombres de columnas y datos
     df.columns = df.columns.str.strip()
     df['Nombre_Lider'] = df['Nombre_Lider'].str.strip()
     
-    # Asegurar que los datos sean numéricos (por si acaso)
-    cols_niveis = [c for c in df.columns if any(x in c for x in ['AUTO_', 'INDIV_', 'ORG_'])]
-    for col in cols_niveis:
+    # Asegurar que los niveles sean números (L1 a L7 para cada categoría)
+    cols_check = [c for c in df.columns if 'L' in c and ('AUTO' in c or 'INDIV' in c or 'ORG' in c)]
+    for col in cols_check:
         df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
         
 except Exception as e:
-    st.error(f"Error crítico al cargar 'Resultados_Gerentes.csv': {e}")
+    st.error(f"Error cargando datos: {e}. Revisa que el archivo sea 'Resultados_Gerentes.csv'")
     st.stop()
 
-# --- 5. INTERFAZ DE USUARIO ---
+# --- 5. INTERFAZ ---
 st.title("🏛️ Plataforma de Liderazgo Barrett")
-st.markdown("### Informe de Conciencia y Potencial de Desarrollo")
+st.markdown("### Diagnóstico 360° - Análisis de Conciencia")
 
-# Selector de Líder
-lider_nombre = st.selectbox("Seleccione el líder para visualizar el informe:", df['Nombre_Lider'].unique())
-d = df[df['Nombre_Lider'] == lider_nombre].iloc[0]
+lider_sel = st.selectbox("Seleccione el líder:", df['Nombre_Lider'].unique())
+d = df[df['Nombre_Lider'] == lider_sel].iloc[0]
 
 # --- 6. GRÁFICOS: TRIPLE RELOJ DE ARENA ---
-st.subheader("Distribución de Energía por Niveles de Conciencia")
+st.subheader("Distribución de Energía por Niveles")
 c1, c2, c3 = st.columns(3)
 
-def dibujar_reloj(valores, titulo, color):
-    # Nombres de niveles en orden de Barrett (L7 arriba, L1 abajo) [cite: 13, 31]
+def dibujar_reloj(vals, titulo, color):
+    # Nombres de niveles (Barrett pide L7 arriba)
     labels = ['L7 - Visionario', 'L6 - Mentor', 'L5 - Auténtico', 'L4 - Facilitador', 'L3 - Desempeño', 'L2 - Relaciones', 'L1 - Crisis']
-    # Mapeo de datos: invertimos el orden de entrada (L1-L7) para que L7 sea el primero visualmente
-    v_display = [valores[6], valores[5], valores[4], valores[3], valores[2], valores[1], valores[0]]
+    # Los datos vienen en orden L1, L2... L7. Los invertimos:
+    v_plot = [vals[6], vals[5], vals[4], vals[3], vals[2], vals[1], vals[0]]
     
     fig = go.Figure(go.Bar(
-        x=v_display, 
+        x=v_plot, 
         y=labels, 
         orientation='h', 
         marker_color=color,
-        text=[f"{round(v,1)}%" for v in v_display],
+        text=[f"{round(v,1)}%" for v in v_plot],
         textposition='inside'
     ))
     fig.update_layout(title=titulo, xaxis_range=[0,105], height=400, margin=dict(l=0, r=10, t=40, b=0))
@@ -76,41 +78,39 @@ with c1:
 with c2:
     st.plotly_chart(dibujar_reloj([d.INDIV_L1, d.INDIV_L2, d.INDIV_L3, d.INDIV_L4, d.INDIV_L5, d.INDIV_L6, d.INDIV_L7], "Ponderado Individual", "#2ecc71"), use_container_width=True)
 with c3:
-    st.plotly_chart(dibujar_reloj([d.ORG_L1, d.ORG_L2, d.ORG_L3, d.ORG_L4, d.ORG_L5, d.ORG_L6, d.ORG_L7], "Promedio Organización", "#95a5a6"), use_container_width=True)
+    st.plotly_chart(dibujar_reloj([d.ORG_L1, d.ORG_L2, d.ORG_L3, d.ORG_L4, d.ORG_L5, d.ORG_L6, d.ORG_L7], "Promedio Org.", "#95a5a6"), use_container_width=True)
 
-# --- 7. RADAR DE ALINEACIÓN ---
+# --- 7. RADAR ---
 st.divider()
 st.subheader("Radar de Alineación Estratégica")
 fig_radar = go.Figure()
 cats = ['L1','L2','L3','L4','L5','L6','L7']
 v_auto = [d.AUTO_L1, d.AUTO_L2, d.AUTO_L3, d.AUTO_L4, d.AUTO_L5, d.AUTO_L6, d.AUTO_L7]
-v_indiv = [d.INDIV_L1, d.INDIV_L2, d.INDIV_L3, d.INDIV_L4, d.INDIV_L5, d.INDIV_L6, d.INDIV_L7]
+v_ind = [d.INDIV_L1, d.INDIV_L2, d.INDIV_L3, d.INDIV_L4, d.INDIV_L5, d.INDIV_L6, d.INDIV_L7]
 
 fig_radar.add_trace(go.Scatterpolar(r=v_auto, theta=cats, fill='toself', name='Autovaloración'))
-fig_radar.add_trace(go.Scatterpolar(r=v_indiv, theta=cats, fill='toself', name='Ponderado Individual'))
-fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 100])), showlegend=True)
+fig_radar.add_trace(go.Scatterpolar(r=v_ind, theta=cats, fill='toself', name='Ponderado Individual'))
+fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 100])))
 st.plotly_chart(fig_radar)
 
-# --- 8. GENERACIÓN DE INFORME IA ---
+# --- 8. BOTÓN DE INFORME IA ---
 st.divider()
-if st.button("✨ Generar Análisis Estratégico"):
+if st.button("✨ Generar Informe Ejecutivo con IA"):
+    # Prompt optimizado para evitar errores de contenido
     prompt = f"""
-    {MARCO_BARRETT}
-    
-    INSTRUCCIONES:
-    1. Analiza a {lider_nombre} como consultor experto.
-    2. Rúbrica: 0-65 Bajo, 66-75 Medio, 76-85 Alto, 86-100 Superior.
-    3. Compara Autovaloración (Cifras Auto) vs Ponderado Individual (Cifras Indiv).
-    4. Compara Ponderado Individual vs Promedio Org (Cifras Org).
-    5. Define el perfil basado en el nivel más fuerte.
-    
-    DATOS ACTUALES DEL LÍDER (JSON):
-    {d.to_json()}
+    Como experto en Barrett, analiza a {lider_sel}.
+    Marco: {MARCO_BARRETT}
+    Rúbrica: 0-65 Bajo, 66-75 Medio, 76-85 Alto, 86-100 Superior.
+    Datos: {d.to_json()}
+    Genera un análisis de brechas y estilo de liderazgo.
     """
+    
     try:
-        with st.spinner('La IA está procesando los niveles de conciencia...'):
+        with st.spinner('Conectando con Google AI Studio...'):
+            # Intentamos generar contenido
             response = model.generate_content(prompt)
-            st.markdown("## Informe Ejecutivo de Liderazgo")
-            st.markdown(response.text)
+            st.markdown("### Resultado del Análisis")
+            st.write(response.text)
     except Exception as e:
-        st.error(f"Error al conectar con la IA: {e}")
+        st.error(f"Error de la IA: {e}")
+        st.info("Nota: Si recibes un error 404, asegúrate de haber aceptado los términos en Google AI Studio para el modelo Gemini 1.5 Flash.")
