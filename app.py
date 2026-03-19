@@ -19,25 +19,6 @@ st.markdown("""
     .block-container { padding-top: 1rem; }
     h1 { color: #BFDBFE !important; text-align: center; }
     .titulo-col { text-align: center; font-weight: bold; color: #BFDBFE; margin-bottom: 10px; font-size: 1.1rem; }
-    
-    .leyenda-v3 {
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        height: 340px; 
-        margin-top: 35px; 
-        padding-right: 10px;
-        border-right: 1px solid #334155;
-    }
-    .item-ley {
-        height: 48px; 
-        display: flex;
-        align-items: center;
-        justify-content: flex-end;
-        font-size: 0.85rem;
-        font-weight: bold;
-        color: #94a3b8;
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -72,18 +53,16 @@ if df is not None:
     lideres = sorted(df['Nombre_Lider'].unique())
     lider_sel = st.selectbox("Seleccione el líder para el análisis detallado:", lideres)
     
-    if "informe_cache" not in st.session_state:
-        st.session_state.informe_cache = {}
-        
     d = df[df['Nombre_Lider'] == lider_sel].iloc[0]
-
-    gerencia_prom = (d.INDIV_L1 + d.INDIV_L2 + d.INDIV_L3) / 3
-    transicion_prom = d.INDIV_L4
-    liderazgo_prom = (d.INDIV_L5 + d.INDIV_L6 + d.INDIV_L7) / 3
 
     v_auto = [d.AUTO_L1, d.AUTO_L2, d.AUTO_L3, d.AUTO_L4, d.AUTO_L5, d.AUTO_L6, d.AUTO_L7]
     v_ind = [d.INDIV_L1, d.INDIV_L2, d.INDIV_L3, d.INDIV_L4, d.INDIV_L5, d.INDIV_L6, d.INDIV_L7]
     v_org = [d.ORG_L1, d.ORG_L2, d.ORG_L3, d.ORG_L4, d.ORG_L5, d.ORG_L6, d.ORG_L7]
+
+    # Cálculos promedios para Informe IA
+    gerencia_prom = (d.INDIV_L1 + d.INDIV_L2 + d.INDIV_L3) / 3
+    transicion_prom = d.INDIV_L4
+    liderazgo_prom = (d.INDIV_L5 + d.INDIV_L6 + d.INDIV_L7) / 3
 
     def obtener_color_desarrollo(v):
         if v < 65: return "#ff4b4b" 
@@ -105,7 +84,7 @@ if df is not None:
         fig.update_layout(title=dict(text=titulo, x=0.5), xaxis_range=[0, 105], height=350, template="plotly_dark", margin=dict(l=0, r=10, t=40, b=20), yaxis=dict(autorange="reversed"))
         return fig
 
-    def generar_fig_reloj(vals, incluir_leyenda=False):
+    def generar_fig_reloj(vals, incluir_leyenda=False, forzar_pdf=False):
         anchos_base = [6, 5, 4, 3.2, 4, 5, 6] 
         v_rev = [vals[6], vals[5], vals[4], vals[3], vals[2], vals[1], vals[0]]
         colors_barrett = ["rgb(33,115,182)"]*3 + ["rgb(140,183,42)"] + ["rgb(241,102,35)"]*3
@@ -133,9 +112,12 @@ if df is not None:
                 width=ancho * 22.0
             )
 
+        # COMPENSACIÓN DE MARGEN PARA SIMETRÍA (PDF)
+        margen_l = 100 if (incluir_leyenda or forzar_pdf) else 10
+        
         fig.update_layout(
             height=400, 
-            margin=dict(l=100 if incluir_leyenda else 10, r=10, t=10, b=10), 
+            margin=dict(l=margen_l, r=20, t=10, b=10), 
             yaxis=dict(visible=incluir_leyenda, tickfont=dict(color="#94a3b8" if not incluir_leyenda else "black", size=10)), 
             xaxis=dict(visible=False), 
             plot_bgcolor='rgba(0,0,0,0)', 
@@ -143,34 +125,22 @@ if df is not None:
         )
         return fig
 
-    # --- 5. ASIGNACIÓN GLOBAL ---
-    fig_b1 = generar_fig_barras(v_auto, "Autovaloración", "#3498db")
-    fig_b2 = generar_fig_barras(v_ind, "Individual (360)", "#2ecc71")
-    fig_b3 = generar_fig_barras(v_org, "Promedio Organizacional", "#e74c3c")
-    
-    fig_r1 = generar_fig_reloj(v_auto)
-    fig_r2 = generar_fig_reloj(v_ind)
-    fig_r3 = generar_fig_reloj(v_org)
-
-    # --- 6. RENDER DASHBOARD ---
+    # --- 5. RENDER DASHBOARD ---
     st.divider()
     st.subheader("📊 Frecuencia de comportamientos por niveles (%)")
     c1, c2, c3 = st.columns(3)
-    with c1: st.plotly_chart(fig_b1, key="b1_v")
-    with c2: st.plotly_chart(fig_b2, key="b2_v")
-    with c3: st.plotly_chart(fig_b3, key="b3_v")
+    with c1: st.plotly_chart(generar_fig_barras(v_auto, "Autovaloración", "#3498db"), key="b1_v")
+    with c2: st.plotly_chart(generar_fig_barras(v_ind, "Individual (360)", "#2ecc71"), key="b2_v")
+    with c3: st.plotly_chart(generar_fig_barras(v_org, "Promedio Organizacional", "#e74c3c"), key="b3_v")
 
     st.divider()
     st.subheader("⏳ Resultados Evaluación 360°")
     cl, cr1, cr2, cr3 = st.columns([1, 1, 1, 1])
-    with cl:
-        st.markdown('<div class="titulo-col">Nivel Barrett</div>', unsafe_allow_html=True)
-        st.markdown('<div class="leyenda-v3">' + ''.join([f'<div class="item-ley">{n}</div>' for n in ["L7 - Visionario", "L6 - Mentor", "L5 - Auténtico", "L4 - Facilitador", "L3 - Desempeño", "L2 - Relaciones", "L1 - Crisis"]]) + '</div>', unsafe_allow_html=True)
-    with cr1: st.markdown('<div class="titulo-col">Autovaloración</div>', unsafe_allow_html=True); st.plotly_chart(fig_r1, key="r1_v")
-    with cr2: st.markdown('<div class="titulo-col">Individual</div>', unsafe_allow_html=True); st.plotly_chart(fig_r2, key="r2_v")
-    with cr3: st.markdown('<div class="titulo-col">Organizacional</div>', unsafe_allow_html=True); st.plotly_chart(fig_r3, key="r3_v")
+    with cr1: st.markdown('<div class="titulo-col">Autovaloración</div>', unsafe_allow_html=True); st.plotly_chart(generar_fig_reloj(v_auto), key="r1_v")
+    with cr2: st.markdown('<div class="titulo-col">Individual</div>', unsafe_allow_html=True); st.plotly_chart(generar_fig_reloj(v_ind), key="r2_v")
+    with cr3: st.markdown('<div class="titulo-col">Organizacional</div>', unsafe_allow_html=True); st.plotly_chart(generar_fig_reloj(v_org), key="r3_v")
 
-    # --- 7. RADAR Y DIMENSIONES ---
+    # --- 6. RADAR Y DIMENSIONES ---
     st.divider()
     col_radar, col_dim = st.columns([1.5, 1])
     with col_radar:
@@ -188,7 +158,10 @@ if df is not None:
         fig_dim.update_layout(xaxis_range=[0, 105], height=400, template="plotly_dark", yaxis=dict(autorange="reversed"))
         st.plotly_chart(fig_dim, key="dim_v")
 
-    # --- 8. INFORME IA ---
+    # --- 7. INFORME IA (SIN TOCAR PROMPT) ---
+    if "informe_cache" not in st.session_state:
+        st.session_state.informe_cache = {}
+
     st.divider()
     if st.button("🚀 GENERAR INFORME EJECUTIVO"):
         prompt_maestro = f"""
@@ -248,31 +221,33 @@ if df is not None:
                         
                         pdf.set_font('Helvetica', 'B', 10)
                         pdf.text(10, 38, "1. Frecuencia de comportamientos por niveles (%)")
-                        pdf.image(save_chart(fig_b1, "b1.png"), x=10, y=42, w=60)
-                        pdf.image(save_chart(fig_b2, "b2.png"), x=75, y=42, w=60)
-                        pdf.image(save_chart(fig_b3, "b3.png"), x=140, y=42, w=60)
+                        pdf.image(save_chart(generar_fig_barras(v_auto, "Auto", "#3498db"), "b1.png"), x=10, y=42, w=60)
+                        pdf.image(save_chart(generar_fig_barras(v_ind, "Individual", "#2ecc71"), "b2.png"), x=75, y=42, w=60)
+                        pdf.image(save_chart(generar_fig_barras(v_org, "Organizacional", "#e74c3c"), "b3.png"), x=140, y=42, w=60)
 
-                        # AJUSTE RADAR: Evitar traslape de L1
                         fig_radar.update_layout(template="plotly", paper_bgcolor='white', font=dict(color="black"), legend=dict(y=1.2), margin=dict(t=100))
                         pdf.text(10, 95, "2. Alineación de Consciencia y Entorno")
                         pdf.image(save_chart(fig_radar, "radar.png", 500, 400), x=10, y=98, w=95)
                         pdf.text(110, 95, "3. Índice del Equilibrio de Liderazgo")
-                        pdf.image(save_chart(fig_dim, "dim.png", 500, 350), x=110, y=105, w=90)
+                        # Crear fig_dim_pdf para el PDF
+                        fig_dim_pdf = go.Figure(go.Bar(x=[liderazgo_prom, transicion_prom, gerencia_prom], y=['Liderazgo', 'Transición', 'Gerencia'], orientation='h', marker_color="#3498db"))
+                        pdf.image(save_chart(fig_dim_pdf, "dim.png", 500, 350), x=110, y=105, w=90)
 
-                        # AJUSTE PDF RELOJES: Simetría absoluta y títulos centrados
+                        # --- SIMETRÍA TOTAL EN RELOJES ---
                         pdf.text(15, 175, "4. Resultados Evaluación 360° (Niveles Barrett)")
                         pdf.set_font('Helvetica', 'B', 8)
+                        pdf.text(45, 182, "Autovaloración")
+                        pdf.text(103, 182, "Individual (360)")
+                        pdf.text(158, 182, "Organizacional")
                         
-                        # Coordenadas X calculadas para centrar títulos sobre el área del reloj
-                        pdf.text(38, 182, "Autovaloración")
-                        pdf.text(95, 182, "Individual (360)")
-                        pdf.text(150, 182, "Organizacional")
-                        
-                        # Generamos versión con leyenda para el PDF compensando el ancho (w=85)
-                        fig_r1_pdf = generar_fig_reloj(v_auto, incluir_leyenda=True)
-                        pdf.image(save_chart(fig_r1_pdf, "r1.png", 650, 400), x=10, y=184, w=82) # Más ancho para alojar leyenda sin encoger figura
-                        pdf.image(save_chart(fig_r2, "r2.png", 400, 400), x=92, y=184, w=52) # Posición X movida para compensar r1
-                        pdf.image(save_chart(fig_r3, "r3.png", 400, 400), x=145, y=184, w=52)
+                        # Los tres con el mismo ancho de imagen (w=60) y mismos márgenes internos
+                        r1 = generar_fig_reloj(v_auto, incluir_leyenda=True)
+                        r2 = generar_fig_reloj(v_ind, incluir_leyenda=False, forzar_pdf=True)
+                        r3 = generar_fig_reloj(v_org, incluir_leyenda=False, forzar_pdf=True)
+
+                        pdf.image(save_chart(r1, "r1.png", 500, 400), x=15, y=184, w=60) 
+                        pdf.image(save_chart(r2, "r2.png", 500, 400), x=75, y=184, w=60) 
+                        pdf.image(save_chart(r3, "r3.png", 500, 400), x=135, y=184, w=60)
 
                     pdf.add_page()
                     pdf.set_font('Helvetica', 'B', 14)
@@ -285,5 +260,5 @@ if df is not None:
                     pdf.multi_cell(0, 6, limpio)
 
                     output = pdf.output()
-                    st.download_button(label="📥 Descargar PDF Final Mejorado", data=bytes(output), file_name=f"Reporte_Liderazgo_{lider_sel}.pdf", mime="application/pdf")
+                    st.download_button(label="📥 Descargar PDF Final Simétrico", data=bytes(output), file_name=f"Reporte_Liderazgo_{lider_sel}.pdf", mime="application/pdf")
                 except Exception as e: st.error(f"Error PDF: {e}")
