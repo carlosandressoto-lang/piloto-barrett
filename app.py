@@ -80,7 +80,7 @@ if df is not None:
     with c2: st.plotly_chart(dibujar_barras([d.INDIV_L1, d.INDIV_L2, d.INDIV_L3, d.INDIV_L4, d.INDIV_L5, d.INDIV_L6, d.INDIV_L7], "Individual", "#2ecc71"), use_container_width=True)
     with c3: st.plotly_chart(dibujar_barras([d.ORG_L1, d.ORG_L2, d.ORG_L3, d.ORG_L4, d.ORG_L5, d.ORG_L6, d.ORG_L7], "Cultura", "#e74c3c"), use_container_width=True)
 
-    # --- 6. RELOJES (ALINEADOS) ---
+    # --- 6. RELOJES (ALINEACIÓN CORREGIDA) ---
     st.divider()
     st.subheader("⏳ Evolución del Liderazgo (Escala de Madurez)")
     
@@ -91,19 +91,32 @@ if df is not None:
         vals_rev = [vals[6], vals[5], vals[4], vals[3], vals[2], vals[1], vals[0]]
         etiquetas = [obtener_etiqueta_color(v)[0] for v in vals_rev]
         colores_t = [obtener_etiqueta_color(v)[1] for v in vals_rev]
+        
         fig = go.Figure(go.Funnel(y=niveles, x=anchos, text=etiquetas, textinfo="text", textfont=dict(color=colores_t, size=14, family='Arial Black'), marker={"color": colors_faded, "line": {"width": 2, "color": "white"}}, connector={"visible": False}))
-        fig.update_layout(height=450, margin=dict(l=150 if con_leyenda else 20, r=20, t=20, b=20), yaxis=dict(visible=con_leyenda, autorange="reversed", tickfont=dict(color="#94a3b8", size=12, family="Arial Black")), xaxis=dict(visible=False), plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
+        
+        # Ajuste dinámico de márgenes y centrado de título
+        if con_leyenda:
+            # Compensamos el espacio de la leyenda para que el diamante no sea más pequeño
+            fig.update_layout(
+                title=dict(text=titulo, x=0.62, xanchor='center', font=dict(size=18)),
+                margin=dict(l=150, r=20, t=50, b=20),
+                yaxis=dict(visible=True, autorange="reversed", tickfont=dict(color="#94a3b8", size=12, family="Arial Black"))
+            )
+        else:
+            fig.update_layout(
+                title=dict(text=titulo, x=0.5, xanchor='center', font=dict(size=18)),
+                margin=dict(l=20, r=20, t=50, b=20),
+                yaxis=dict(visible=False, autorange="reversed")
+            )
+            
+        fig.update_layout(height=480, xaxis=dict(visible=False), plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
         return fig
 
-    t1, t2, t3 = st.columns([1.2, 1, 1])
-    with t1: st.markdown('<div class="titulo-reloj">Auto</div>', unsafe_allow_html=True)
-    with t2: st.markdown('<div class="titulo-reloj">Individual</div>', unsafe_allow_html=True)
-    with t3: st.markdown('<div class="titulo-reloj">Cultura</div>', unsafe_allow_html=True)
-
+    # Usamos columnas equilibradas
     r1, r2, r3 = st.columns([1.2, 1, 1])
     with r1: st.plotly_chart(dibujar_reloj_barrett([d.AUTO_L1, d.AUTO_L2, d.AUTO_L3, d.AUTO_L4, d.AUTO_L5, d.AUTO_L6, d.AUTO_L7], "Auto", True), use_container_width=True)
-    with r2: st.plotly_chart(dibujar_reloj_barrett([d.INDIV_L1, d.INDIV_L2, d.INDIV_L3, d.INDIV_L4, d.INDIV_L5, d.INDIV_L6, d.INDIV_L7], "Indiv", False), use_container_width=True)
-    with r3: st.plotly_chart(dibujar_reloj_barrett([d.ORG_L1, d.ORG_L2, d.ORG_L3, d.ORG_L4, d.ORG_L5, d.ORG_L6, d.ORG_L7], "Cult", False), use_container_width=True)
+    with r2: st.plotly_chart(dibujar_reloj_barrett([d.INDIV_L1, d.INDIV_L2, d.INDIV_L3, d.INDIV_L4, d.INDIV_L5, d.INDIV_L6, d.INDIV_L7], "Individual", False), use_container_width=True)
+    with r3: st.plotly_chart(dibujar_reloj_barrett([d.ORG_L1, d.ORG_L2, d.ORG_L3, d.ORG_L4, d.ORG_L5, d.ORG_L6, d.ORG_L7], "Cultura", False), use_container_width=True)
 
     # --- 7. RADAR Y DIMENSIONES ---
     st.divider()
