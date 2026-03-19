@@ -33,7 +33,7 @@ def load_data():
         df.columns = df.columns.str.strip()
         df['Nombre_Lider'] = df['Nombre_Lider'].astype(str).str.strip()
         
-        # FILTRO CRÍTICO: Eliminar basura
+        # FILTRO CRÍTICO: Eliminar basura (Nan, 0.0)
         df = df[df['Nombre_Lider'] != '0.0']
         df = df[df['Nombre_Lider'] != 'nan']
         df = df.dropna(subset=['Nombre_Lider'])
@@ -126,7 +126,7 @@ if df is not None:
         fig_dim.update_layout(xaxis_range=[0, 105], height=400, template="plotly_dark", yaxis=dict(autorange="reversed"))
         st.plotly_chart(fig_dim, use_container_width=True)
 
-    # --- 8. INFORME IA - RESTRICCIONES DE TÍTULOS Y TÉRMINOS ---
+    # --- 8. INFORME IA - LENGUAJE APRECIATIVO Y CONCEPTUALMENTE CORRECTO ---
     st.divider()
     if st.button("🚀 GENERAR ANÁLISIS ESTRATÉGICO 360°"):
         prompt_maestro = f"""
@@ -137,28 +137,27 @@ if df is not None:
         - Dimensiones: Gerencia L1-L3: {round(gerencia_prom,1)}%, Transición L4: {round(transicion_prom,1)}%, Liderazgo L5-L7: {round(liderazgo_prom,1)}%.
 
         REGLAS DE ORO DE COMUNICACIÓN:
-        1. INICIA DIRECTAMENTE CON EL ANÁLISIS. Sin preámbulos, fechas, saludos o etiquetas de consultoría.
-        2. TÍTULOS LIMPIOS: Los títulos de las secciones deben ser estrictamente:
+        1. INICIA DIRECTAMENTE CON EL ANÁLISIS. Sin preámbulos, fechas ni saludos.
+        2. TÍTULOS LIMPIOS:
            - 1. ANÁLISIS DE EVOLUCIÓN POR NIVELES
            - 2. SINTONÍA DE CONSCIENCIA
            - 3. RESULTADO ORGANIZACIONAL
            - 4. RUTA DE TRANSFORMACIÓN
-        3. NO USES PARÉNTESIS ni textos adicionales en los títulos principales.
-        4. FILOSOFÍA 100% APRECIATIVA: No señales errores. Habla de "talento de consciencia" y "potencial". 
-        5. PROHIBIDO: Usar títulos como "Oportunidad de Desarrollo:" o "Debilidades:". Usa puntos seguidos para integrar la evolución.
-        6. TERMINOLOGÍA: No es desempeño, es evolución de consciencia Barrett. No uses "Cultura de Confa", usa "Resultado Organizacional".
+        3. CONCEPTUALIZACIÓN CORRECTA: El 'Ponderado Individual' representa la visión colectiva del entorno profesional del líder (pares, jefe y colaboradores). NO asumas que es solo de colaboradores.
+        4. FILOSOFÍA 100% APRECIATIVA: Habla de "talentos observados" y "potencial de expansión". Prohibido títulos de "Oportunidad de Desarrollo" o palabras de error/falla. Usa puntos seguidos para integrar el crecimiento.
+        5. FOCO LIDERAZGO: No es evaluación de cargo ni desempeño. Es evolución de consciencia Barrett.
 
         ESTRUCTURA:
-        1. ANÁLISIS DE EVOLUCIÓN POR NIVELES: Desglose L1-L7 basado en 'Individual'. Describe talento y ruta de expansión (punto seguido).
-        2. SINTONÍA DE CONSCIENCIA: Alineación Autopercepción vs Individual.
-        3. RESULTADO ORGANIZACIONAL: Sintonía del líder con el promedio organizacional.
-        4. RUTA DE TRANSFORMACIÓN: Análisis del equilibrio (Gerencia, Transición, Liderazgo) y 3 recomendaciones estratégicas integrales.
+        1. ANÁLISIS DE EVOLUCIÓN POR NIVELES: Desglose L1-L7 basado en el impacto percibido por el entorno ('Ponderado Individual'). Describe el talento observado y la ruta para ampliar su impacto.
+        2. SINTONÍA DE CONSCIENCIA: Alineación Autopercepción vs Visión Colectiva del Entorno.
+        3. RESULTADO ORGANIZACIONAL: Sintonía del impacto del líder con el promedio de la organización.
+        4. RUTA DE TRANSFORMACIÓN: Análisis del equilibrio (Gerencia, Transición, Liderazgo) y 3 recomendaciones tácticas de alto impacto.
 
         NOMENCLATURA: L1 Líder de Crisis/Viabilidad, L2 Líder de Relaciones, L3 Líder de Desempeño, L4 Líder Facilitador, L5 Líder Auténtico, L6 Líder Mentor/Socio, L7 Líder Visionario.
         RÚBRICA: 0-65 Bajo, 66-75 Medio, 76-85 Alto, 85-100 Superior.
         """
         try:
-            with st.spinner('Analizando consciencia...'):
+            with st.spinner('Analizando consciencia 360°...'):
                 response = model.generate_content(prompt_maestro)
                 st.markdown(f"## Análisis Estratégico de Liderazgo 360°: {lider_sel}")
                 st.markdown("---")
