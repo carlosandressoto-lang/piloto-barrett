@@ -71,12 +71,9 @@ if df is not None:
     # --- 4. SELECCIÓN ---
     lideres = sorted(df['Nombre_Lider'].unique())
     lider_sel = st.selectbox("Seleccione el líder para el análisis detallado:", lideres)
-    
-    if "informe_cache" not in st.session_state:
-        st.session_state.informe_cache = {}
-        
     d = df[df['Nombre_Lider'] == lider_sel].iloc[0]
 
+    # Cálculos de dimensiones
     gerencia_prom = (d.INDIV_L1 + d.INDIV_L2 + d.INDIV_L3) / 3
     transicion_prom = d.INDIV_L4
     liderazgo_prom = (d.INDIV_L5 + d.INDIV_L6 + d.INDIV_L7) / 3
@@ -110,7 +107,7 @@ if df is not None:
     st.subheader("⏳ Evolución del Liderazgo (Semáforo de Madurez)")
     def dibujar_reloj_barrett(vals):
         anchos = [6, 5, 4, 3.2, 4, 5, 6] 
-        colors_barrett = ["rgba(111, 66, 193, 0.5)"]*3 + ["rgba(40, 167, 69, 0.5)"] + ["rgba(253, 126, 20, 0.5)"]*3
+        colors_barrett = ["rgba(111, 66, 193, 0.5)"]*3 + ["rgba(40, 167, 69, 0.4)"] + ["rgba(253, 126, 20, 0.5)"]*3
         v_rev = [vals[6], vals[5], vals[4], vals[3], vals[2], vals[1], vals[0]]
         etiquetas = [obtener_etiqueta_color(v)[0] for v in v_rev]
         col_txt = [obtener_etiqueta_color(v)[1] for v in v_rev]
@@ -153,6 +150,7 @@ if df is not None:
 
     # --- 8. INFORME IA ---
     st.divider()
+    if "informe_cache" not in st.session_state: st.session_state.informe_cache = {}
     if st.button("🚀 GENERAR INFORME EJECUTIVO"):
         prompt_maestro = f"""
         Actúa como un experto consultor senior en desarrollo de liderazgo (Richard Barrett). Genera un informe estratégico 360° para {lider_sel}.
@@ -166,10 +164,10 @@ if df is not None:
         - Nivel 2: GESTOR DE RELACIONES - Apoyo de relaciones
         - Nivel 1: GESTOR DE CRISIS - Garantizar visibilidad
         ESTRUCTURA:
-        1. DESCRIPCIÓN POR NIVELES: Desglose L1 a L7 ascendente. Usa la NOMENCLATURA OBLIGATORIA y analiza el impacto según el 'Ponderado Individual'.
+        1. DESCRIPCIÓN POR NIVELES: Desglose L1 a L7 ascendente. Usa la NOMENCLATURA OBLIGATORIA y analiza el impacto según el 'Ponderado Individual' (Sin poner que es el ponderado individuale esas reduandancias sobran).
         2. ANÁLISIS DE AUTOVALORACIÓN: Autoconciencia frente a la visión del entorno (Ponderado individual).
-        3. MATRIZ DE MADUREZ: Alineación estratégica Individual (Ponderado Individual) vs Organizacional.
-        4. PERFIL DE LIDERAZGO: Estilo y 3 recomendaciones apreciativas (punto seguido).
+        3. MATRIZ DE MADUREZ: Alineación estratégica Individual (Ponderado Individual) vs Organizacional (Ponderado organizacional).
+        4. PERFIL DE LIDERAZGO: Estilo (Nivel predominante y dimensión predominante según el promedio mas alto (Liderazgo, Trasnsicion, Gerencia)) y 3 recomendaciones apreciativas (punto seguido).
         FILOSOFÍA: 100% Apreciativa. Sin lenguaje negativo. Inicia directamente.
         """
         try:
@@ -184,33 +182,57 @@ if df is not None:
         st.markdown(f"### 📋 Informe Ejecutivo: {lider_sel}")
         st.write(texto_informe)
 
-        # --- 9. MÓDULO PDF AL FINAL ---
+        # --- 9. MÓDULO PDF AFINADO (CON IMÁGENES) ---
         st.divider()
         if st.button("📄 GENERAR REPORTE COMPLETO PDF"):
-            with st.spinner('Construyendo PDF profesional...'):
+            with st.spinner('Procesando imágenes y generando PDF...'):
                 try:
                     pdf = FPDF()
                     pdf.set_auto_page_break(auto=True, margin=15)
+                    
+                    # PÁGINA 1: Encabezado y Radar
                     pdf.add_page()
                     pdf.set_font('Helvetica', 'B', 16)
-                    pdf.cell(0, 10, 'REPORTE DE LIDERAZGO MODELO BARRETT', ln=True, align='C')
+                    pdf.cell(0, 10, 'REPORTE ESTRATEGICO DE LIDERAZGO (MODELO BARRETT)', ln=True, align='C')
                     pdf.set_font('Helvetica', '', 12)
                     pdf.cell(0, 10, f'Líder Evaluado: {lider_sel}', ln=True, align='C')
-                    pdf.ln(10)
-                    
-                    pdf.set_font('Helvetica', 'B', 14)
-                    pdf.cell(0, 10, 'Informe Ejecutivo', ln=True)
                     pdf.ln(5)
+
+                    # Exportar Radar
+                    with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmp_radar:
+                        # Forzamos fondo blanco para el PDF
+                        fig_radar.update_layout(template="plotly", paper_bgcolor='white', plot_bgcolor='white', font=dict(color="black"))
+                        fig_radar.write_image(tmp_radar.name, engine="kaleido")
+                        pdf.image(tmp_radar.name, x=10, y=35, w=110)
+                        os.unlink(tmp_radar.name)
+
+                    # Exportar Madurez Global
+                    with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmp_dim:
+                        fig_dim.update_layout(template="plotly", paper_bgcolor='white', plot_bgcolor='white', font=dict(color="black"))
+                        fig_dim.write_image(tmp_dim.name, engine="kaleido")
+                        pdf.image(tmp_dim.name, x=125, y=50, w=75)
+                        os.unlink(tmp_dim.name)
+
+                    # PÁGINA 2: Informe de IA
+                    pdf.set_y(140)
+                    pdf.set_font('Helvetica', 'B', 14)
+                    pdf.cell(0, 10, 'Analisis Ejecutivo de Consciencia', ln=True)
+                    pdf.ln(2)
                     pdf.set_font('Helvetica', '', 10)
                     texto_pdf = texto_informe.encode('latin-1', 'replace').decode('latin-1')
                     pdf.multi_cell(0, 7, texto_pdf)
                     
+                    # Regresar gráficos al estilo Dark para el Dashboard
+                    fig_radar.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)')
+                    fig_dim.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)')
+
                     output = pdf.output()
                     st.download_button(
-                        label="📥 Descargar PDF",
+                        label="📥 Descargar PDF Final",
                         data=bytes(output),
-                        file_name=f"Reporte_Barrett_{lider_sel.replace(' ', '_')}.pdf",
+                        file_name=f"Reporte_Integral_{lider_sel.replace(' ', '_')}.pdf",
                         mime="application/pdf"
                     )
                 except Exception as e:
                     st.error(f"Error PDF: {e}")
+                    st.info("Nota: Requiere 'kaleido' instalado para procesar los gráficos.")
