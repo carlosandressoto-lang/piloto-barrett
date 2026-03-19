@@ -86,10 +86,10 @@ if df is not None:
     v_org = [d.ORG_L1, d.ORG_L2, d.ORG_L3, d.ORG_L4, d.ORG_L5, d.ORG_L6, d.ORG_L7]
 
     def obtener_color_desarrollo(v):
-        if v < 65: return "#ff4b4b" # Rojo
-        if v < 75: return "#f1c40f" # Amarillo
-        if v < 85: return "#2ecc71" # Verde
-        return "#3498db"            # Azul Desarrollo
+        if v < 65: return "#ff4b4b" 
+        if v < 75: return "#f1c40f" 
+        if v < 85: return "#2ecc71" 
+        return "#3498db"
 
     def obtener_etiqueta(v):
         if v < 65: return "Bajo"
@@ -114,31 +114,23 @@ if df is not None:
     with c2: st.plotly_chart(fig_b2, key="b2")
     with c3: st.plotly_chart(fig_b3, key="b3")
 
-    # --- 6. RELOJES (NUEVA VISUAL ETIQUETA RESALTADA) ---
+    # --- 6. RELOJES ---
     st.divider()
     st.subheader("⏳ Evolución del Liderazgo (Semáforo de Madurez)")
     def dibujar_reloj_barrett(vals):
         anchos = [6, 5, 4, 3.2, 4, 5, 6] 
         v_rev = [vals[6], vals[5], vals[4], vals[3], vals[2], vals[1], vals[0]]
-        # Colores Barrett: L5-L7 Azul oscuro (#1e3a8a), L4 Verde (#15803d), L1-L3 Naranja (#c2410c)
         colors_barrett = ["#1e3a8a"]*3 + ["#15803d"] + ["#c2410c"]*3
         
         labels = [obtener_etiqueta(v) for v in v_rev]
         text_colors = [obtener_color_desarrollo(v) for v in v_rev]
 
         fig = go.Figure(go.Funnel(
-            y=[1,2,3,4,5,6,7], 
-            x=anchos, 
-            text=labels, 
-            textinfo="text", 
+            y=[1,2,3,4,5,6,7], x=anchos, text=labels, textinfo="text", 
             textfont=dict(color=text_colors, size=15, family='Arial Black'), 
-            marker={
-                "color": colors_barrett, 
-                "line": {"width": 2, "color": "white"}
-            }, 
+            marker={"color": colors_barrett, "line": {"width": 2, "color": "white"}}, 
             connector={"visible": False}
         ))
-        # Simulamos el recuadro blanco mediante una anotación de forma (en Plotly se hace via texttemplate o shapes, aquí usamos un truco visual de fuente clara)
         fig.update_traces(texttemplate="<span style='background-color: white; padding: 2px 8px;'> %{text} </span>")
         fig.update_layout(height=400, margin=dict(l=10, r=10, t=10, b=10), yaxis=dict(visible=False), xaxis=dict(visible=False), plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
         return fig
@@ -166,25 +158,38 @@ if df is not None:
         st.plotly_chart(fig_radar, key="radar")
     with col_dim:
         st.subheader("Madurez Global")
+        dims = ['Liderazgo (L5-L7)', 'Transición (L4)', 'Gerencia (L1-L3)']
         vals_dim = [liderazgo_prom, transicion_prom, gerencia_prom]
-        fig_dim = go.Figure(go.Bar(x=vals_dim, y=['Liderazgo (L5-L7)', 'Transición (L4)', 'Gerencia (L1-L3)'], orientation='h', marker_color=[obtener_color_desarrollo(v) for v in vals_dim], text=[f"{round(v,1)}% - {obtener_etiqueta(v)}" for v in vals_dim], textposition='inside'))
+        fig_dim = go.Figure(go.Bar(x=vals_dim, y=dims, orientation='h', marker_color=[obtener_color_desarrollo(v) for v in vals_dim], text=[f"{round(v,1)}% - {obtener_etiqueta(v)}" for v in vals_dim], textposition='inside'))
         fig_dim.update_layout(xaxis_range=[0, 105], height=400, template="plotly_dark", yaxis=dict(autorange="reversed"))
         st.plotly_chart(fig_dim, key="dim")
 
-    # --- 8. INFORME IA (ESTRUCTURA ESPEJO Y HOMOGÉNEA) ---
+    # --- 8. INFORME IA ---
     st.divider()
     if st.button("🚀 GENERAR INFORME EJECUTIVO"):
         prompt_maestro = f"""
-        Actúa como consultor Barrett senior. Genera un informe de DESARROLLO DE LIDERAZGO para {lider_sel}. DATOS: {d.to_json()}
-        REGLA DE ORO: INICIA DIRECTAMENTE. PROHIBIDO SALUDOS O INTRODUCCIONES. NO USES TÉRMINOS COMO "DESEMPEÑO", "BRECHAS" O "PUNTOS CIEGOS".
+        Actúa como consultor Barrett senior. Genera un reporte de DESARROLLO DE LIDERAZGO para {lider_sel}. DATOS: {d.to_json()}
         
-        ESTRUCTURA OBLIGATORIA (ESPEJO):
-        1. DESCRIPCIÓN POR NIVELES: Analiza obligatoriamente CADA nivel (L1 a L7) por separado en una lista. Usa la nomenclatura Barrett (ej: Nivel 7: Lider visionario, Nivel 6 Lider Mentor Socio, Nivel 5: Lider Autentico). Describe el estado de desarrollo basándote en el 'Ponderado Individual' convertido a Niveles según la rubrica.
-        2. ANÁLISIS DE AUTOVALORACIÓN: Un solo párrafo. Analiza la alineación entre la percepción interna (Autoevaluación) y externa (Ponderado individual que lo componen la evaluación de Jefe inmediato, De sus colaboradores y de sus Pares) . Resalta áreas donde la influencia del líder es mayor de lo percibido por él mismo.
-        3. MATRIZ DE MADUREZ: Un solo párrafo. Analiza la sintonía del líder (Ponderado Individual) con el promedio organizacional. Destaca fortalezas que impulsan la cultura corporativa (Ponderado organizacional).
-        4. PERFIL DE LIDERAZGO: Un solo párrafo. Define el estilo predominante según el promedio más alto (Liderazgo: {round(liderazgo_prom,1)}%, Transición: {round(transicion_prom,1)}%, Gerencia: {round(gerencia_prom,1)}%) y 3 recomendaciones apreciativas punto seguido.
+        CONTEXTO BARRETT OBLIGATORIO:
+        - L1 (Survival): Crisis Manager. Estabilidad financiera y viabilidad[cite: 242, 243].
+        - L2 (Relationship): Relationship Builder. Respeto, armonía y manejo de conflictos[cite: 257, 265].
+        - L3 (Self-esteem): Manager/Organizer. Eficiencia, orden y resultados de calidad[cite: 274, 275, 285].
+        - L4 (Transformation): Facilitator/Influencer. Aprendizaje continuo, innovación y adaptabilidad[cite: 295, 296, 301, 309].
+        - L5 (Internal Cohesion): Integrator/Inspirer. Valores, integridad y cohesión interna[cite: 314, 315, 317].
+        - L6 (Making a Difference): Mentor/Partner. Colaboración, mentoría y alianzas estratégicas[cite: 333, 334, 344].
+        - L7 (Service): Wisdom/Visionary. Propósito, servicio al mundo y visión a largo plazo[cite: 350, 352, 363].
 
-        FILOSOFÍA: 100% Apreciativa. Tercera persona neutral.
+        REGLAS DE ORO:
+        - INICIA DIRECTAMENTE. PROHIBIDO SALUDOS O INTRODUCCIONES GENÉRICAS.
+        - PROHIBIDO USAR: "desempeño", "brechas", "puntos ciegos" o hablar desde defectos o fallos, debe ser un feedback totalmente apreciativo.
+        - USA: "desarrollo", "alineación", "influencia", "oportunidad de expansión".
+        - RÚBRICA: Bajo (<65), Medio (65-75), Alto (75-85), Superior (>85).
+
+        ESTRUCTURA ESPEJO OBLIGATORIA:
+        1. DESCRIPCIÓN POR NIVELES: Lista desglosada de L1 a L7. Clasifica cada nivel basándote en el 'Ponderado Individual' usando la RÚBRICA y el CONTEXTO BARRETT anterior.
+        2. ANÁLISIS DE AUTOVALORACIÓN: Un párrafo sólido. Compara Autoevaluación vs percepción colectiva (Jefe, Pares, Colaboradores) que es el 'Ponderado individual'. Resalta donde la influencia es mayor de lo percibido por el líder en su autovaloracion, o donde se tenga mayor brecha.
+        3. MATRIZ DE MADUREZ: Un párrafo sólido. Analiza sintonía del líder (Ponderado Individual) con el Ponderado Organizacional basándote en la Rúbrica.
+        4. PERFIL DE LIDERAZGO: Un párrafo sólido. Define el estilo predominante según el promedio más alto (Liderazgo: {round(liderazgo_prom,1)}%, Transición: {round(transicion_prom,1)}%, Gerencia: {round(gerencia_prom,1)}%) y ofrece 3 recomendaciones de expansión para llegar a un equilibrio de las 3 dimensiones (Liderazgo Transicion y Gerencia) punto seguido.
         """
         try:
             with st.spinner('Consolidando informe espejo...'):
@@ -195,12 +200,12 @@ if df is not None:
 
     if lider_sel in st.session_state.informe_cache:
         texto_informe = st.session_state.informe_cache[lider_sel]
-        st.markdown(f"### 📋 Informe Ejecutivo: {lider_sel}")
+        st.markdown(f"### 📋 Informe de Desarrollo: {lider_sel}")
         st.write(texto_informe)
 
-        # --- 9. PDF CONSOLIDADO (TITULOS Y NITIDEZ) ---
+        # --- 9. PDF CONSOLIDADO ---
         if st.button("📄 GENERAR REPORTE COMPLETO PDF"):
-            with st.spinner('Procesando PDF con alta definición...'):
+            with st.spinner('Procesando PDF...'):
                 try:
                     pdf = FPDF()
                     pdf.set_auto_page_break(auto=True, margin=15)
@@ -208,7 +213,8 @@ if df is not None:
                     pdf.set_font('Helvetica', 'B', 14)
                     pdf.cell(0, 10, 'REPORTE ESTRATEGICO DE DESARROLLO DE LIDERAZGO', ln=True, align='C')
                     pdf.set_font('Helvetica', '', 11)
-                    pdf.cell(0, 8, f'Líder Evaluado: {lider_sel}', ln=True, align='C')
+                    pdf.cell(0, 10, f'Líder Evaluado: {lider_sel}', ln=True, align='C')
+                    pdf.ln(10)
 
                     with tempfile.TemporaryDirectory() as tmp_dir:
                         def save_chart(fig, name, w=600, h=300):
@@ -218,23 +224,29 @@ if df is not None:
                             return path
                         
                         pdf.set_font('Helvetica', 'B', 9)
-                        # Títulos para las 8 imágenes
-                        pdf.text(10, 28, "1. Distribucion de Energia (%) - Autovaloracion | Individual | Organizacional")
-                        pdf.image(save_chart(fig_b1, "b1.png"), x=10, y=30, w=60)
-                        pdf.image(save_chart(fig_b2, "b2.png"), x=75, y=30, w=60)
-                        pdf.image(save_chart(fig_b3, "b3.png"), x=140, y=30, w=60)
+                        pdf.text(10, 38, "1. Distribucion de Energia (%) - Autovaloracion | Individual | Organizacional")
+                        pdf.image(save_chart(fig_b1, "b1.png"), x=10, y=40, w=60)
+                        pdf.image(save_chart(fig_b2, "b2.png"), x=75, y=40, w=60)
+                        pdf.image(save_chart(fig_b3, "b3.png"), x=140, y=40, w=60)
 
-                        pdf.text(10, 83, "2. Radar de Alineacion de Liderazgo Triple")
-                        pdf.image(save_chart(fig_radar, "radar.png", 500, 400), x=10, y=85, w=95)
-                        pdf.text(110, 83, "3. Madurez Global por Dimensiones (L-T-G)")
-                        pdf.image(save_chart(fig_dim, "dim.png", 500, 350), x=110, y=95, w=90)
+                        pdf.text(10, 93, "2. Radar de Alineacion de Liderazgo Triple")
+                        pdf.image(save_chart(fig_radar, "radar.png", 500, 400), x=10, y=95, w=95)
+                        pdf.text(110, 93, "3. Madurez Global por Dimensiones (L-T-G)")
+                        pdf.image(save_chart(fig_dim, "dim.png", 500, 350), x=110, y=105, w=90)
 
-                        pdf.text(15, 163, "4. Evolucion Madurez: Auto")
-                        pdf.image(save_chart(fig_r1, "r1.png", 400, 400), x=15, y=165, w=55)
-                        pdf.text(75, 163, "5. Evolucion Madurez: Individual (360)")
-                        pdf.image(save_chart(fig_r2, "r2.png", 400, 400), x=75, y=165, w=55)
-                        pdf.text(135, 163, "6. Evolucion Madurez: Organizacional")
-                        pdf.image(save_chart(fig_r3, "r3.png", 400, 400), x=135, y=165, w=55)
+                        # Captura Leyenda y Relojes
+                        pdf.text(15, 173, "4. Evolucion Madurez Liderazgo (Leyenda | Auto | Individual | Organizacional)")
+                        # Creamos imagen de leyenda
+                        leyenda_niveles = ["L7 - Visionario", "L6 - Mentor", "L5 - Autentico", "L4 - Facilitador", "L3 - Desempeno", "L2 - Relaciones", "L1 - Crisis"]
+                        pdf.set_font('Helvetica', 'B', 7)
+                        curr_y = 183
+                        for n in leyenda_niveles:
+                            pdf.text(10, curr_y, n)
+                            curr_y += 6.5
+                        
+                        pdf.image(save_chart(fig_r1, "r1.png", 400, 400), x=30, y=175, w=55)
+                        pdf.image(save_chart(fig_r2, "r2.png", 400, 400), x=85, y=175, w=55)
+                        pdf.image(save_chart(fig_r3, "r3.png", 400, 400), x=140, y=175, w=55)
 
                     pdf.add_page()
                     pdf.set_font('Helvetica', 'B', 14)
