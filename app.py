@@ -47,7 +47,7 @@ try:
     genai.configure(api_key=api_key_segura)
     model = genai.GenerativeModel('gemini-2.5-flash')
 except Exception as e:
-    st.error("Error: Configura 'GEMINI_API_KEY' en los Secrets.")
+    st.error("Error: Configura 'GEMINI_API_KEY' in Secrets.")
 
 # --- 3. CARGA DE DATOS ---
 @st.cache_data
@@ -85,13 +85,6 @@ if df is not None:
     v_ind = [d.INDIV_L1, d.INDIV_L2, d.INDIV_L3, d.INDIV_L4, d.INDIV_L5, d.INDIV_L6, d.INDIV_L7]
     v_org = [d.ORG_L1, d.ORG_L2, d.ORG_L3, d.ORG_L4, d.ORG_L5, d.ORG_L6, d.ORG_L7]
 
-    # Metodología de colores uniforme
-    def obtener_estilo_semaforo(v):
-        if v < 65: return "#ff4b4b", "white"   # Rojo - Blanco
-        if v < 75: return "#f1c40f", "black"   # Amarillo - Negro
-        if v < 85: return "#2ecc71", "black"   # Verde - Negro
-        return "#1A237E", "white"              # Azul Barrett Superior - Blanco
-
     def obtener_etiqueta_color(v):
         if v < 65: return "Bajo", "#ff4b4b"
         if v < 75: return "Medio", "#f1c40f"
@@ -116,35 +109,34 @@ if df is not None:
     with c2: st.plotly_chart(fig_b2, key="b2")
     with c3: st.plotly_chart(fig_b3, key="b3")
 
-    # --- 6. RELOJES CORREGIDOS (EL DISEÑO EXPERTO) ---
+    # --- 6. RELOJES (IDENTIDAD ESTÁTICA + TEXTO DINÁMICO RESALTADO) ---
     st.divider()
     st.subheader("⏳ Evolución del Liderazgo (Semáforo de Madurez)")
     def dibujar_reloj_barrett(vals):
         anchos = [6, 5, 4, 3.2, 4, 5, 6] 
         v_rev = [vals[6], vals[5], vals[4], vals[3], vals[2], vals[1], vals[0]]
         
-        bg_colors = []
-        font_colors = []
+        # Colores estáticos Barrett
+        colors_static = ["#1A237E"]*3 + ["#28A745"] + ["#FD7E14"]*3
+        
         labels = []
-        line_colors = []
-
-        for i, v in enumerate(v_rev):
-            bg, ft = obtener_estilo_semaforo(v)
-            bg_colors.append(bg)
-            font_colors.append(ft)
-            labels.append(obtener_etiqueta_color(v)[0])
-            # Si es L5-L7 (índices 0,1,2 en la lista invertida), le ponemos marco azul claro para resaltar la zona Barrett
-            line_colors.append("#BFDBFE" if i < 3 else "white")
+        font_colors = []
+        for v in v_rev:
+            lbl, col = obtener_etiqueta_color(v)
+            labels.append(lbl)
+            font_colors.append(col)
 
         fig = go.Figure(go.Funnel(
             y=[1,2,3,4,5,6,7], 
             x=anchos, 
             text=labels, 
             textinfo="text", 
-            textfont=dict(color=font_colors, size=14, family='Arial Black'), 
-            marker={"color": bg_colors, "line": {"width": 2, "color": line_colors}}, 
+            textfont=dict(color=font_colors, size=15, family='Arial Black'), 
+            marker={"color": colors_static, "line": {"width": 2, "color": "white"}}, 
             connector={"visible": False}
         ))
+        # Efecto de resaltado para el texto (outline blanco sutil)
+        fig.update_traces(texttemplate="<b>%{text}</b>")
         fig.update_layout(height=400, margin=dict(l=10, r=10, t=10, b=10), yaxis=dict(visible=False), xaxis=dict(visible=False), plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
         return fig
 
@@ -180,26 +172,18 @@ if df is not None:
     # --- 8. INFORME IA (INTOCABLE) ---
     st.divider()
     if st.button("🚀 GENERAR INFORME EJECUTIVO"):
-        # Se mantiene exactamente tu prompt maestro
         prompt_maestro = f"""
-        Actúa como un experto consultor senior en desarrollo de liderazgo (Richard Barrett). Genera un informe estratégico 360° para {lider_sel}.
-        DATOS: {d.to_json()}
+        Actúa como consultor senior Barrett. Analiza a {lider_sel}. DATOS: {d.to_json()}
         REGLA DE ORO: INICIA DIRECTAMENTE CON EL PUNTO 1. PROHIBIDO SALUDOS O INTRODUCCIONES.
-        REGLA DE NOMENCLATURA OBLIGATORIA:
-        - Nivel 7: LÍDER VISIONARIO - Propósito de vivir
-        - Nivel 6: LÍDER MENTOR/SOCIO - Trabajo en la colaboración
-        - Nivel 5: LÍDER AUTÉNTICO - Autoexpresión genuina
-        - Nivel 4: FACILITADOR/INNOVADOR - Evolución de forma valiente
-        - Nivel 3: GESTOR DE DESEMPEÑO - Logrando la excelencia
-        - Nivel 2: GESTOR DE RELACIONES - Apoyo de relaciones
-        - Nivel 1: GESTOR DE CRISIS - Garantizar visibilidad
-
-        ESTRUCTURA DEL INFORME:
-        1. DESCRIPCIÓN POR NIVELES: Desglose L1 a L7 ascendente. Usa la NOMENCLATURA OBLIGATORIA y analiza el impacto según el 'Ponderado Individual'. da una descripción apreciativa de los niveles de liderazgo y categorias según su Nivel de desarrollo de liderazgo de 'Ponderado Individual'
+        NOMENCLATURA: L7: LÍDER VISIONARIO, L6: LÍDER MENTOR/SOCIO, L5: LÍDER AUTÉNTICO, L4: FACILITADOR/INNOVADOR, L3: GESTOR DE DESEMPEÑO, L2: GESTOR DE RELACIONES, L1: GESTOR DE CRISIS.
+        RÚBRICA: Bajo (<65), Medio (65-75), Alto (75-85), Superior (>85).
+        
+        ESTRUCTURA Y ANÁLISIS REQUERIDO:
+        1. DESCRIPCIÓN POR NIVELES: Orden L1-L7. Describe el nivel basándote en el 'Ponderado Individual' usando las categorías de la RÚBRICA. da una descripción apreciativa de los niveles de liderazgo y categorias según su Nivel de desarrollo de liderazgo de 'Ponderado Individual'
         2. ANÁLISIS DE AUTOVALORACIÓN: Resalta brechas notorias entre Autoevaluacion y Ponderado Individual. Enfatiza los "puntos ciegos positivos" (donde el líder se califica Bajo/Medio pero el entorno(colaboradores, pares y jefe) lo califica Alto/Superior o viceversa).
         3. MATRIZ DE MADUREZ: Analiza diferencias significativas del líder (Ponderado individual) respecto al promedio organizacional(ponderado organizacional), tanto en fortalezas sobresalientes como en áreas con potencial de alineación.
-        4. PERFIL DE LIDERAZGO: Estilo (Nivel predominante y dimensión predominante según el promedio mas alto (Liderazgo: {round(liderazgo_prom,1)}%, Transición: {round(transicion_prom,1)}%, Gerencia: {round(gerencia_prom,1)}%)) y equilibrio de las 3 dimensiones, en base a ese equilibrio entrega 3 recomendaciones apreciativas (punto seguido).
-
+        4. PERFIL DE LIDERAZGO: Estilo predominante según promedios (Liderazgo: {round(liderazgo_prom,1)}%, Transición: {round(transicion_prom,1)}%, Gerencia: {round(gerencia_prom,1)}%) y 3 recomendaciones apreciativas (punto seguido).
+        
         FILOSOFÍA: 100% Apreciativa. Tercera persona neutral.
         """
         try:
@@ -214,9 +198,9 @@ if df is not None:
         st.markdown(f"### 📋 Informe Ejecutivo: {lider_sel}")
         st.write(texto_informe)
 
-        # --- 9. MÓDULO PDF (CONSOLIDADO + TÍTULOS + NITIDEZ) ---
+        # --- 9. MÓDULO PDF (MEJORA: TITULOS + ALTO CONTRASTE) ---
         if st.button("📄 GENERAR REPORTE CONSOLIDADO PDF"):
-            with st.spinner('Procesando PDF de alta calidad...'):
+            with st.spinner('Consolidando reporte de alta calidad...'):
                 try:
                     pdf = FPDF()
                     pdf.set_auto_page_break(auto=True, margin=15)
@@ -228,27 +212,32 @@ if df is not None:
 
                     with tempfile.TemporaryDirectory() as tmp_dir:
                         def save_chart(fig, name, w=600, h=300):
-                            fig.update_layout(template="plotly", paper_bgcolor='white', font=dict(color="black"), width=w, height=h)
+                            # Ajuste de lienzo para lienzo blanco de PDF
+                            fig.update_layout(template="plotly", paper_bgcolor='white', font=dict(color="black", size=11, family="Arial"), width=w, height=h)
                             path = os.path.join(tmp_dir, name)
                             fig.write_image(path, engine="kaleido", scale=2) 
                             return path
                         
                         pdf.set_font('Helvetica', 'B', 9)
-                        pdf.text(10, 28, "Distribucion de Energia por Niveles (Auto | Individual | Organizacional)")
+                        
+                        # Fila 1: Barras con títulos
+                        pdf.text(10, 28, "1. Distribucion de Energia (%) - Auto | Individual | Organizacional")
                         pdf.image(save_chart(fig_b1, "b1.png"), x=10, y=30, w=60)
                         pdf.image(save_chart(fig_b2, "b2.png"), x=75, y=30, w=60)
                         pdf.image(save_chart(fig_b3, "b3.png"), x=140, y=30, w=60)
-
-                        pdf.text(10, 83, "Radar de Alineacion Triple")
+                        
+                        # Fila 2: Radar y Dimensiones
+                        pdf.text(10, 83, "2. Radar de Alineacion Triple")
                         pdf.image(save_chart(fig_radar, "radar.png", 500, 400), x=10, y=85, w=95)
-                        pdf.text(110, 83, "Madurez Global por Dimensiones")
+                        pdf.text(110, 83, "3. Madurez Global por Dimensiones")
                         pdf.image(save_chart(fig_dim, "dim.png", 500, 350), x=110, y=95, w=90)
-
-                        pdf.text(15, 163, "Evolucion: Autovaloracion")
+                        
+                        # Fila 3: Relojes
+                        pdf.text(15, 163, "4. Evolucion Madurez: Auto")
                         pdf.image(save_chart(fig_r1, "r1.png", 400, 400), x=15, y=165, w=55)
-                        pdf.text(75, 163, "Evolucion: Individual (360)")
+                        pdf.text(75, 163, "5. Evolucion Madurez: Individual")
                         pdf.image(save_chart(fig_r2, "r2.png", 400, 400), x=75, y=165, w=55)
-                        pdf.text(135, 163, "Evolucion: Organizacional")
+                        pdf.text(135, 163, "6. Evolucion Madurez: Organizacional")
                         pdf.image(save_chart(fig_r3, "r3.png", 400, 400), x=135, y=165, w=55)
 
                     pdf.add_page()
@@ -262,5 +251,5 @@ if df is not None:
                     pdf.multi_cell(0, 6, limpio)
 
                     output = pdf.output()
-                    st.download_button(label="📥 Descargar PDF", data=bytes(output), file_name=f"Reporte_{lider_sel}.pdf", mime="application/pdf")
+                    st.download_button(label="📥 Descargar PDF Final", data=bytes(output), file_name=f"Reporte_{lider_sel}.pdf", mime="application/pdf")
                 except Exception as e: st.error(f"Error PDF: {e}")
