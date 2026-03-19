@@ -124,17 +124,17 @@ if df is not None:
             connector={"visible": False}
         ))
 
-        # Añadimos las cajas blancas concéntricas ajustadas (Reducción del 15% adicional para estética)
+        # Añadimos las cajas blancas concéntricas ESTILIZADAS (Menos anchas y más delgadas)
         for i, (val, ancho) in enumerate(zip(v_rev, anchos_base)):
             fig.add_annotation(
                 x=0, y=i if incluir_leyenda else i+1,
                 text=obtener_etiqueta(val),
                 showarrow=False,
-                font=dict(color=obtener_color_desarrollo(val), size=12, family='Arial Black'),
+                font=dict(color=obtener_color_desarrollo(val), size=11, family='Arial Black'),
                 bgcolor="white",
                 bordercolor="rgba(255,255,255,0)",
-                borderpad=4,
-                width=ancho * 25.5 # Reducción del 15% respecto al 30 anterior (30 * 0.85 = 25.5)
+                borderpad=3, # Altura reducida
+                width=ancho * 22.0 # Ancho reducido (Factor 22.0 es el 15% menos del anterior)
             )
 
         fig.update_layout(
