@@ -89,7 +89,7 @@ if df is not None:
         if v < 65: return "#ff4b4b" 
         if v < 75: return "#f1c40f" 
         if v < 85: return "#2ecc71" 
-        return "#3498db"
+        return "#1A237E"
 
     def obtener_etiqueta(v):
         if v < 65: return "Bajo"
@@ -117,22 +117,23 @@ if df is not None:
     # --- 6. RELOJES ---
     st.divider()
     st.subheader("⏳ Evolución del Liderazgo (Semáforo de Madurez)")
-    def dibujar_reloj_barrett(vals):
+    def dibujar_reloj_barrett(vals, incluir_leyenda=False):
         anchos = [6, 5, 4, 3.2, 4, 5, 6] 
         v_rev = [vals[6], vals[5], vals[4], vals[3], vals[2], vals[1], vals[0]]
         colors_barrett = ["#1e3a8a"]*3 + ["#15803d"] + ["#c2410c"]*3
+        labels_niveles = ["L7-Visionario", "L6-Mentor", "L5-Auténtico", "L4-Facilitador", "L3-Desempeño", "L2-Relaciones", "L1-Crisis"]
         
-        labels = [obtener_etiqueta(v) for v in v_rev]
-        text_colors = [obtener_color_desarrollo(v) for v in v_rev]
-
         fig = go.Figure(go.Funnel(
-            y=[1,2,3,4,5,6,7], x=anchos, text=labels, textinfo="text", 
-            textfont=dict(color=text_colors, size=15, family='Arial Black'), 
+            y=labels_niveles if incluir_leyenda else [1,2,3,4,5,6,7], 
+            x=anchos, text=[obtener_etiqueta(v) for v in v_rev], textinfo="text", 
+            textfont=dict(color=[obtener_color_desarrollo(v) for v in v_rev], size=15, family='Arial Black'), 
             marker={"color": colors_barrett, "line": {"width": 2, "color": "white"}}, 
             connector={"visible": False}
         ))
         fig.update_traces(texttemplate="<span style='background-color: white; padding: 2px 8px;'> %{text} </span>")
-        fig.update_layout(height=400, margin=dict(l=10, r=10, t=10, b=10), yaxis=dict(visible=False), xaxis=dict(visible=False), plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
+        fig.update_layout(height=400, margin=dict(l=80 if incluir_leyenda else 10, r=10, t=10, b=10), 
+                          yaxis=dict(visible=incluir_leyenda, tickfont=dict(color="#94a3b8", size=10)), 
+                          xaxis=dict(visible=False), plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
         return fig
 
     cl, cr1, cr2, cr3 = st.columns([1, 1, 1, 1])
@@ -158,9 +159,8 @@ if df is not None:
         st.plotly_chart(fig_radar, key="radar")
     with col_dim:
         st.subheader("Madurez Global")
-        dims = ['Liderazgo (L5-L7)', 'Transición (L4)', 'Gerencia (L1-L3)']
         vals_dim = [liderazgo_prom, transicion_prom, gerencia_prom]
-        fig_dim = go.Figure(go.Bar(x=vals_dim, y=dims, orientation='h', marker_color=[obtener_color_desarrollo(v) for v in vals_dim], text=[f"{round(v,1)}% - {obtener_etiqueta(v)}" for v in vals_dim], textposition='inside'))
+        fig_dim = go.Figure(go.Bar(x=vals_dim, y=['Liderazgo (L5-L7)', 'Transición (L4)', 'Gerencia (L1-L3)'], orientation='h', marker_color=[obtener_color_desarrollo(v) for v in vals_dim], text=[f"{round(v,1)}% - {obtener_etiqueta(v)}" for v in vals_dim], textposition='inside'))
         fig_dim.update_layout(xaxis_range=[0, 105], height=400, template="plotly_dark", yaxis=dict(autorange="reversed"))
         st.plotly_chart(fig_dim, key="dim")
 
@@ -168,26 +168,26 @@ if df is not None:
     st.divider()
     if st.button("🚀 GENERAR INFORME EJECUTIVO"):
         prompt_maestro = f"""
-        Actúa como consultor Barrett senior. Genera un reporte de DESARROLLO DE LIDERAZGO para {lider_sel}. DATOS: {d.to_json()}
-        
-        CONTEXTO BARRETT OBLIGATORIO:
-        - L1 (Survival): Crisis Manager. Estabilidad financiera y viabilidad[cite: 242, 243].
-        - L2 (Relationship): Relationship Builder. Respeto, armonía y manejo de conflictos[cite: 257, 265].
-        - L3 (Self-esteem): Manager/Organizer. Eficiencia, orden y resultados de calidad[cite: 274, 275, 285].
-        - L4 (Transformation): Facilitator/Influencer. Aprendizaje continuo, innovación y adaptabilidad[cite: 295, 296, 301, 309].
-        - L5 (Internal Cohesion): Integrator/Inspirer. Valores, integridad y cohesión interna[cite: 314, 315, 317].
-        - L6 (Making a Difference): Mentor/Partner. Colaboración, mentoría y alianzas estratégicas[cite: 333, 334, 344].
-        - L7 (Service): Wisdom/Visionary. Propósito, servicio al mundo y visión a largo plazo[cite: 350, 352, 363].
+        Actúa como consultor senior de DESARROLLO DE LIDERAZGO Barrett. Genera un reporte para {lider_sel}. DATOS: {d.to_json()}
+        PROHIBIDO USAR ANGLICISMOS. REDACTA TODO EN ESPAÑOL PURO.
+        CONTEXTO BARRETT:
+        - L1: Gestor de Crisis. Foco en estabilidad y viabilidad operativa. (Supervivencia)
+        - L2: Constructor de Relaciones. Foco en armonía y respeto mutuo. (Relaciones)
+        - L3: Gestor Organizador. Foco en eficiencia y resultados de calidad. (Autoestima)
+        - L4: Facilitador Influyente. Foco en innovación y adaptabilidad. (Transformación)
+        - L5: Integrador Inspirador. Foco en integridad y valores. (Cohesión Interna)
+        - L6: Mentor Socio. Foco en colaboración y mentoría. (Hacer la Diferencia)
+        - L7: Visionario Sabio. Foco en propósito y visión de largo plazo. (Servicio)
 
-        REGLAS DE ORO:
-        - INICIA DIRECTAMENTE. PROHIBIDO SALUDOS O INTRODUCCIONES GENÉRICAS.
-        - PROHIBIDO USAR: "desempeño", "brechas", "puntos ciegos" o hablar desde defectos o fallos, debe ser un feedback totalmente apreciativo.
+        REGLAS DE ORO: 
+        - INICIA DIRECTAMENTE. PROHIBIDO SALUDOS O INTRODUCCIONES.
+       	- PROHIBIDO USAR: "desempeño", "brechas", "puntos ciegos" o hablar desde defectos o fallos, debe ser un feedback totalmente apreciativo.
         - USA: "desarrollo", "alineación", "influencia", "oportunidad de expansión".
         - RÚBRICA: Bajo (<65), Medio (65-75), Alto (75-85), Superior (>85).
 
         ESTRUCTURA ESPEJO OBLIGATORIA:
-        1. DESCRIPCIÓN POR NIVELES: Lista desglosada de L1 a L7. Clasifica cada nivel basándote en el 'Ponderado Individual' usando la RÚBRICA y el CONTEXTO BARRETT anterior.
-        2. ANÁLISIS DE AUTOVALORACIÓN: Un párrafo sólido. Compara Autoevaluación vs percepción colectiva (Jefe, Pares, Colaboradores) que es el 'Ponderado individual'. Resalta donde la influencia es mayor de lo percibido por el líder en su autovaloracion, o donde se tenga mayor brecha.
+        1. DESCRIPCIÓN POR NIVELES: Lista de L1 a L7 con el nombre de contexto Barret (Ejemplo L1: Gestor de Crisis). Clasifica cada nivel basándote en el 'Ponderado Individual' usando la rúbrica (Bajo, Medio, Alto, Superior) y las definiciones Barrett anteriores.
+        2. ANÁLISIS DE AUTOVALORACIÓN: Un párrafo. Analiza alineación percepción interna (Autoevaluacion) vs colectiva (Ponderado individual que es la evaluación de Jefe directo, Colaboradore a cargo y Pares). Resalta donde la influencia externa es mayor a la autopercepción, o aquellos puntos donde la autoevaluacion sea mayor en rubrica a lo evaluado pues son 2 cosas diferentes a trabajar segun el nivel de consiencia.
         3. MATRIZ DE MADUREZ: Un párrafo sólido. Analiza sintonía del líder (Ponderado Individual) con el Ponderado Organizacional basándote en la Rúbrica.
         4. PERFIL DE LIDERAZGO: Un párrafo sólido. Define el estilo predominante según el promedio más alto (Liderazgo: {round(liderazgo_prom,1)}%, Transición: {round(transicion_prom,1)}%, Gerencia: {round(gerencia_prom,1)}%) y ofrece 3 recomendaciones de expansión para llegar a un equilibrio de las 3 dimensiones (Liderazgo Transicion y Gerencia) punto seguido.
         """
@@ -205,7 +205,7 @@ if df is not None:
 
         # --- 9. PDF CONSOLIDADO ---
         if st.button("📄 GENERAR REPORTE COMPLETO PDF"):
-            with st.spinner('Procesando PDF...'):
+            with st.spinner('Procesando PDF de alta definición...'):
                 try:
                     pdf = FPDF()
                     pdf.set_auto_page_break(auto=True, margin=15)
@@ -234,19 +234,12 @@ if df is not None:
                         pdf.text(110, 93, "3. Madurez Global por Dimensiones (L-T-G)")
                         pdf.image(save_chart(fig_dim, "dim.png", 500, 350), x=110, y=105, w=90)
 
-                        # Captura Leyenda y Relojes
+                        # Captura Relojes con Leyenda Integrada para alineación perfecta
                         pdf.text(15, 173, "4. Evolucion Madurez Liderazgo (Leyenda | Auto | Individual | Organizacional)")
-                        # Creamos imagen de leyenda
-                        leyenda_niveles = ["L7 - Visionario", "L6 - Mentor", "L5 - Autentico", "L4 - Facilitador", "L3 - Desempeno", "L2 - Relaciones", "L1 - Crisis"]
-                        pdf.set_font('Helvetica', 'B', 7)
-                        curr_y = 183
-                        for n in leyenda_niveles:
-                            pdf.text(10, curr_y, n)
-                            curr_y += 6.5
-                        
-                        pdf.image(save_chart(fig_r1, "r1.png", 400, 400), x=30, y=175, w=55)
-                        pdf.image(save_chart(fig_r2, "r2.png", 400, 400), x=85, y=175, w=55)
-                        pdf.image(save_chart(fig_r3, "r3.png", 400, 400), x=140, y=175, w=55)
+                        fig_r1_with_leyenda = dibujar_reloj_barrett(v_auto, incluir_leyenda=True)
+                        pdf.image(save_chart(fig_r1_with_leyenda, "r1.png", 500, 400), x=10, y=175, w=70)
+                        pdf.image(save_chart(fig_r2, "r2.png", 400, 400), x=80, y=175, w=60)
+                        pdf.image(save_chart(fig_r3, "r3.png", 400, 400), x=140, y=175, w=60)
 
                     pdf.add_page()
                     pdf.set_font('Helvetica', 'B', 14)
