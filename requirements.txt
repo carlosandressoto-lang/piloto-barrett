@@ -3,4 +3,4 @@ pandas
 plotly
 google-generativeai>=0.7.2
 fpdf2
-kaleido
+kaleido==0.1.0post1
