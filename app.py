@@ -48,7 +48,6 @@ if df is not None:
     lider_sel = st.selectbox("Seleccione el líder para el análisis detallado:", lideres)
     d = df[df['Nombre_Lider'] == lider_sel].iloc[0]
 
-    # Lógica de cálculo de dimensiones agrupadas (Promedios internos)
     gerencia_prom = (d.INDIV_L1 + d.INDIV_L2 + d.INDIV_L3) / 3
     transicion_prom = d.INDIV_L4
     liderazgo_prom = (d.INDIV_L5 + d.INDIV_L6 + d.INDIV_L7) / 3
@@ -75,37 +74,25 @@ if df is not None:
     with c2: st.plotly_chart(dibujar_barras([d.INDIV_L1, d.INDIV_L2, d.INDIV_L3, d.INDIV_L4, d.INDIV_L5, d.INDIV_L6, d.INDIV_L7], "Individual (360)", "#2ecc71"), use_container_width=True)
     with c3: st.plotly_chart(dibujar_barras([d.ORG_L1, d.ORG_L2, d.ORG_L3, d.ORG_L4, d.ORG_L5, d.ORG_L6, d.ORG_L7], "Promedio Organizacional", "#e74c3c"), use_container_width=True)
 
-    # --- 6. RELOJES DE ARENA (CORRECCIÓN RESPONSIVA Y NOMENCLATURA) ---
+    # --- 6. RELOJES DE ARENA (RESPONSIVIDAD L4 CORREGIDA) ---
     st.divider()
     st.subheader("⏳ Nivel de Desarrollo Barrett (Semáforo de Desempeño)")
 
     def dibujar_reloj_semáforo(vals, titulo):
-        # Nomenclatura corregida según roles de líder
-        levels = [
-            'L7 - Líder Visionario', 
-            'L6 - Líder Mentor/Socio', 
-            'L5 - Líder Auténtico', 
-            'L4 - Líder Facilitador', 
-            'L3 - Líder de Desempeño', 
-            'L2 - Líder de Relaciones', 
-            'L1 - Líder de Crisis/Viabilidad'
-        ]
-        # AJUSTE RESPONSIVO: Ensanchamos la base teórica (anchos fijos) 
-        # para que "Superior" quepa dentro de L4 en cualquier pantalla.
-        anchos_hourglass = [5.5, 4.5, 3.5, 2.8, 3.5, 4.5, 5.5] 
-        colors_barrett_faded = ["rgba(111, 66, 193, 0.4)"]*3 + ["rgba(40, 167, 69, 0.4)"] + ["rgba(253, 126, 20, 0.4)"]*3
-        
+        levels = ['L7 - Líder Visionario', 'L6 - Líder Mentor/Socio', 'L5 - Líder Auténtico', 'L4 - Líder Facilitador', 'L3 - Líder de Desempeño', 'L2 - Líder de Relaciones', 'L1 - Líder de Crisis/Viabilidad']
+        # Ensanchamos L4 (2.2 -> 3.0) para asegurar que el texto "Superior" entre siempre
+        anchos_hourglass = [6, 5, 4, 3.2, 4, 5, 6] 
+        colors_faded = ["rgba(111, 66, 193, 0.4)"]*3 + ["rgba(40, 167, 69, 0.4)"] + ["rgba(253, 126, 20, 0.4)"]*3
         etiquetas = [obtener_etiqueta_color(vals[i])[0] for i in [6, 5, 4, 3, 2, 1, 0]]
         colores_t = [obtener_etiqueta_color(vals[i])[1] for i in [6, 5, 4, 3, 2, 1, 0]]
 
         fig = go.Figure(go.Funnel(
             y=levels, x=anchos_hourglass, text=etiquetas, textinfo="text",
-            textfont=dict(color=colores_t, size=15, family='Arial Black'),
-            marker={"color": colors_barrett_faded, "line": {"width": 2, "color": "white"}},
+            textfont=dict(color=colores_t, size=14, family='Arial Black'),
+            marker={"color": colors_faded, "line": {"width": 2, "color": "white"}},
             connector={"line": {"color": "white", "width": 1}, "fillcolor": "rgba(200, 200, 200, 0.1)"}
         ))
-        # Ajuste de márgenes para responsividad
-        fig.update_layout(title=dict(text=titulo, x=0.5, font=dict(color='white')), height=500, margin=dict(l=220, r=20, t=50, b=50), yaxis=dict(autorange="reversed", tickfont=dict(color='white')), xaxis=dict(visible=False), plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
+        fig.update_layout(title=dict(text=titulo, x=0.5), height=500, margin=dict(l=220, r=20, t=50, b=50), yaxis=dict(autorange="reversed"), xaxis=dict(visible=False), plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
         return fig
 
     r1, r2, r3 = st.columns(3)
@@ -113,10 +100,9 @@ if df is not None:
     with r2: st.plotly_chart(dibujar_reloj_semáforo([d.INDIV_L1, d.INDIV_L2, d.INDIV_L3, d.INDIV_L4, d.INDIV_L5, d.INDIV_L6, d.INDIV_L7], "Competencia Individual"), use_container_width=True)
     with r3: st.plotly_chart(dibujar_reloj_semáforo([d.ORG_L1, d.ORG_L2, d.ORG_L3, d.ORG_L4, d.ORG_L5, d.ORG_L6, d.ORG_L7], "Cultura Organizacional"), use_container_width=True)
 
-    # --- 7. RADAR Y DIMENSIONES (NUEVA VISUAL) ---
+    # --- 7. RADAR Y DIMENSIONES ---
     st.divider()
     col_radar, col_dim = st.columns([1.5, 1])
-    
     with col_radar:
         st.subheader("Radar de Alineación Estratégica Triple (%)")
         fig_radar = go.Figure()
@@ -128,60 +114,42 @@ if df is not None:
 
     with col_dim:
         st.subheader("Madurez por Dimensiones (Promedio Individual)")
-        # Preparamos datos de dimensiones agrupadas
         dims = ['Liderazgo (L5-L7)', 'Transición (L4)', 'Gerencia (L1-L3)']
         vals_dim = [liderazgo_prom, transicion_prom, gerencia_prom]
         colors_dim = [obtener_etiqueta_color(v)[1] for v in vals_dim]
         labels_dim = [obtener_etiqueta_color(v)[0] for v in vals_dim]
-        
-        fig_dim = go.Figure(go.Bar(
-            x=vals_dim, y=dims, orientation='h',
-            marker_color=colors_dim,
-            text=[f"{round(v,1)}% - {l}" for v, l in zip(vals_dim, labels_dim)],
-            textposition='inside', textfont=dict(size=14, color="white")
-        ))
+        fig_dim = go.Figure(go.Bar(x=vals_dim, y=dims, orientation='h', marker_color=colors_dim, text=[f"{round(v,1)}% - {l}" for v, l in zip(vals_dim, labels_dim)], textposition='inside'))
         fig_dim.update_layout(xaxis_range=[0, 105], height=400, template="plotly_dark", yaxis=dict(autorange="reversed"))
         st.plotly_chart(fig_dim, use_container_width=True)
 
-    # --- 8. INFORME IA (PROMPT MAESTRO BLINDADO) ---
+    # --- 8. INFORME IA (PROMPT SIN REDUNDANCIAS) ---
     st.divider()
     if st.button("✨ GENERAR INFORME EJECUTIVO"):
-        # PROMPT MAESTRO: Integra tus reglas originales del GEM con la nueva lógica técnica
         prompt_maestro = f"""
-        CONTEXTO Y ROL:
-        Actúa como un experto consultor senior en desarrollo de liderazgo, especializado exclusivamente en el Modelo de los 7 Niveles de Conciencia de Richard Barrett. 
-        Tu objetivo es generar un informe de alto impacto para el Comité Ejecutivo y la Gerencia de Gestión Humana sobre el líder {lider_sel}.
+        Actúa como un experto consultor senior en desarrollo de liderazgo (Modelo Barrett). Genera un informe estratégico de alto impacto para el líder {lider_sel}.
 
-        DATOS PARA EL ANÁLISIS (Utiliza ÚNICAMENTE estos datos):
+        DATOS (Usa exclusivamente estos):
         {d.to_json()}
-        
-        DIMENSIONES AGRUPADAS (Promedio Ponderado Individual):
-        - GERENCIA (L1-L3): {round(gerencia_prom,1)}%
-        - TRANSICIÓN (L4): {round(transicion_prom,1)}%
-        - LIDERAZGO (L5-L7): {round(liderazgo_prom,1)}%
+        - Dimensiones: Gerencia L1-L3: {round(gerencia_prom,1)}%, Transición L4: {round(transicion_prom,1)}%, Liderazgo L5-L7: {round(liderazgo_prom,1)}%.
 
-        FILOSOFÍA DE FEEDBACK Y REGLAS (OBLIGATORIO):
-        - Inicia DIRECTAMENTE con el contenido profesional. PROHIBIDO incluir preámbulos, fechas, nombres de consultor o advertencias de confidencialidad (Contenido basura).
-        - Utiliza un enfoque basado en OPORTUNIDADES DE DESARROLLO y POTENCIAL. ESTRICTAMENTE PROHIBIDO utilizar lenguaje negativo, señalar "errores" o "fallos". Todo feedback debe ser transformacional.
-        - EVALUACIÓN INDIVIDUAL: Para evaluar la competencia real del individuo, utiliza EXCLUSIVAMENTE los datos de 'Ponderado Individual'. Los datos de Auto y Organizacional son SOLO para comparativas de brecha y alineación cultural. No confundas la evaluación individual con el promedio organizacional.
+        REGLAS DE ORO:
+        - INICIA DIRECTAMENTE CON EL ANÁLISIS. PROHIBIDO: preámbulos, fechas, nombres de consultor o advertencias de confidencialidad.
+        - FILOSOFÍA: 100% Apreciativa. Habla de "Oportunidades de Desarrollo" y "Potencial". Prohibido lenguaje negativo o señalar "errores".
+        - DATOS: El Ponderado Individual es la competencia real. Auto y Org son solo para comparar alineación. No mezcles el dato de la organización como si fuera la nota del líder.
 
         ESTRUCTURA DEL INFORME:
-        1. DESCRIPCIÓN POR NIVELES: Desglose analítico nivel por nivel (L1 a L7), identificando el potencial actual y las oportunidades de evolución basándote ÚNICAMENTE en el 'Ponderado Individual'.
-        2. ANÁLISIS DE AUTOVALORACIÓN: Evalúa cómo se percibe el líder, destacando áreas de autoconciencia sólida y brechas con la percepción del entorno.
-        3. ANÁLISIS DE PONDERADO INDIVIDUAL: Evalúa la competencia real observada según la rúbrica.
-        4. MATRIZ DE MADUREZ: Cruza el Ponderado Individual con el Ponderado Organizacional para determinar la alineación del líder con la cultura de Confa y su potencial de crecimiento.
-        5. PERFIL DE LIDERAZGO (EQUILIBRIO): Analiza matemáticamente el equilibrio entre las 3 dimensiones (Gerencia L1-L3, Transición L4, Liderazgo L5-L7) utilizando los porcentajes calculados arriba. Define el estilo predominante y propón 3 recomendaciones de alto valor estratégico para armonizar los 7 niveles de conciencia.
+        1. DESCRIPCIÓN POR NIVELES Y COMPETENCIA: Realiza un desglose de los 7 niveles (L1-L7). Para cada nivel, integra el análisis de la competencia observada (Ponderado Individual), el potencial y las oportunidades de crecimiento. (NO REPITAS ESTA INFORMACIÓN LUEGO).
+        2. ANÁLISIS DE AUTOVALORACIÓN: Evalúa cómo se percibe el líder y destaca áreas de autoconciencia sólida frente al entorno.
+        3. MATRIZ DE MADUREZ Y ALINEACIÓN: Cruza el Ponderado Individual con el Organizacional para determinar la alineación con la cultura de Confa.
+        4. PERFIL DE LIDERAZGO (EQUILIBRIO): Define el estilo basado en el bloque más fuerte (Gerencia, Transición o Liderazgo). Da 3 recomendaciones estratégicas para armonizar los 7 niveles.
 
-        RÚBRICA TÉCNICA Y NOMENCLATURA:
-        - Rúbrica: 0-65 Bajo | 65-75 Medio | 75-85 Alto | 85-100 Superior
-        - Nomenclatura Niveles: L1 Líder de Crisis/Viabilidad, L2 Líder de Relaciones, L3 Líder de Desempeño, L4 Líder Facilitador, L5 Líder Auténtico, L6 Líder Mentor/Socio, L7 Líder Visionario.
+        RÚBRICA: 0-65 Bajo, 66-75 Medio, 76-85 Alto, 85-100 Superior.
+        NOMENCLATURA: L1 Líder de Crisis/Viabilidad, L2 Líder de Relaciones, L3 Líder de Desempeño, L4 Líder Facilitador, L5 Líder Auténtico, L6 Líder Mentor/Socio, L7 Líder Visionario.
         """
-        
         try:
-            with st.spinner('Analizando datos bajo el modelo Barrett...'):
+            with st.spinner('Analizando datos estratégicos...'):
                 response = model.generate_content(prompt_maestro)
-                # Título limpio, directo al grano
-                st.markdown(f"## Análisis Estratégico de Liderazgo Barrett: {lider_sel}")
+                st.markdown(f"## Análisis de Liderazgo Barrett: {lider_sel}")
                 st.markdown("---")
                 st.write(response.text)
         except Exception as e:
