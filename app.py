@@ -89,7 +89,7 @@ if df is not None:
         if v < 65: return "#ff4b4b" 
         if v < 75: return "#f1c40f" 
         if v < 85: return "#2ecc71" 
-        return "#1A237E"
+        return "#3498db"
 
     def obtener_etiqueta(v):
         if v < 65: return "Bajo"
@@ -107,30 +107,31 @@ if df is not None:
         fig.update_layout(title=dict(text=titulo, x=0.5), xaxis_range=[0, 105], height=350, template="plotly_dark", margin=dict(l=0, r=10, t=40, b=20), yaxis=dict(autorange="reversed"))
         return fig
     
-    fig_b1 = dibujar_barras(v_auto, "Autovaloración", "#3498db")
-    fig_b2 = dibujar_barras(v_ind, "Individual (360)", "#2ecc71")
-    fig_b3 = dibujar_barras(v_org, "Promedio Organizacional", "#e74c3c")
-    with c1: st.plotly_chart(fig_b1, key="b1")
-    with c2: st.plotly_chart(fig_b2, key="b2")
-    with c3: st.plotly_chart(fig_b3, key="b3")
+    with c1: st.plotly_chart(dibujar_barras(v_auto, "Autovaloración", "#3498db"), key="b1")
+    with c2: st.plotly_chart(dibujar_barras(v_ind, "Individual (360)", "#2ecc71"), key="b2")
+    with c3: st.plotly_chart(dibujar_barras(v_org, "Promedio Organizacional", "#e74c3c"), key="b3")
 
-    # --- 6. RELOJES ---
+    # --- 6. RELOJES (NUEVA VISUAL: RECUADRO HUECO BARRETT) ---
     st.divider()
     st.subheader("⏳ Evolución del Liderazgo (Semáforo de Madurez)")
     def dibujar_reloj_barrett(vals, incluir_leyenda=False):
         anchos = [6, 5, 4, 3.2, 4, 5, 6] 
         v_rev = [vals[6], vals[5], vals[4], vals[3], vals[2], vals[1], vals[0]]
-        colors_barrett = ["#1e3a8a"]*3 + ["#15803d"] + ["#c2410c"]*3
+        # Colores Institucionales Barrett [cite: 182]
+        # L5-L7: Azul (33, 115, 182) | L4: Verde (140, 183, 42) | L1-L3: Naranja (241, 102, 35)
+        colors_barrett_borde = ["rgb(33,115,182)"]*3 + ["rgb(140,183,42)"] + ["rgb(241,102,35)"]*3
         labels_niveles = ["L7-Visionario", "L6-Mentor", "L5-Auténtico", "L4-Facilitador", "L3-Desempeño", "L2-Relaciones", "L1-Crisis"]
         
         fig = go.Figure(go.Funnel(
             y=labels_niveles if incluir_leyenda else [1,2,3,4,5,6,7], 
             x=anchos, text=[obtener_etiqueta(v) for v in v_rev], textinfo="text", 
             textfont=dict(color=[obtener_color_desarrollo(v) for v in v_rev], size=15, family='Arial Black'), 
-            marker={"color": colors_barrett, "line": {"width": 2, "color": "white"}}, 
+            marker={
+                "color": "white", # Fondo hueco blanco
+                "line": {"width": 4, "color": colors_barrett_borde} # Borde grueso institucional
+            }, 
             connector={"visible": False}
         ))
-        fig.update_traces(texttemplate="<span style='background-color: white; padding: 2px 8px;'> %{text} </span>")
         fig.update_layout(height=400, margin=dict(l=80 if incluir_leyenda else 10, r=10, t=10, b=10), 
                           yaxis=dict(visible=incluir_leyenda, tickfont=dict(color="#94a3b8", size=10)), 
                           xaxis=dict(visible=False), plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
@@ -164,7 +165,7 @@ if df is not None:
         fig_dim.update_layout(xaxis_range=[0, 105], height=400, template="plotly_dark", yaxis=dict(autorange="reversed"))
         st.plotly_chart(fig_dim, key="dim")
 
-    # --- 8. INFORME IA ---
+    # --- 8. INFORME IA (SIN MODIFICACIONES) ---
     st.divider()
     if st.button("🚀 GENERAR INFORME EJECUTIVO"):
         prompt_maestro = f"""
@@ -191,8 +192,9 @@ if df is not None:
         3. MATRIZ DE MADUREZ: Un párrafo sólido. Analiza sintonía del líder (Ponderado Individual) con el Ponderado Organizacional basándote en la Rúbrica.
         4. PERFIL DE LIDERAZGO: Un párrafo sólido. Define el estilo predominante según el promedio más alto (Liderazgo: {round(liderazgo_prom,1)}%, Transición: {round(transicion_prom,1)}%, Gerencia: {round(gerencia_prom,1)}%) y ofrece 3 recomendaciones de expansión para llegar a un equilibrio de las 3 dimensiones (Liderazgo Transicion y Gerencia) punto seguido.
         """
+        """
         try:
-            with st.spinner('Consolidando informe espejo...'):
+            with st.spinner('Consolidando informe...'):
                 response = model.generate_content(prompt_maestro)
                 st.session_state.informe_cache[lider_sel] = response.text
         except Exception as e:
@@ -205,7 +207,7 @@ if df is not None:
 
         # --- 9. PDF CONSOLIDADO ---
         if st.button("📄 GENERAR REPORTE COMPLETO PDF"):
-            with st.spinner('Procesando PDF de alta definición...'):
+            with st.spinner('Procesando PDF...'):
                 try:
                     pdf = FPDF()
                     pdf.set_auto_page_break(auto=True, margin=15)
@@ -224,20 +226,19 @@ if df is not None:
                             return path
                         
                         pdf.set_font('Helvetica', 'B', 9)
-                        pdf.text(10, 38, "1. Distribucion de Energia (%) - Autovaloracion | Individual | Organizacional")
+                        pdf.text(10, 38, "1. Distribucion de Energia (%) - Auto | Individual | Organizacional")
                         pdf.image(save_chart(fig_b1, "b1.png"), x=10, y=40, w=60)
                         pdf.image(save_chart(fig_b2, "b2.png"), x=75, y=40, w=60)
                         pdf.image(save_chart(fig_b3, "b3.png"), x=140, y=40, w=60)
 
                         pdf.text(10, 93, "2. Radar de Alineacion de Liderazgo Triple")
                         pdf.image(save_chart(fig_radar, "radar.png", 500, 400), x=10, y=95, w=95)
-                        pdf.text(110, 93, "3. Madurez Global por Dimensiones (L-T-G)")
+                        pdf.text(110, 93, "3. Madurez Global por Dimensiones")
                         pdf.image(save_chart(fig_dim, "dim.png", 500, 350), x=110, y=105, w=90)
 
-                        # Captura Relojes con Leyenda Integrada para alineación perfecta
                         pdf.text(15, 173, "4. Evolucion Madurez Liderazgo (Leyenda | Auto | Individual | Organizacional)")
-                        fig_r1_with_leyenda = dibujar_reloj_barrett(v_auto, incluir_leyenda=True)
-                        pdf.image(save_chart(fig_r1_with_leyenda, "r1.png", 500, 400), x=10, y=175, w=70)
+                        fig_r1_pdf = dibujar_reloj_barrett(v_auto, incluir_leyenda=True)
+                        pdf.image(save_chart(fig_r1_pdf, "r1.png", 500, 400), x=10, y=175, w=70)
                         pdf.image(save_chart(fig_r2, "r2.png", 400, 400), x=80, y=175, w=60)
                         pdf.image(save_chart(fig_r3, "r3.png", 400, 400), x=140, y=175, w=60)
 
