@@ -14,6 +14,7 @@ st.markdown("""
     .block-container { padding-top: 1rem; }
     h1 { color: #BFDBFE !important; text-align: center; }
     
+    /* Estilo para los títulos de las 4 columnas */
     .titulo-columna { 
         text-align: center; 
         color: white; 
@@ -23,11 +24,12 @@ st.markdown("""
         height: 30px;
     }
     
+    /* Contenedor de la leyenda para que coincida con la altura de los funnels */
     .leyenda-v2 {
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-        height: 380px; 
+        height: 380px; /* Ajuste para alinear con las barras */
         margin-top: 10px;
         padding-right: 10px;
         border-right: 1px solid #334155;
@@ -131,10 +133,10 @@ if df is not None:
         st.markdown('<div class="titulo-columna">Autovaloración</div>', unsafe_allow_html=True)
         st.plotly_chart(dibujar_reloj_cuadro([d.AUTO_L1, d.AUTO_L2, d.AUTO_L3, d.AUTO_L4, d.AUTO_L5, d.AUTO_L6, d.AUTO_L7]), use_container_width=True)
     with col_r2:
-        st.markdown('<div class="titulo-columna">Individual</div>', unsafe_allow_html=True)
+        st.markdown('<div class="titulo-columna">Resultado Individual</div>', unsafe_allow_html=True)
         st.plotly_chart(dibujar_reloj_cuadro([d.INDIV_L1, d.INDIV_L2, d.INDIV_L3, d.INDIV_L4, d.INDIV_L5, d.INDIV_L6, d.INDIV_L7]), use_container_width=True)
     with col_r3:
-        st.markdown('<div class="titulo-columna">Organizacional</div>', unsafe_allow_html=True)
+        st.markdown('<div class="titulo-columna">Resultado Organizacional</div>', unsafe_allow_html=True)
         st.plotly_chart(dibujar_reloj_cuadro([d.ORG_L1, d.ORG_L2, d.ORG_L3, d.ORG_L4, d.ORG_L5, d.ORG_L6, d.ORG_L7]), use_container_width=True)
 
     # --- 7. RADAR Y DIMENSIONES ---
@@ -158,7 +160,7 @@ if df is not None:
         fig_dim.update_layout(xaxis_range=[0, 105], height=400, template="plotly_dark", yaxis=dict(autorange="reversed"))
         st.plotly_chart(fig_dim, use_container_width=True)
 
-    # --- 8. INFORME IA (PROMPT MAESTRO RESTAURADO) ---
+    # --- 8. INFORME IA CONSOLIDADO Y CORREGIDO ---
     st.divider()
     if st.button("🚀 GENERAR ANÁLISIS ESTRATÉGICO 360°"):
         prompt_maestro = f"""
@@ -181,10 +183,10 @@ if df is not None:
            - 2. SINTONÍA DE CONSCIENCIA
            - 3. RESULTADO ORGANIZACIONAL
            - 4. RUTA DE TRANSFORMACIÓN
-        3. En el punto '1. ANÁLISIS DE EVOLUCIÓN POR NIVELES', debes seguir estrictamente el orden secuencial desde el Nivel 1 hasta el Nivel 7.
-        4. CONCEPTUALIZACIÓN: El 'Ponderado Individual' representa la visión colectiva del entorno profesional.
+        3. En el punto '1. ANÁLISIS DE EVOLUCIÓN POR NIVELES', debes seguir estrictamente el orden secuencial desde el Nivel 1 hasta el Nivel 7. No mezcles los niveles.
+        4. CONCEPTUALIZACIÓN: El 'Ponderado Individual' es la visión colectiva del entorno profesional.
         5. FILOSOFÍA 100% APRECIATIVA: Prohibido usar "Oportunidad de Desarrollo:". Integra sugerencias usando puntos seguidos.
-        6. PROHIBIDO: Usar nombres genéricos como "Supervivencia". Usa ÚNICAMENTE la nomenclatura obligatoria de arriba.
+        6. PROHIBIDO: Usar nombres genéricos como "Supervivencia" o "Autoestima". Usa ÚNICAMENTE la nomenclatura obligatoria definida arriba.
         """
         try:
             with st.spinner('Analizando consciencia...'):
