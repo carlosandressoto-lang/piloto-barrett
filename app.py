@@ -236,7 +236,7 @@ if df is not None:
         st.markdown(f"### 📋 Informe de Desarrollo: {lider_sel}")
         st.write(st.session_state.informe_cache[lider_sel])
 
-        if st.button("📄 GENERAR REPORTE COMPLETO PDF"):
+        if st.button("📄 GENERAR REPORTE"):
             with st.spinner('Procesando PDF...'):
                 try:
                     pdf = FPDF()
@@ -295,5 +295,5 @@ if df is not None:
                     pdf.multi_cell(0, 6, limpio)
 
                     output = pdf.output()
-                    st.download_button(label="📥 Descargar PDF Final Simétrico", data=bytes(output), file_name=f"Reporte_Liderazgo_{lider_sel}.pdf", mime="application/pdf")
+                    st.download_button(label="📥 Descargar PDF", data=bytes(output), file_name=f"Reporte_Liderazgo_{lider_sel}.pdf", mime="application/pdf")
                 except Exception as e: st.error(f"Error PDF: {e}")
