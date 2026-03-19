@@ -19,7 +19,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- 2. CONEXIÓN IA ---
+# --- 2. CONEXIÓN IA SEGURA ---
 try:
     api_key_segura = st.secrets["GEMINI_API_KEY"]
     genai.configure(api_key=api_key_segura)
@@ -27,15 +27,21 @@ try:
 except Exception as e:
     st.error("Error: Configura 'GEMINI_API_KEY' en los Secrets.")
 
-# --- 3. CARGA DE DATOS ---
+# --- 3. CARGA DE DATOS (BLINDADA CONTRA 0.0 Y BASURA) ---
 @st.cache_data
 def load_data():
     try:
         df = pd.read_csv('Resultados_Gerentes.csv', sep=';', decimal=',')
         df.columns = df.columns.str.strip()
         df['Nombre_Lider'] = df['Nombre_Lider'].astype(str).str.strip()
-        df = df[~df['Nombre_Lider'].isin(['0.0', 'nan', ''])]
-        cols_check = [c for c in df.columns if 'L' in c]
+        
+        # FILTRO ROBUSTO: Solo nombres reales
+        df = df[df['Nombre_Lider'].notna()]
+        df = df[df['Nombre_Lider'] != '0.0']
+        df = df[df['Nombre_Lider'] != 'nan']
+        df = df[df['Nombre_Lider'] != '']
+        
+        cols_check = [c for c in df.columns if 'L' in c and any(x in c for x in ['AUTO', 'INDIV', 'ORG'])]
         for col in cols_check:
             df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
         return df
@@ -48,14 +54,14 @@ df = load_data()
 if df is not None:
     # --- 4. SELECCIÓN ---
     lideres = sorted(df['Nombre_Lider'].unique())
-    lider_sel = st.selectbox("Seleccione el líder para el análisis detallado:", lideres)
+    lider_sel = st.selectbox("Seleccione el líder para el análisis estratégico:", lideres)
     d = df[df['Nombre_Lider'] == lider_sel].iloc[0]
 
     v_auto = [d.AUTO_L1, d.AUTO_L2, d.AUTO_L3, d.AUTO_L4, d.AUTO_L5, d.AUTO_L6, d.AUTO_L7]
     v_ind = [d.INDIV_L1, d.INDIV_L2, d.INDIV_L3, d.INDIV_L4, d.INDIV_L5, d.INDIV_L6, d.INDIV_L7]
     v_org = [d.ORG_L1, d.ORG_L2, d.ORG_L3, d.ORG_L4, d.ORG_L5, d.ORG_L6, d.ORG_L7]
 
-    # --- 5. BARRAS ORIGINALES ---
+    # --- 5. BARRAS (%) ---
     st.divider()
     st.subheader("Distribución de Energía por Niveles de Conciencia (%)")
     c1, c2, c3 = st.columns(3)
@@ -64,14 +70,14 @@ if df is not None:
         labels = ['L7 - Visionario', 'L6 - Mentor', 'L5 - Auténtico', 'L4 - Facilitador', 'L3 - Desempeño', 'L2 - Relaciones', 'L1 - Crisis']
         v_plot = [vals[6], vals[5], vals[4], vals[3], vals[2], vals[1], vals[0]]
         fig = go.Figure(go.Bar(x=v_plot, y=labels, orientation='h', marker_color=color, text=[f"{round(v,1)}%" for v in v_plot], textposition='inside'))
-        fig.update_layout(title=dict(text=titulo, x=0.5), xaxis_range=[0, 105], height=350, template="plotly_dark", margin=dict(l=0, r=10, t=40, b=20), yaxis=dict(autorange="reversed"), plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
+        fig.update_layout(title=dict(text=titulo, x=0.5), xaxis_range=[0, 105], height=350, template="plotly_dark", margin=dict(l=0, r=10, t=40, b=20), yaxis=dict(autorange="reversed"))
         return fig
 
     with c1: st.plotly_chart(dibujar_barras(v_auto, "Autovaloración", "#3498db"), use_container_width=True, key="bar_auto")
     with c2: st.plotly_chart(dibujar_barras(v_ind, "Individual (360)", "#2ecc71"), use_container_width=True, key="bar_ind")
     with c3: st.plotly_chart(dibujar_barras(v_org, "Promedio Organizacional", "#e74c3c"), use_container_width=True, key="bar_org")
 
-    # --- 6. RELOJES DE ARENA (CORREGIDO ERROR DUPLICATE ID) ---
+    # --- 6. RELOJES (SIMETRÍA Y ALINEACIÓN) ---
     st.divider()
     st.subheader("⏳ Evolución del Liderazgo (Semáforo de Madurez)")
 
@@ -105,56 +111,50 @@ if df is not None:
 
     with col_r1:
         st.markdown('<div class="titulo-col">Autovaloración</div>', unsafe_allow_html=True)
-        st.plotly_chart(dibujar_reloj_limpio(v_auto), use_container_width=True, key="reloj_auto")
+        st.plotly_chart(dibujar_reloj_limpio(v_auto), use_container_width=True, key="re_auto")
     with col_r2:
         st.markdown('<div class="titulo-col">Individual</div>', unsafe_allow_html=True)
-        st.plotly_chart(dibujar_reloj_limpio(v_ind), use_container_width=True, key="reloj_ind")
+        st.plotly_chart(dibujar_reloj_limpio(v_ind), use_container_width=True, key="re_ind")
     with col_r3:
         st.markdown('<div class="titulo-col">Organizacional</div>', unsafe_allow_html=True)
-        st.plotly_chart(dibujar_reloj_limpio(v_org), use_container_width=True, key="reloj_org")
+        st.plotly_chart(dibujar_reloj_limpio(v_org), use_container_width=True, key="re_org")
 
     # --- 7. RADAR ---
     st.divider()
     st.subheader("Radar de Alineación Estratégica Triple (%)")
-    col_vacia1, col_center_radar, col_vacia2 = st.columns([1, 4, 1])
+    col_center_radar = st.columns([1, 4, 1])[1]
     with col_center_radar:
         fig_radar = go.Figure()
         cats = ['L1','L2','L3','L4','L5','L6','L7']
-        fig_radar.add_trace(go.Scatterpolar(r=v_auto, theta=cats, fill='toself', name='Auto', line_color='#3498db'))
-        fig_radar.add_trace(go.Scatterpolar(r=v_ind, theta=cats, fill='toself', name='Individual', line_color='#2ecc71'))
-        fig_radar.add_trace(go.Scatterpolar(r=v_org, theta=cats, fill='toself', name='Organizacional', line_color='#e74c3c'))
+        for val, name, color in zip([v_auto, v_ind, v_org], ['Auto', 'Individual', 'Organizacional'], ['#3498db', '#2ecc71', '#e74c3c']):
+            fig_radar.add_trace(go.Scatterpolar(r=val, theta=cats, fill='toself', name=name, line_color=color))
         fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 100])), height=600, template="plotly_dark", legend=dict(orientation="h", y=1.1, x=0.5, xanchor="center"))
         st.plotly_chart(fig_radar, use_container_width=True, key="radar_final")
 
-    # --- 8. INFORME IA (PROMPT MAESTRO ORIGINAL) ---
+    # --- 8. INFORME IA (PROMPT MAESTRO INTEGRAL) ---
     st.divider()
     if st.button("🚀 GENERAR INFORME EJECUTIVO"):
         prompt_maestro = f"""
-        CONTEXTO Y ROL:
-        Actúa como un experto consultor senior en desarrollo de liderazgo, especializado exclusivamente en el Modelo de los 7 Niveles de Conciencia de Richard Barrett. 
-        Tu objetivo es generar un informe de alto impacto para el Comité Ejecutivo y la Gerencia de Gestión Humana sobre el líder {lider_sel}.
-
-        DATOS PARA EL ANÁLISIS:
-        {d.to_json()}
-
-        FILOSOFÍA DE FEEDBACK (OBLIGATORIO):
-        - Utiliza un enfoque basado en OPORTUNIDADES DE DESARROLLO y POTENCIAL.
-        - Está estrictamente prohibido utilizar lenguaje negativo, señalar "errores" o "fallos".
-        - Todo hallazgo debe ser enmarcado como una posibilidad de crecimiento o un área para fortalecer el equilibrio.
-        - NO incluyas introducciones corteses. Inicia directamente con el contenido profesional.
+        Actúa como un experto consultor senior en desarrollo de liderazgo (Richard Barrett). Genera un informe estratégico 360° para {lider_sel}.
+        DATOS PARA EL ANÁLISIS: {d.to_json()}
+        
+        FILOSOFÍA DE FEEDBACK:
+        - Enfoque 100% en OPORTUNIDADES y POTENCIAL.
+        - Prohibido lenguaje negativo, señalar "errores" o usar etiquetas como "Oportunidad de Desarrollo:".
+        - NO incluyas introducciones cordiales. Inicia directamente.
 
         ESTRUCTURA DEL INFORME:
-        1. DESCRIPCIÓN POR NIVELES: Desglose analítico de los 7 niveles (L1 a L7). Identifica el potencial actual en cada nivel y las oportunidades específicas de evolución según los datos de 'Ponderado Individual'.
-        2. ANÁLISIS DE AUTOVALORACIÓN: Evalúa la percepción del líder sobre sí mismo frente al entorno.
-        3. ANÁLISIS DE PONDERADO INDIVIDUAL: Evalúa las competencias reales observadas por el entorno.
-        4. MATRIZ DE MADUREZ: Cruza el Ponderado Individual con el Ponderado Organizacional.
-        5. PERFIL DE LIDERAZGO: Define un (1) estilo predominante y propón tres recomendaciones accionables.
+        1. DESCRIPCIÓN POR NIVELES: Desglose analítico de los 7 niveles (L1 a L7). Identifica el potencial actual basándote en 'Ponderado Individual'.
+        2. ANÁLISIS DE AUTOVALORACIÓN: Evalúa la percepción del líder frente a la del entorno.
+        3. ANÁLISIS DE PONDERADO INDIVIDUAL: Evalúa las competencias reales observadas por el entorno profesional.
+        4. MATRIZ DE MADUREZ: Cruza Individual con Organizacional para determinar la alineación estratégica.
+        5. PERFIL DE LIDERAZGO: Define un (1) estilo predominante y propón tres recomendaciones de gran valor estratégico.
 
-        RÚBRICA TÉCNICA:
-        - 0 a 65: Bajo | 65 a 75: Medio | 75 a 85: Alto | 85 a 100: Superior
+        RÚBRICA: 0-65 Bajo | 65-75 Medio | 75-85 Alto | 85-100 Superior
+        TERMINOLOGÍA: Emplea terminología técnica de Barrett (Viabilidad, Relaciones, Desempeño, Evolución, etc.).
         """
         try:
-            with st.spinner('Analizando datos...'):
+            with st.spinner('Analizando datos bajo el modelo Barrett...'):
                 response = model.generate_content(prompt_maestro)
                 st.markdown(f"### 📋 Informe Ejecutivo: {lider_sel}")
                 st.markdown("---")
