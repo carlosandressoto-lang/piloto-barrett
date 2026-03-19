@@ -108,13 +108,10 @@ if df is not None:
     def generar_fig_reloj(vals, incluir_leyenda=False):
         anchos_base = [6, 5, 4, 3.2, 4, 5, 6] 
         v_rev = [vals[6], vals[5], vals[4], vals[3], vals[2], vals[1], vals[0]]
-        # Colores Institucionales Barrett
         colors_barrett = ["rgb(33,115,182)"]*3 + ["rgb(140,183,42)"] + ["rgb(241,102,35)"]*3
         labels_niveles = ["L7-Visionario", "L6-Mentor", "L5-Auténtico", "L4-Facilitador", "L3-Desempeño", "L2-Relaciones", "L1-Crisis"]
         
         fig = go.Figure()
-
-        # Bloque base de color
         fig.add_trace(go.Funnel(
             y=labels_niveles if incluir_leyenda else [1,2,3,4,5,6,7],
             x=anchos_base,
@@ -124,7 +121,6 @@ if df is not None:
             connector={"visible": False}
         ))
 
-        # Añadimos las cajas blancas concéntricas ajustadas (Reducción del 15% adicional para estética)
         for i, (val, ancho) in enumerate(zip(v_rev, anchos_base)):
             fig.add_annotation(
                 x=0, y=i if incluir_leyenda else i+1,
@@ -133,8 +129,8 @@ if df is not None:
                 font=dict(color=obtener_color_desarrollo(val), size=12, family='Arial Black'),
                 bgcolor="white",
                 bordercolor="rgba(255,255,255,0)",
-                borderpad=4,
-                width=ancho * 25.5 # Reducción del 15% respecto al 30 anterior (30 * 0.85 = 25.5)
+                borderpad=3,
+                width=ancho * 22.0
             )
 
         fig.update_layout(
@@ -158,13 +154,14 @@ if df is not None:
 
     # --- 6. RENDER DASHBOARD ---
     st.divider()
+    st.subheader("📊 Frecuencia de comportamientos por niveles (%)")
     c1, c2, c3 = st.columns(3)
     with c1: st.plotly_chart(fig_b1, key="b1_v")
     with c2: st.plotly_chart(fig_b2, key="b2_v")
     with c3: st.plotly_chart(fig_b3, key="b3_v")
 
     st.divider()
-    st.subheader("⏳ Evolución del Liderazgo (Semáforo de Madurez)")
+    st.subheader("⏳ Resultados Evaluación 360°")
     cl, cr1, cr2, cr3 = st.columns([1, 1, 1, 1])
     with cl:
         st.markdown('<div class="titulo-col">Nivel Barrett</div>', unsafe_allow_html=True)
@@ -177,7 +174,7 @@ if df is not None:
     st.divider()
     col_radar, col_dim = st.columns([1.5, 1])
     with col_radar:
-        st.subheader("Radar de Alineación Triple (%)")
+        st.subheader("🎯 Alineación de Consciencia y Entorno")
         fig_radar = go.Figure()
         cats = ['L1','L2','L3','L4','L5','L6','L7']
         for val, name, color in zip([v_auto, v_ind, v_org], ['Auto', 'Individual', 'Organizacional'], ['#3498db', '#2ecc71', '#e74c3c']):
@@ -185,7 +182,7 @@ if df is not None:
         fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 100])), height=500, template="plotly_dark", legend=dict(orientation="h", y=1.1, x=0.5, xanchor="center"))
         st.plotly_chart(fig_radar, key="radar_v")
     with col_dim:
-        st.subheader("Madurez Global")
+        st.subheader("⚖️ Índice del Equilibrio de Liderazgo")
         vals_dim = [liderazgo_prom, transicion_prom, gerencia_prom]
         fig_dim = go.Figure(go.Bar(x=vals_dim, y=['Liderazgo (L5-L7)', 'Transición (L4)', 'Gerencia (L1-L3)'], orientation='h', marker_color=[obtener_color_desarrollo(v) for v in vals_dim], text=[f"{round(v,1)}% - {obtener_etiqueta(v)}" for v in vals_dim], textposition='inside'))
         fig_dim.update_layout(xaxis_range=[0, 105], height=400, template="plotly_dark", yaxis=dict(autorange="reversed"))
@@ -208,7 +205,7 @@ if df is not None:
 
         REGLAS DE ORO: 
         - INICIA DIRECTAMENTE. PROHIBIDO SALUDOS O INTRODUCCIONES o RESMENES O APRECIACIONES.
-        - PROHIBIDO USAR: "desempeño", "brechas", "puntos ciegos" o hablar desde defectos o fallos, debe ser un feedback totalmente apreciativo.
+       	- PROHIBIDO USAR: "desempeño", "brechas", "puntos ciegos" o hablar desde defectos o fallos, debe ser un feedback totalmente apreciativo.
         - USA: "desarrollo", "alineación", "influencia", "oportunidad de expansión".
         - RÚBRICA: Bajo (<65), Medio (65-75), Alto (75-85), Superior (>85).
 
@@ -231,7 +228,7 @@ if df is not None:
         st.write(texto_informe)
 
         if st.button("📄 GENERAR REPORTE COMPLETO PDF"):
-            with st.spinner('Procesando PDF...'):
+            with st.spinner('Procesando PDF de alta calidad...'):
                 try:
                     pdf = FPDF()
                     pdf.set_auto_page_break(auto=True, margin=15)
@@ -249,21 +246,22 @@ if df is not None:
                             fig.write_image(path, engine="kaleido", scale=2) 
                             return path
                         
-                        pdf.set_font('Helvetica', 'B', 9)
-                        pdf.text(10, 38, "1. Distribución de Energía (%)")
-                        pdf.image(save_chart(fig_b1, "b1.png"), x=10, y=40, w=60)
-                        pdf.image(save_chart(fig_b2, "b2.png"), x=75, y=40, w=60)
-                        pdf.image(save_chart(fig_b3, "b3.png"), x=140, y=40, w=60)
+                        pdf.set_font('Helvetica', 'B', 10)
+                        pdf.text(10, 38, "1. Frecuencia de comportamientos por niveles (%)")
+                        pdf.image(save_chart(fig_b1, "b1.png"), x=10, y=42, w=60)
+                        pdf.image(save_chart(fig_b2, "b2.png"), x=75, y=42, w=60)
+                        pdf.image(save_chart(fig_b3, "b3.png"), x=140, y=42, w=60)
 
-                        pdf.text(10, 93, "2. Radar de Alineación | 3. Madurez Global")
-                        pdf.image(save_chart(fig_radar, "radar.png", 500, 400), x=10, y=95, w=95)
+                        pdf.text(10, 95, "2. Alineación de Consciencia y Entorno")
+                        pdf.image(save_chart(fig_radar, "radar.png", 500, 400), x=10, y=98, w=95)
+                        pdf.text(110, 95, "3. Índice del Equilibrio de Liderazgo")
                         pdf.image(save_chart(fig_dim, "dim.png", 500, 350), x=110, y=105, w=90)
 
-                        pdf.text(15, 173, "4. Evolución Madurez Liderazgo")
+                        pdf.text(15, 175, "4. Resultados Evaluación 360° (Niveles Barrett)")
                         fig_r1_p = generar_fig_reloj(v_auto, incluir_leyenda=True)
-                        pdf.image(save_chart(fig_r1_p, "r1.png", 500, 400), x=10, y=175, w=70)
-                        pdf.image(save_chart(fig_r2, "r2.png", 400, 400), x=80, y=175, w=60)
-                        pdf.image(save_chart(fig_r3, "r3.png", 400, 400), x=140, y=175, w=60)
+                        pdf.image(save_chart(fig_r1_p, "r1.png", 500, 400), x=10, y=178, w=70)
+                        pdf.image(save_chart(fig_r2, "r2.png", 400, 400), x=80, y=178, w=60)
+                        pdf.image(save_chart(fig_r3, "r3.png", 400, 400), x=140, y=178, w=60)
 
                     pdf.add_page()
                     pdf.set_font('Helvetica', 'B', 14)
