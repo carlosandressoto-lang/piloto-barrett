@@ -14,29 +14,10 @@ st.markdown("""
     .block-container { padding-top: 1rem; }
     h1 { color: #BFDBFE !important; text-align: center; }
     h3 { text-align: center; margin-bottom: 20px; }
-    
-    .leyenda-container { 
-        display: flex; 
-        flex-direction: column; 
-        justify-content: space-between; 
-        height: 380px; 
-        margin-top: 85px; 
-        border-right: 2px solid #334155; 
-        padding-right: 15px; 
-    }
-    .leyenda-nivel { 
-        height: 50px; 
-        display: flex; 
-        align-items: center; 
-        justify-content: flex-end; 
-        font-size: 0.8rem; 
-        font-weight: bold; 
-        color: #94a3b8; 
-    }
 </style>
 """, unsafe_allow_html=True)
 
-# --- 2. CONEXIÓN IA ---
+# --- 2. CONEXIÓN IA SEGURA ---
 try:
     api_key_segura = st.secrets["GEMINI_API_KEY"]
     genai.configure(api_key=api_key_segura)
@@ -50,11 +31,7 @@ def load_data():
     try:
         df = pd.read_csv('Resultados_Gerentes.csv', sep=';', decimal=',')
         df.columns = df.columns.str.strip()
-        # Limpieza para evitar el lider 0.0
-        df = df[df['Nombre_Lider'].notna()]
         df['Nombre_Lider'] = df['Nombre_Lider'].astype(str).str.strip()
-        df = df[df['Nombre_Lider'] != '0.0']
-        
         cols_check = [c for c in df.columns if 'L' in c]
         for col in cols_check:
             df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
@@ -67,7 +44,6 @@ df = load_data()
 
 if df is not None:
     # --- 4. SELECCIÓN ---
-    st.title("🏛️ Índice del equilibrio - Dashboard LDR Barrett")
     lideres = sorted(df['Nombre_Lider'].unique())
     lider_sel = st.selectbox("Seleccione el líder para el análisis 360°:", lideres)
     d = df[df['Nombre_Lider'] == lider_sel].iloc[0]
@@ -82,7 +58,7 @@ if df is not None:
         if v < 85: return "Alto", "#2ecc71"
         return "Superior", "#3498db"
 
-    # --- 5. BARRAS (%) ---
+    # --- 5. BARRAS ENERGÍA (%) ---
     st.divider()
     st.subheader("Distribución de Energía por Niveles de Conciencia (%)")
     c1, c2, c3 = st.columns(3)
@@ -91,25 +67,39 @@ if df is not None:
         labels = ['L7-Visionario', 'L6-Mentor', 'L5-Auténtico', 'L4-Facilitador', 'L3-Desempeño', 'L2-Relaciones', 'L1-Crisis']
         v_plot = [vals[6], vals[5], vals[4], vals[3], vals[2], vals[1], vals[0]]
         fig = go.Figure(go.Bar(x=v_plot, y=labels, orientation='h', marker_color=color, text=[f"{round(v,1)}%" for v in v_plot], textposition='inside'))
-        fig.update_layout(title=dict(text=titulo, x=0.5, xanchor='center'), xaxis_range=[0, 105], height=350, template="plotly_dark", margin=dict(l=0, r=10, t=40, b=20), yaxis=dict(autorange="reversed"))
+        fig.update_layout(title=dict(text=titulo, x=0.5), xaxis_range=[0, 105], height=350, template="plotly_dark", margin=dict(l=0, r=10, t=40, b=20), yaxis=dict(autorange="reversed"))
         return fig
 
     with c1: st.plotly_chart(dibujar_barras([d.AUTO_L1, d.AUTO_L2, d.AUTO_L3, d.AUTO_L4, d.AUTO_L5, d.AUTO_L6, d.AUTO_L7], "Autovaloración", "#3498db"), use_container_width=True)
     with c2: st.plotly_chart(dibujar_barras([d.INDIV_L1, d.INDIV_L2, d.INDIV_L3, d.INDIV_L4, d.INDIV_L5, d.INDIV_L6, d.INDIV_L7], "Individual", "#2ecc71"), use_container_width=True)
     with c3: st.plotly_chart(dibujar_barras([d.ORG_L1, d.ORG_L2, d.ORG_L3, d.ORG_L4, d.ORG_L5, d.ORG_L6, d.ORG_L7], "Cultura", "#e74c3c"), use_container_width=True)
 
-    # --- 6. RELOJES DE ARENA ---
+    # --- 6. RELOJES DE ARENA (SISTEMA DE ALINEACIÓN POR COLUMNAS GRÁFICAS) ---
     st.divider()
     st.subheader("⏳ Evolución del Liderazgo (Escala de Madurez)")
-    col_leyenda, r1, r2, r3 = st.columns([0.8, 1, 1, 1])
+    
+    # Definimos 4 columnas iguales para que la leyenda sea un gráfico más
+    col1, col2, col3, col4 = st.columns(4)
 
-    with col_leyenda:
-        st.markdown('<div class="leyenda-container">', unsafe_allow_html=True)
+    # GRÁFICO 1: LEYENDA (Un gráfico Plotly que solo tiene texto para alinear perfectamente)
+    with col1:
         niveles = ["L7 - Visionario", "L6 - Mentor", "L5 - Auténtico", "L4 - Facilitador", "L3 - Desempeño", "L2 - Relaciones", "L1 - Crisis"]
-        for n in niveles: st.markdown(f'<div class="leyenda-nivel">{n}</div>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+        fig_leyenda = go.Figure()
+        fig_leyenda.add_trace(go.Scatter(
+            x=[0]*7, y=niveles, mode="text", 
+            text=niveles, textposition="middle left",
+            textfont=dict(color="#94a3b8", size=12, family="Arial")
+        ))
+        fig_leyenda.update_layout(
+            title=dict(text="Niveles", x=0.5, font=dict(color="rgba(0,0,0,0)")), # Título invisible para alinear
+            height=450, margin=dict(l=100, r=0, t=85, b=25), # t=85 alinea con los títulos de los otros
+            xaxis=dict(visible=False, range=[-1, 1]),
+            yaxis=dict(visible=False, autorange="reversed"),
+            plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)'
+        )
+        st.plotly_chart(fig_leyenda, use_container_width=True)
 
-    def dibujar_reloj_limpio(vals, titulo):
+    def dibujar_reloj_alineado(vals, titulo):
         anchos = [6, 5, 4, 3.5, 4, 5, 6] 
         colors = ["rgba(111, 66, 193, 0.4)"]*3 + ["rgba(40, 167, 69, 0.4)"] + ["rgba(253, 126, 20, 0.4)"]*3
         etiquetas = [obtener_etiqueta_color(vals[i])[0] for i in [6, 5, 4, 3, 2, 1, 0]]
@@ -122,16 +112,16 @@ if df is not None:
             connector={"visible": False}
         ))
         fig.update_layout(
-            title=dict(text=titulo, x=0.5, xanchor='center'), 
-            height=480, margin=dict(l=20, r=20, t=60, b=10),
+            title=dict(text=titulo, x=0.5), height=450, 
+            margin=dict(l=10, r=10, t=85, b=25), # Margen superior igualado a la leyenda
             yaxis=dict(visible=False, autorange="reversed"),
             xaxis=dict(visible=False), plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)'
         )
         return fig
 
-    with r1: st.plotly_chart(dibujar_reloj_limpio([d.AUTO_L1, d.AUTO_L2, d.AUTO_L3, d.AUTO_L4, d.AUTO_L5, d.AUTO_L6, d.AUTO_L7], "Auto"), use_container_width=True)
-    with r2: st.plotly_chart(dibujar_reloj_limpio([d.INDIV_L1, d.INDIV_L2, d.INDIV_L3, d.INDIV_L4, d.INDIV_L5, d.INDIV_L6, d.INDIV_L7], "Individual"), use_container_width=True)
-    with r3: st.plotly_chart(dibujar_reloj_limpio([d.ORG_L1, d.ORG_L2, d.ORG_L3, d.ORG_L4, d.ORG_L5, d.ORG_L6, d.ORG_L7], "Cultura"), use_container_width=True)
+    with col2: st.plotly_chart(dibujar_reloj_alineado([d.AUTO_L1, d.AUTO_L2, d.AUTO_L3, d.AUTO_L4, d.AUTO_L5, d.AUTO_L6, d.AUTO_L7], "Auto"), use_container_width=True)
+    with col3: st.plotly_chart(dibujar_reloj_alineado([d.INDIV_L1, d.INDIV_L2, d.INDIV_L3, d.INDIV_L4, d.INDIV_L5, d.INDIV_L6, d.INDIV_L7], "Individual"), use_container_width=True)
+    with col4: st.plotly_chart(dibujar_reloj_alineado([d.ORG_L1, d.ORG_L2, d.ORG_L3, d.ORG_L4, d.ORG_L5, d.ORG_L6, d.ORG_L7], "Cultura"), use_container_width=True)
 
     # --- 7. RADAR Y DIMENSIONES ---
     st.divider()
@@ -158,12 +148,24 @@ if df is not None:
     st.divider()
     if st.button("🚀 GENERAR ANÁLISIS ESTRATÉGICO 360°"):
         prompt_maestro = f"""
-        Actúa como un experto consultor senior en liderazgo (Barrett). Analiza a {lider_sel}.
-        DATOS: {d.to_json()}
-        DIMENSIONES: Gerencia {round(gerencia_prom,1)}%, Transición {round(transicion_prom,1)}%, Liderazgo {round(liderazgo_prom,1)}%.
-        REGLAS: Inicia directamente, tono apreciativo, no hables de desempeño. 
-        ESTRUCTURA: 1. Evolución Niveles, 2. Sintonía Consciencia, 3. Integración Cultural, 4. Equilibrio y recomendaciones.
-        RÚBRICA: 0-65 Bajo, 66-75 Medio, 76-85 Alto, 85-100 Superior.
+        Actúa como un experto consultor senior en desarrollo de liderazgo especializado en el Modelo de Barrett. 
+        Analiza a {lider_sel} bajo una óptica de Evaluación 360° de Liderazgo integral.
+
+        DATOS FUENTE:
+        {d.to_json()}
+        - Dimensiones Agrupadas: Gerencia: {round(gerencia_prom,1)}%, Transición: {round(transicion_prom,1)}%, Liderazgo: {round(liderazgo_prom,1)}%.
+
+        REGLAS DE ORO:
+        - INICIA DIRECTAMENTE: Sin preámbulos, fechas ni nombres.
+        - FOCO LIDERAZGO: Evolución de consciencia 360°. NO hables de desempeño laboral.
+        - FILOSOFÍA: Apreciativa. Foco en POTENCIAL y OPORTUNIDADES.
+
+        ESTRUCTURA:
+        1. ANÁLISIS DE EVOLUCIÓN POR NIVELES: Desglose L1-L7 basado en el impacto observado (Ponderado Individual).
+        2. SINTONÍA DE CONSCIENCIA: Alineación autopercepción vs entorno.
+        3. INTEGRACIÓN CON EL PROPÓSITO ORGANIZACIONAL: Sintonía con la cultura Confa.
+        4. EQUILIBRIO DE LIDERAZGO Y RUTA DE TRANSFORMACIÓN: Análisis de dimensiones y 3 rutas de alto impacto.
+
         NOMENCLATURA: L1 Líder de Crisis/Viabilidad, L2 Líder de Relaciones, L3 Líder de Desempeño, L4 Líder Facilitador, L5 Líder Auténtico, L6 Líder Mentor/Socio, L7 Líder Visionario.
         """
         try:
