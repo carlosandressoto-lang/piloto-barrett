@@ -13,6 +13,8 @@ st.markdown("""
     .stSelectbox div[data-baseweb="select"] { color: white !important; background-color: #1e293b; }
     .block-container { padding-top: 1rem; }
     h1 { color: #BFDBFE !important; }
+    /* Estilo para la leyenda fija a la izquierda */
+    .leyenda-nivel { height: 60px; display: flex; align-items: center; justify-content: flex-end; font-size: 0.85rem; font-weight: bold; border-bottom: 1px solid #334155; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -74,31 +76,46 @@ if df is not None:
     with c2: st.plotly_chart(dibujar_barras([d.INDIV_L1, d.INDIV_L2, d.INDIV_L3, d.INDIV_L4, d.INDIV_L5, d.INDIV_L6, d.INDIV_L7], "Individual (360)", "#2ecc71"), use_container_width=True)
     with c3: st.plotly_chart(dibujar_barras([d.ORG_L1, d.ORG_L2, d.ORG_L3, d.ORG_L4, d.ORG_L5, d.ORG_L6, d.ORG_L7], "Promedio Organizacional", "#e74c3c"), use_container_width=True)
 
-    # --- 6. RELOJES DE ARENA (RESPONSIVIDAD L4 CORREGIDA) ---
+    # --- 6. RELOJES DE ARENA (OPTIMIZADOS Y RESPONSIVOS) ---
     st.divider()
     st.subheader("⏳ Nivel de Desarrollo Barrett (Semáforo de Desempeño)")
+    
+    # Creamos 4 columnas: 1 para la leyenda y 3 para los gráficos
+    col_leyenda, r1, r2, r3 = st.columns([0.8, 1, 1, 1])
 
-    def dibujar_reloj_semáforo(vals, titulo):
-        levels = ['L7 - Líder Visionario', 'L6 - Líder Mentor/Socio', 'L5 - Líder Auténtico', 'L4 - Líder Facilitador', 'L3 - Líder de Desempeño', 'L2 - Líder de Relaciones', 'L1 - Líder de Crisis/Viabilidad']
-        # Ensanchamos L4 (2.2 -> 3.0) para asegurar que el texto "Superior" entre siempre
+    with col_leyenda:
+        st.write("") # Espacio para alinear con el título del gráfico
+        st.write("")
+        niveles_nombres = [
+            "L7 - Visionario", "L6 - Mentor", "L5 - Auténtico", 
+            "L4 - Facilitador", "L3 - Desempeño", "L2 - Relaciones", "L1 - Crisis"
+        ]
+        for nivel in niveles_nombres:
+            st.markdown(f'<div class="leyenda-nivel">{nivel}</div>', unsafe_allow_html=True)
+
+    def dibujar_reloj_limpio(vals, titulo):
+        # Ya no incluimos los niveles en el eje Y del gráfico para ganar espacio
         anchos_hourglass = [6, 5, 4, 3.2, 4, 5, 6] 
         colors_faded = ["rgba(111, 66, 193, 0.4)"]*3 + ["rgba(40, 167, 69, 0.4)"] + ["rgba(253, 126, 20, 0.4)"]*3
         etiquetas = [obtener_etiqueta_color(vals[i])[0] for i in [6, 5, 4, 3, 2, 1, 0]]
         colores_t = [obtener_etiqueta_color(vals[i])[1] for i in [6, 5, 4, 3, 2, 1, 0]]
 
         fig = go.Figure(go.Funnel(
-            y=levels, x=anchos_hourglass, text=etiquetas, textinfo="text",
-            textfont=dict(color=colores_t, size=14, family='Arial Black'),
+            y=[7,6,5,4,3,2,1], x=anchos_hourglass, text=etiquetas, textinfo="text",
+            textfont=dict(color=colores_t, size=15, family='Arial Black'),
             marker={"color": colors_faded, "line": {"width": 2, "color": "white"}},
-            connector={"line": {"color": "white", "width": 1}, "fillcolor": "rgba(200, 200, 200, 0.1)"}
+            connector={"visible": False}
         ))
-        fig.update_layout(title=dict(text=titulo, x=0.5), height=500, margin=dict(l=220, r=20, t=50, b=50), yaxis=dict(autorange="reversed"), xaxis=dict(visible=False), plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
+        fig.update_layout(
+            title=dict(text=titulo, x=0.5), height=460, margin=dict(l=10, r=10, t=50, b=10),
+            yaxis=dict(visible=False, autorange="reversed"), # Escondemos el eje Y
+            xaxis=dict(visible=False), plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)'
+        )
         return fig
 
-    r1, r2, r3 = st.columns(3)
-    with r1: st.plotly_chart(dibujar_reloj_semáforo([d.AUTO_L1, d.AUTO_L2, d.AUTO_L3, d.AUTO_L4, d.AUTO_L5, d.AUTO_L6, d.AUTO_L7], "Autopercepción Barrett"), use_container_width=True)
-    with r2: st.plotly_chart(dibujar_reloj_semáforo([d.INDIV_L1, d.INDIV_L2, d.INDIV_L3, d.INDIV_L4, d.INDIV_L5, d.INDIV_L6, d.INDIV_L7], "Competencia Individual"), use_container_width=True)
-    with r3: st.plotly_chart(dibujar_reloj_semáforo([d.ORG_L1, d.ORG_L2, d.ORG_L3, d.ORG_L4, d.ORG_L5, d.ORG_L6, d.ORG_L7], "Cultura Organizacional"), use_container_width=True)
+    with r1: st.plotly_chart(dibujar_reloj_limpio([d.AUTO_L1, d.AUTO_L2, d.AUTO_L3, d.AUTO_L4, d.AUTO_L5, d.AUTO_L6, d.AUTO_L7], "Auto"), use_container_width=True)
+    with r2: st.plotly_chart(dibujar_reloj_limpio([d.INDIV_L1, d.INDIV_L2, d.INDIV_L3, d.INDIV_L4, d.INDIV_L5, d.INDIV_L6, d.INDIV_L7], "Individual"), use_container_width=True)
+    with r3: st.plotly_chart(dibujar_reloj_limpio([d.ORG_L1, d.ORG_L2, d.ORG_L3, d.ORG_L4, d.ORG_L5, d.ORG_L6, d.ORG_L7], "Cultura"), use_container_width=True)
 
     # --- 7. RADAR Y DIMENSIONES ---
     st.divider()
@@ -113,7 +130,7 @@ if df is not None:
         st.plotly_chart(fig_radar, use_container_width=True)
 
     with col_dim:
-        st.subheader("Madurez por Dimensiones (Promedio Individual)")
+        st.subheader("Madurez por Dimensiones")
         dims = ['Liderazgo (L5-L7)', 'Transición (L4)', 'Gerencia (L1-L3)']
         vals_dim = [liderazgo_prom, transicion_prom, gerencia_prom]
         colors_dim = [obtener_etiqueta_color(v)[1] for v in vals_dim]
@@ -122,7 +139,7 @@ if df is not None:
         fig_dim.update_layout(xaxis_range=[0, 105], height=400, template="plotly_dark", yaxis=dict(autorange="reversed"))
         st.plotly_chart(fig_dim, use_container_width=True)
 
-    # --- 8. INFORME IA (PROMPT SIN REDUNDANCIAS) ---
+    # --- 8. INFORME IA (SIN REDUNDANCIAS) ---
     st.divider()
     if st.button("✨ GENERAR INFORME EJECUTIVO"):
         prompt_maestro = f"""
@@ -135,21 +152,21 @@ if df is not None:
         REGLAS DE ORO:
         - INICIA DIRECTAMENTE CON EL ANÁLISIS. PROHIBIDO: preámbulos, fechas, nombres de consultor o advertencias de confidencialidad.
         - FILOSOFÍA: 100% Apreciativa. Habla de "Oportunidades de Desarrollo" y "Potencial". Prohibido lenguaje negativo o señalar "errores".
-        - DATOS: El Ponderado Individual es la competencia real. Auto y Org son solo para comparar alineación. No mezcles el dato de la organización como si fuera la nota del líder.
+        - DATOS: El Ponderado Individual es la competencia real. Auto y Org son solo para comparar alineación. 
 
         ESTRUCTURA DEL INFORME:
-        1. DESCRIPCIÓN POR NIVELES Y COMPETENCIA: Realiza un desglose de los 7 niveles (L1-L7). Para cada nivel, integra el análisis de la competencia observada (Ponderado Individual), el potencial y las oportunidades de crecimiento. (NO REPITAS ESTA INFORMACIÓN LUEGO).
-        2. ANÁLISIS DE AUTOVALORACIÓN: Evalúa cómo se percibe el líder y destaca áreas de autoconciencia sólida frente al entorno.
-        3. MATRIZ DE MADUREZ Y ALINEACIÓN: Cruza el Ponderado Individual con el Organizacional para determinar la alineación con la cultura de Confa.
-        4. PERFIL DE LIDERAZGO (EQUILIBRIO): Define el estilo basado en el bloque más fuerte (Gerencia, Transición o Liderazgo). Da 3 recomendaciones estratégicas para armonizar los 7 niveles.
+        1. DESCRIPCIÓN POR NIVELES Y COMPETENCIA: Realiza un desglose de los 7 niveles (L1-L7). Para cada nivel, integra el análisis de la competencia observada (Ponderado Individual), el potencial y las oportunidades de crecimiento. 
+        2. ANÁLISIS DE AUTOVALORACIÓN: Evalúa el grado de autoconciencia del líder frente a la percepción del entorno.
+        3. MATRIZ DE MADUREZ Y ALINEACIÓN: Cruza el Ponderado Individual con el Organizacional para determinar la alineación con la cultura organizacional.
+        4. PERFIL DE LIDERAZGO (EQUILIBRIO): Define el estilo basado en el bloque más fuerte. Da 3 recomendaciones estratégicas para armonizar los 7 niveles.
 
         RÚBRICA: 0-65 Bajo, 66-75 Medio, 76-85 Alto, 85-100 Superior.
         NOMENCLATURA: L1 Líder de Crisis/Viabilidad, L2 Líder de Relaciones, L3 Líder de Desempeño, L4 Líder Facilitador, L5 Líder Auténtico, L6 Líder Mentor/Socio, L7 Líder Visionario.
         """
         try:
-            with st.spinner('Analizando datos estratégicos...'):
+            with st.spinner('Analizando datos bajo el modelo Barrett...'):
                 response = model.generate_content(prompt_maestro)
-                st.markdown(f"## Análisis de Liderazgo Barrett: {lider_sel}")
+                st.markdown(f"## Análisis Estratégico de Liderazgo Barrett: {lider_sel}")
                 st.markdown("---")
                 st.write(response.text)
         except Exception as e:
