@@ -97,19 +97,18 @@ if df is not None:
         if v < 85: return "Alto"
         return "Superior"
 
-    # --- 4. GENERACIÓN DE FIGURAS (FUERA PARA EL PDF) ---
-    def dibujar_barras(vals, titulo, color):
+    # --- 4. FUNCIONES DE DIBUJO ---
+    def generar_fig_barras(vals, titulo, color):
         labels = ['L7 - Visionario', 'L6 - Mentor', 'L5 - Auténtico', 'L4 - Facilitador', 'L3 - Desempeño', 'L2 - Relaciones', 'L1 - Crisis']
         v_plot = [vals[6], vals[5], vals[4], vals[3], vals[2], vals[1], vals[0]]
         fig = go.Figure(go.Bar(x=v_plot, y=labels, orientation='h', marker_color=color, text=[f"{round(v,1)}%" for v in v_plot], textposition='inside'))
         fig.update_layout(title=dict(text=titulo, x=0.5), xaxis_range=[0, 105], height=350, template="plotly_dark", margin=dict(l=0, r=10, t=40, b=20), yaxis=dict(autorange="reversed"))
         return fig
 
-    def dibujar_reloj_barrett(vals, incluir_leyenda=False):
+    def generar_fig_reloj(vals, incluir_leyenda=False):
         anchos = [6, 5, 4, 3.2, 4, 5, 6] 
         v_rev = [vals[6], vals[5], vals[4], vals[3], vals[2], vals[1], vals[0]]
-        # Doble caja: Borde institucional Barrett con centro blanco
-        colors_barrett_borde = ["rgb(33,115,182)"]*3 + ["rgb(140,183,42)"] + ["rgb(241,102,35)"]*3
+        colors_barrett_fondo = ["rgb(33,115,182)"]*3 + ["rgb(140,183,42)"] + ["rgb(241,102,35)"]*3
         labels_niveles = ["L7-Visionario", "L6-Mentor", "L5-Auténtico", "L4-Facilitador", "L3-Desempeño", "L2-Relaciones", "L1-Crisis"]
         
         fig = go.Figure(go.Funnel(
@@ -118,40 +117,41 @@ if df is not None:
             textfont=dict(color=[obtener_color_desarrollo(v) for v in v_rev], size=15, family='Arial Black'), 
             marker={
                 "color": "white", 
-                "line": {"width": 6, "color": colors_barrett_borde} 
+                "line": {"width": 8, "color": colors_barrett_fondo} 
             }, 
             connector={"visible": False}
         ))
+        fig.update_traces(texttemplate="<span style='background-color: white; border: 1px solid #ddd; padding: 2px 10px;'> %{text} </span>")
         fig.update_layout(height=400, margin=dict(l=80 if incluir_leyenda else 10, r=10, t=10, b=10), 
                           yaxis=dict(visible=incluir_leyenda, tickfont=dict(color="#94a3b8", size=10)), 
                           xaxis=dict(visible=False), plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
         return fig
 
-    fig_b1 = dibujar_barras(v_auto, "Autovaloración", "#3498db")
-    fig_b2 = dibujar_barras(v_ind, "Individual (360)", "#2ecc71")
-    fig_b3 = dibujar_barras(v_org, "Promedio Organizacional", "#e74c3c")
+    # --- 5. ASIGNACIÓN GLOBAL DE FIGURAS ---
+    fig_b1 = generar_fig_barras(v_auto, "Autovaloración", "#3498db")
+    fig_b2 = generar_fig_barras(v_ind, "Individual (360)", "#2ecc71")
+    fig_b3 = generar_fig_barras(v_org, "Promedio Organizacional", "#e74c3c")
+    
+    fig_r1 = generar_fig_reloj(v_auto)
+    fig_r2 = generar_fig_reloj(v_ind)
+    fig_r3 = generar_fig_reloj(v_org)
 
-    # --- 5. VISUALIZACIÓN BARRAS ---
+    # --- 6. RENDER DASHBOARD ---
     st.divider()
-    st.subheader("Distribución de Energía por Niveles de Conciencia (%)")
     c1, c2, c3 = st.columns(3)
-    with c1: st.plotly_chart(fig_b1, key="b1_chart")
-    with c2: st.plotly_chart(fig_b2, key="b2_chart")
-    with c3: st.plotly_chart(fig_b3, key="b3_chart")
+    with c1: st.plotly_chart(fig_b1, key="b1_v")
+    with c2: st.plotly_chart(fig_b2, key="b2_v")
+    with c3: st.plotly_chart(fig_b3, key="b3_v")
 
-    # --- 6. VISUALIZACIÓN RELOJES ---
     st.divider()
     st.subheader("⏳ Evolución del Liderazgo (Semáforo de Madurez)")
-    
     cl, cr1, cr2, cr3 = st.columns([1, 1, 1, 1])
     with cl:
         st.markdown('<div class="titulo-col">Nivel Barrett</div>', unsafe_allow_html=True)
         st.markdown('<div class="leyenda-v3">' + ''.join([f'<div class="item-ley">{n}</div>' for n in ["L7 - Visionario", "L6 - Mentor", "L5 - Auténtico", "L4 - Facilitador", "L3 - Desempeño", "L2 - Relaciones", "L1 - Crisis"]]) + '</div>', unsafe_allow_html=True)
-    
-    fig_r1, fig_r2, fig_r3 = dibujar_reloj_barrett(v_auto), dibujar_reloj_barrett(v_ind), dibujar_reloj_barrett(v_org)
-    with cr1: st.markdown('<div class="titulo-col">Autovaloración</div>', unsafe_allow_html=True); st.plotly_chart(fig_r1, key="r1_chart")
-    with cr2: st.markdown('<div class="titulo-col">Individual</div>', unsafe_allow_html=True); st.plotly_chart(fig_r2, key="r2_chart")
-    with cr3: st.markdown('<div class="titulo-col">Organizacional</div>', unsafe_allow_html=True); st.plotly_chart(fig_r3, key="r3_chart")
+    with cr1: st.markdown('<div class="titulo-col">Autovaloración</div>', unsafe_allow_html=True); st.plotly_chart(fig_r1, key="r1_v")
+    with cr2: st.markdown('<div class="titulo-col">Individual</div>', unsafe_allow_html=True); st.plotly_chart(fig_r2, key="r2_v")
+    with cr3: st.markdown('<div class="titulo-col">Organizacional</div>', unsafe_allow_html=True); st.plotly_chart(fig_r3, key="r3_v")
 
     # --- 7. RADAR Y DIMENSIONES ---
     st.divider()
@@ -163,13 +163,13 @@ if df is not None:
         for val, name, color in zip([v_auto, v_ind, v_org], ['Auto', 'Individual', 'Organizacional'], ['#3498db', '#2ecc71', '#e74c3c']):
             fig_radar.add_trace(go.Scatterpolar(r=val, theta=cats, fill='toself', name=name, line_color=color))
         fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 100])), height=500, template="plotly_dark", legend=dict(orientation="h", y=1.1, x=0.5, xanchor="center"))
-        st.plotly_chart(fig_radar, key="radar_chart")
+        st.plotly_chart(fig_radar, key="radar_v")
     with col_dim:
         st.subheader("Madurez Global")
         vals_dim = [liderazgo_prom, transicion_prom, gerencia_prom]
         fig_dim = go.Figure(go.Bar(x=vals_dim, y=['Liderazgo (L5-L7)', 'Transición (L4)', 'Gerencia (L1-L3)'], orientation='h', marker_color=[obtener_color_desarrollo(v) for v in vals_dim], text=[f"{round(v,1)}% - {obtener_etiqueta(v)}" for v in vals_dim], textposition='inside'))
         fig_dim.update_layout(xaxis_range=[0, 105], height=400, template="plotly_dark", yaxis=dict(autorange="reversed"))
-        st.plotly_chart(fig_dim, key="dim_chart")
+        st.plotly_chart(fig_dim, key="dim_v")
 
     # --- 8. INFORME IA ---
     st.divider()
@@ -210,9 +210,8 @@ if df is not None:
         st.markdown(f"### 📋 Informe de Desarrollo: {lider_sel}")
         st.write(texto_informe)
 
-        # --- 9. PDF CONSOLIDADO (CORREGIDO ERROR NAME fig_b1) ---
         if st.button("📄 GENERAR REPORTE COMPLETO PDF"):
-            with st.spinner('Procesando PDF de alta calidad...'):
+            with st.spinner('Procesando PDF...'):
                 try:
                     pdf = FPDF()
                     pdf.set_auto_page_break(auto=True, margin=15)
@@ -231,20 +230,18 @@ if df is not None:
                             return path
                         
                         pdf.set_font('Helvetica', 'B', 9)
-                        pdf.text(10, 38, "1. Distribución de Energía (%) - Auto | Individual | Organizacional")
+                        pdf.text(10, 38, "1. Distribución de Energía (%)")
                         pdf.image(save_chart(fig_b1, "b1.png"), x=10, y=40, w=60)
                         pdf.image(save_chart(fig_b2, "b2.png"), x=75, y=40, w=60)
                         pdf.image(save_chart(fig_b3, "b3.png"), x=140, y=40, w=60)
 
-                        pdf.text(10, 93, "2. Radar de Alineación de Liderazgo Triple")
+                        pdf.text(10, 93, "2. Radar de Alineación | 3. Madurez Global")
                         pdf.image(save_chart(fig_radar, "radar.png", 500, 400), x=10, y=95, w=95)
-                        pdf.text(110, 93, "3. Madurez Global por Dimensiones")
                         pdf.image(save_chart(fig_dim, "dim.png", 500, 350), x=110, y=105, w=90)
 
-                        pdf.text(15, 173, "4. Evolución Madurez Liderazgo (Leyenda | Auto | Individual | Organizacional)")
-                        # Usar función con leyenda para la primera imagen del PDF
-                        fig_r1_pdf = dibujar_reloj_barrett(v_auto, incluir_leyenda=True)
-                        pdf.image(save_chart(fig_r1_pdf, "r1.png", 500, 400), x=10, y=175, w=70)
+                        pdf.text(15, 173, "4. Evolución Madurez Liderazgo")
+                        fig_r1_p = generar_fig_reloj(v_auto, incluir_leyenda=True)
+                        pdf.image(save_chart(fig_r1_p, "r1.png", 500, 400), x=10, y=175, w=70)
                         pdf.image(save_chart(fig_r2, "r2.png", 400, 400), x=80, y=175, w=60)
                         pdf.image(save_chart(fig_r3, "r3.png", 400, 400), x=140, y=175, w=60)
 
