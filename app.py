@@ -108,20 +108,22 @@ if df is not None:
     def generar_fig_reloj(vals, incluir_leyenda=False):
         anchos = [6, 5, 4, 3.2, 4, 5, 6] 
         v_rev = [vals[6], vals[5], vals[4], vals[3], vals[2], vals[1], vals[0]]
-        # Colores Institucionales Barrett: Azul, Verde, Naranja
-        colors_barrett_line = ["rgb(33,115,182)"]*3 + ["rgb(140,183,42)"] + ["rgb(241,102,35)"]*3
+        # Colores Institucionales Barrett
+        colors_barrett_base = ["rgb(33,115,182)"]*3 + ["rgb(140,183,42)"] + ["rgb(241,102,35)"]*3
         labels_niveles = ["L7-Visionario", "L6-Mentor", "L5-Auténtico", "L4-Facilitador", "L3-Desempeño", "L2-Relaciones", "L1-Crisis"]
         
         fig = go.Figure(go.Funnel(
             y=labels_niveles if incluir_leyenda else [1,2,3,4,5,6,7], 
             x=anchos, text=[obtener_etiqueta(v) for v in v_rev], textinfo="text", 
-            textfont=dict(color=[obtener_color_desarrollo(v) for v in v_rev], size=15, family='Arial Black'), 
+            textfont=dict(color=[obtener_color_desarrollo(v) for v in v_rev], size=14, family='Arial Black'), 
             marker={
-                "color": "white", # Fondo blanco interior
-                "line": {"width": 12, "color": colors_barrett_line} # Borde grueso que crece hacia adentro
+                "color": colors_barrett_base, # El bloque ahora tiene el color completo
+                "line": {"width": 2, "color": "white"} 
             }, 
             connector={"visible": False}
         ))
+        # MEJORA VISUAL: Etiqueta blanca ajustada al texto para que el color institucional rellene el resto
+        fig.update_traces(texttemplate="<span style='background-color: white; border-radius: 3px; padding: 1px 6px;'> %{text} </span>")
         fig.update_layout(height=400, margin=dict(l=80 if incluir_leyenda else 10, r=10, t=10, b=10), 
                           yaxis=dict(visible=incluir_leyenda, tickfont=dict(color="#94a3b8", size=10)), 
                           xaxis=dict(visible=False), plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
