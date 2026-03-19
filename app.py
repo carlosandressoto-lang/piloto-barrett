@@ -19,6 +19,26 @@ st.markdown("""
     .block-container { padding-top: 1rem; }
     h1 { color: #BFDBFE !important; text-align: center; }
     .titulo-col { text-align: center; font-weight: bold; color: #BFDBFE; margin-bottom: 10px; font-size: 1.1rem; }
+    
+    /* Restauración de la leyenda visual para la App */
+    .leyenda-v3 {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        height: 340px; 
+        margin-top: 35px; 
+        padding-right: 10px;
+        border-right: 1px solid #334155;
+    }
+    .item-ley {
+        height: 48px; 
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        font-size: 0.85rem;
+        font-weight: bold;
+        color: #94a3b8;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -59,7 +79,6 @@ if df is not None:
     v_ind = [d.INDIV_L1, d.INDIV_L2, d.INDIV_L3, d.INDIV_L4, d.INDIV_L5, d.INDIV_L6, d.INDIV_L7]
     v_org = [d.ORG_L1, d.ORG_L2, d.ORG_L3, d.ORG_L4, d.ORG_L5, d.ORG_L6, d.ORG_L7]
 
-    # Cálculos promedios para Informe IA
     gerencia_prom = (d.INDIV_L1 + d.INDIV_L2 + d.INDIV_L3) / 3
     transicion_prom = d.INDIV_L4
     liderazgo_prom = (d.INDIV_L5 + d.INDIV_L6 + d.INDIV_L7) / 3
@@ -135,10 +154,23 @@ if df is not None:
 
     st.divider()
     st.subheader("⏳ Resultados Evaluación 360°")
+    
+    # RESTAURACIÓN DE LA LEYENDA EN LA APP
     cl, cr1, cr2, cr3 = st.columns([1, 1, 1, 1])
-    with cr1: st.markdown('<div class="titulo-col">Autovaloración</div>', unsafe_allow_html=True); st.plotly_chart(generar_fig_reloj(v_auto), key="r1_v")
-    with cr2: st.markdown('<div class="titulo-col">Individual</div>', unsafe_allow_html=True); st.plotly_chart(generar_fig_reloj(v_ind), key="r2_v")
-    with cr3: st.markdown('<div class="titulo-col">Organizacional</div>', unsafe_allow_html=True); st.plotly_chart(generar_fig_reloj(v_org), key="r3_v")
+    with cl:
+        st.markdown('<div class="titulo-col">Nivel Barrett</div>', unsafe_allow_html=True)
+        niveles = ["L7 - Visionario", "L6 - Mentor", "L5 - Auténtico", "L4 - Facilitador", "L3 - Desempeño", "L2 - Relaciones", "L1 - Crisis"]
+        st.markdown('<div class="leyenda-v3">' + ''.join([f'<div class="item-ley">{n}</div>' for n in niveles]) + '</div>', unsafe_allow_html=True)
+    
+    with cr1: 
+        st.markdown('<div class="titulo-col">Autovaloración</div>', unsafe_allow_html=True)
+        st.plotly_chart(generar_fig_reloj(v_auto, incluir_leyenda=False), key="r1_v")
+    with cr2: 
+        st.markdown('<div class="titulo-col">Individual (360)</div>', unsafe_allow_html=True)
+        st.plotly_chart(generar_fig_reloj(v_ind, incluir_leyenda=False), key="r2_v")
+    with cr3: 
+        st.markdown('<div class="titulo-col">Organizacional</div>', unsafe_allow_html=True)
+        st.plotly_chart(generar_fig_reloj(v_org, incluir_leyenda=False), key="r3_v")
 
     # --- 6. RADAR Y DIMENSIONES ---
     st.divider()
@@ -158,7 +190,7 @@ if df is not None:
         fig_dim.update_layout(xaxis_range=[0, 105], height=400, template="plotly_dark", yaxis=dict(autorange="reversed"))
         st.plotly_chart(fig_dim, key="dim_v")
 
-    # --- 7. INFORME IA (SIN TOCAR PROMPT) ---
+    # --- 7. INFORME IA (SIN CAMBIOS) ---
     if "informe_cache" not in st.session_state:
         st.session_state.informe_cache = {}
 
@@ -189,19 +221,18 @@ if df is not None:
         4. PERFIL DE LIDERAZGO: Un párrafo sólido. Define el estilo predominante según el promedio más alto (Liderazgo: {round(liderazgo_prom,1)}%, Transición: {round(transicion_prom,1)}%, Gerencia: {round(gerencia_prom,1)}%) y ofrece 3 recomendaciones de expansión para llegar a un equilibrio de las 3 dimensiones (Liderazgo Transicion y Gerencia) punto seguido.
         """
         try:
-            with st.spinner('Consolidando informe espejo...'):
+            with st.spinner('Consolidando informe...'):
                 response = model.generate_content(prompt_maestro)
                 st.session_state.informe_cache[lider_sel] = response.text
         except Exception as e:
             st.error(f"Error IA: {e}")
 
     if lider_sel in st.session_state.informe_cache:
-        texto_informe = st.session_state.informe_cache[lider_sel]
         st.markdown(f"### 📋 Informe de Desarrollo: {lider_sel}")
-        st.write(texto_informe)
+        st.write(st.session_state.informe_cache[lider_sel])
 
         if st.button("📄 GENERAR REPORTE COMPLETO PDF"):
-            with st.spinner('Procesando PDF de alta calidad...'):
+            with st.spinner('Procesando PDF...'):
                 try:
                     pdf = FPDF()
                     pdf.set_auto_page_break(auto=True, margin=15)
@@ -225,37 +256,33 @@ if df is not None:
                         pdf.image(save_chart(generar_fig_barras(v_ind, "Individual", "#2ecc71"), "b2.png"), x=75, y=42, w=60)
                         pdf.image(save_chart(generar_fig_barras(v_org, "Organizacional", "#e74c3c"), "b3.png"), x=140, y=42, w=60)
 
-                        fig_radar.update_layout(template="plotly", paper_bgcolor='white', font=dict(color="black"), legend=dict(y=1.2), margin=dict(t=100))
                         pdf.text(10, 95, "2. Alineación de Consciencia y Entorno")
                         pdf.image(save_chart(fig_radar, "radar.png", 500, 400), x=10, y=98, w=95)
                         pdf.text(110, 95, "3. Índice del Equilibrio de Liderazgo")
-                        # Crear fig_dim_pdf para el PDF
                         fig_dim_pdf = go.Figure(go.Bar(x=[liderazgo_prom, transicion_prom, gerencia_prom], y=['Liderazgo', 'Transición', 'Gerencia'], orientation='h', marker_color="#3498db"))
                         pdf.image(save_chart(fig_dim_pdf, "dim.png", 500, 350), x=110, y=105, w=90)
 
-                        # --- SIMETRÍA TOTAL EN RELOJES ---
+                        # SIMETRÍA TOTAL EN PDF SIN AFECTAR LA APP
                         pdf.text(15, 175, "4. Resultados Evaluación 360° (Niveles Barrett)")
                         pdf.set_font('Helvetica', 'B', 8)
                         pdf.text(45, 182, "Autovaloración")
                         pdf.text(103, 182, "Individual (360)")
                         pdf.text(158, 182, "Organizacional")
                         
-                        # Los tres con el mismo ancho de imagen (w=60) y mismos márgenes internos
-                        r1 = generar_fig_reloj(v_auto, incluir_leyenda=True)
-                        r2 = generar_fig_reloj(v_ind, incluir_leyenda=False, forzar_pdf=True)
-                        r3 = generar_fig_reloj(v_org, incluir_leyenda=False, forzar_pdf=True)
+                        r1_pdf = generar_fig_reloj(v_auto, incluir_leyenda=True)
+                        r2_pdf = generar_fig_reloj(v_ind, incluir_leyenda=False, forzar_pdf=True)
+                        r3_pdf = generar_fig_reloj(v_org, incluir_leyenda=False, forzar_pdf=True)
 
-                        pdf.image(save_chart(r1, "r1.png", 500, 400), x=15, y=184, w=60) 
-                        pdf.image(save_chart(r2, "r2.png", 500, 400), x=75, y=184, w=60) 
-                        pdf.image(save_chart(r3, "r3.png", 500, 400), x=135, y=184, w=60)
+                        pdf.image(save_chart(r1_pdf, "r1.png", 500, 400), x=15, y=184, w=60) 
+                        pdf.image(save_chart(r2_pdf, "r2.png", 500, 400), x=75, y=184, w=60) 
+                        pdf.image(save_chart(r3_pdf, "r3.png", 500, 400), x=135, y=184, w=60)
 
                     pdf.add_page()
                     pdf.set_font('Helvetica', 'B', 14)
                     pdf.cell(0, 10, 'Análisis Ejecutivo de Consciencia de Liderazgo', ln=True)
                     pdf.ln(5)
                     pdf.set_font('Helvetica', '', 10)
-                    limpio = texto_informe.replace("**", "").replace("###", "").replace("- ", "• ")
-                    limpio = re.sub(r'\$\(L\d\)\^\{\*\*\}', '', limpio)
+                    limpio = st.session_state.informe_cache[lider_sel].replace("**", "").replace("###", "").replace("- ", "• ")
                     limpio = limpio.encode('latin-1', 'replace').decode('latin-1')
                     pdf.multi_cell(0, 6, limpio)
 
