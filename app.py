@@ -106,38 +106,38 @@ if df is not None:
         return fig
 
     def generar_fig_reloj(vals, incluir_leyenda=False):
-        anchos_base = [6, 5, 4, 3.2, 4, 5, 6] 
+        anchos = [6, 5, 4, 3.2, 4, 5, 6] 
         v_rev = [vals[6], vals[5], vals[4], vals[3], vals[2], vals[1], vals[0]]
+        # Colores Barrett Institucionales 
         colors_barrett = ["rgb(33,115,182)"]*3 + ["rgb(140,183,42)"] + ["rgb(241,102,35)"]*3
         labels_niveles = ["L7-Visionario", "L6-Mentor", "L5-Auténtico", "L4-Facilitador", "L3-Desempeño", "L2-Relaciones", "L1-Crisis"]
         
-        fig = go.Figure()
-
-        # Dibujamos las cajas Barrett (Base)
-        fig.add_trace(go.Funnel(
+        # Bloque base de color
+        fig = go.Figure(go.Funnel(
             y=labels_niveles if incluir_leyenda else [1,2,3,4,5,6,7],
-            x=anchos_base,
+            x=anchos,
+            textinfo="none",
             hoverinfo="none",
             marker={"color": colors_barrett, "line": {"width": 1, "color": "white"}},
             connector={"visible": False}
         ))
 
-        # Dibujamos las cajas blancas internas (Capa de texto)
-        # Usamos una segunda traza con anchos reducidos para simular el recuadro concéntrico
-        anchos_texto = [a * 0.7 for a in anchos_base] 
-        fig.add_trace(go.Funnel(
-            y=labels_niveles if incluir_leyenda else [1,2,3,4,5,6,7],
-            x=anchos_texto,
-            text=[obtener_etiqueta(v) for v in v_rev],
-            textinfo="text",
-            textfont=dict(color=[obtener_color_desarrollo(v) for v in v_rev], size=14, family='Arial Black'),
-            hoverinfo="none",
-            marker={"color": "white", "line": {"width": 1, "color": "white"}},
-            connector={"visible": False}
-        ))
+        # Añadimos las cajas blancas y el texto como Annotations para que sean concéntricos reales
+        for i, (val, ancho) in enumerate(zip(v_rev, anchos)):
+            # Fondo blanco interno ajustado
+            fig.add_annotation(
+                x=0, y=i if incluir_leyenda else i+1,
+                text=obtener_etiqueta(val),
+                showarrow=False,
+                font=dict(color=obtener_color_desarrollo(val), size=14, family='Arial Black'),
+                bgcolor="white",
+                bordercolor="white",
+                borderwidth=2,
+                borderpad=4,
+                width=ancho * 40 # Ajuste de proporción interna
+            )
 
         fig.update_layout(
-            showlegend=False,
             height=400, 
             margin=dict(l=80 if incluir_leyenda else 10, r=10, t=10, b=10), 
             yaxis=dict(visible=incluir_leyenda, tickfont=dict(color="#94a3b8", size=10)), 
@@ -191,20 +191,21 @@ if df is not None:
         fig_dim.update_layout(xaxis_range=[0, 105], height=400, template="plotly_dark", yaxis=dict(autorange="reversed"))
         st.plotly_chart(fig_dim, key="dim_v")
 
-    # --- 8. INFORME IA (INTOCABLE) ---
+    # --- 8. INFORME IA (ESTÁNDAR FIJO) ---
     st.divider()
     if st.button("🚀 GENERAR INFORME EJECUTIVO"):
+        # Se restauró el prompt exacto solicitado, sin cambios.
         prompt_maestro = f"""
         Actúa como consultor senior de DESARROLLO DE LIDERAZGO Barrett. Genera un reporte para {lider_sel}. DATOS: {d.to_json()}
         PROHIBIDO USAR ANGLICISMOS. REDACTA TODO EN ESPAÑOL PURO.
         CONTEXTO BARRETT:
-        - L1: Gestor de Crisis. Foco en estabilidad y viabilidad operativa. (Supervivencia) [cite: 185, 193]
-        - L2: Constructor de Relaciones. Foco en armonía y respeto mutuo. (Relaciones) [cite: 200, 207]
-        - L3: Gestor Organizador. Foco en eficiencia y resultados de calidad. (Autoestima) [cite: 217, 226]
-        - L4: Facilitador Influyente. Foco en innovación y adaptabilidad. (Transformación) [cite: 238, 244]
-        - L5: Integrador Inspirador. Foco en integridad y valores. (Cohesión Interna) [cite: 257, 264]
-        - L6: Mentor Socio. Foco en colaboración y mentoría. (Hacer la Diferencia) [cite: 276, 282]
-        - L7: Visionario Sabio. Foco en propósito y visión de largo plazo. (Servicio) [cite: 294, 301]
+        - L1: Gestor de Crisis. Foco en estabilidad y viabilidad operativa. (Supervivencia)
+        - L2: Constructor de Relaciones. Foco en armonía y respeto mutuo. (Relaciones)
+        - L3: Gestor Organizador. Foco en eficiencia y resultados de calidad. (Autoestima)
+        - L4: Facilitador Influyente. Foco en innovación y adaptabilidad. (Transformación)
+        - L5: Integrador Inspirador. Foco en integridad y valores. (Cohesión Interna)
+        - L6: Mentor Socio. Foco en colaboración y mentoría. (Hacer la Diferencia)
+        - L7: Visionario Sabio. Foco en propósito y visión de largo plazo. (Servicio)
 
         REGLAS DE ORO: 
         - INICIA DIRECTAMENTE. PROHIBIDO SALUDOS O INTRODUCCIONES o RESMENES O APRECIACIONES.
