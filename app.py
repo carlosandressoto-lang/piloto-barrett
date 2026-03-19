@@ -106,27 +106,45 @@ if df is not None:
         return fig
 
     def generar_fig_reloj(vals, incluir_leyenda=False):
-        anchos = [6, 5, 4, 3.2, 4, 5, 6] 
+        anchos_base = [6, 5, 4, 3.2, 4, 5, 6] 
         v_rev = [vals[6], vals[5], vals[4], vals[3], vals[2], vals[1], vals[0]]
-        # Colores Institucionales Barrett Base
-        colors_barrett_base = ["rgb(33,115,182)"]*3 + ["rgb(140,183,42)"] + ["rgb(241,102,35)"]*3
+        colors_barrett = ["rgb(33,115,182)"]*3 + ["rgb(140,183,42)"] + ["rgb(241,102,35)"]*3
         labels_niveles = ["L7-Visionario", "L6-Mentor", "L5-Auténtico", "L4-Facilitador", "L3-Desempeño", "L2-Relaciones", "L1-Crisis"]
         
-        fig = go.Figure(go.Funnel(
-            y=labels_niveles if incluir_leyenda else [1,2,3,4,5,6,7], 
-            x=anchos, text=[obtener_etiqueta(v) for v in v_rev], textinfo="text", 
-            textfont=dict(color=[obtener_color_desarrollo(v) for v in v_rev], size=14, family='Arial Black'), 
-            marker={
-                "color": colors_barrett_base, # Fondo institucional sólido
-                "line": {"width": 2, "color": "white"} 
-            }, 
+        fig = go.Figure()
+
+        # Dibujamos las cajas Barrett (Base)
+        fig.add_trace(go.Funnel(
+            y=labels_niveles if incluir_leyenda else [1,2,3,4,5,6,7],
+            x=anchos_base,
+            hoverinfo="none",
+            marker={"color": colors_barrett, "line": {"width": 1, "color": "white"}},
             connector={"visible": False}
         ))
-        # MEJORA VISUAL FINAL (Doble Caja Proporcional): Caja blanca central amplia y definida para el texto
-        fig.update_traces(texttemplate="<span style='background-color: white; border-radius: 4px; padding: 8px 25px; border: 1px solid #ccc; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);'> %{text} </span>")
-        fig.update_layout(height=400, margin=dict(l=80 if incluir_leyenda else 10, r=10, t=10, b=10), 
-                          yaxis=dict(visible=incluir_leyenda, tickfont=dict(color="#94a3b8", size=10)), 
-                          xaxis=dict(visible=False), plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
+
+        # Dibujamos las cajas blancas internas (Capa de texto)
+        # Usamos una segunda traza con anchos reducidos para simular el recuadro concéntrico
+        anchos_texto = [a * 0.7 for a in anchos_base] 
+        fig.add_trace(go.Funnel(
+            y=labels_niveles if incluir_leyenda else [1,2,3,4,5,6,7],
+            x=anchos_texto,
+            text=[obtener_etiqueta(v) for v in v_rev],
+            textinfo="text",
+            textfont=dict(color=[obtener_color_desarrollo(v) for v in v_rev], size=14, family='Arial Black'),
+            hoverinfo="none",
+            marker={"color": "white", "line": {"width": 1, "color": "white"}},
+            connector={"visible": False}
+        ))
+
+        fig.update_layout(
+            showlegend=False,
+            height=400, 
+            margin=dict(l=80 if incluir_leyenda else 10, r=10, t=10, b=10), 
+            yaxis=dict(visible=incluir_leyenda, tickfont=dict(color="#94a3b8", size=10)), 
+            xaxis=dict(visible=False), 
+            plot_bgcolor='rgba(0,0,0,0)', 
+            paper_bgcolor='rgba(0,0,0,0)'
+        )
         return fig
 
     # --- 5. ASIGNACIÓN GLOBAL ---
@@ -155,7 +173,7 @@ if df is not None:
     with cr2: st.markdown('<div class="titulo-col">Individual</div>', unsafe_allow_html=True); st.plotly_chart(fig_r2, key="r2_v")
     with cr3: st.markdown('<div class="titulo-col">Organizacional</div>', unsafe_allow_html=True); st.plotly_chart(fig_r3, key="r3_v")
 
-    # --- 7. Radar y Dimensiones ---
+    # --- 7. RADAR Y DIMENSIONES ---
     st.divider()
     col_radar, col_dim = st.columns([1.5, 1])
     with col_radar:
@@ -180,13 +198,13 @@ if df is not None:
         Actúa como consultor senior de DESARROLLO DE LIDERAZGO Barrett. Genera un reporte para {lider_sel}. DATOS: {d.to_json()}
         PROHIBIDO USAR ANGLICISMOS. REDACTA TODO EN ESPAÑOL PURO.
         CONTEXTO BARRETT:
-        - L1: Gestor de Crisis. Foco en estabilidad y viabilidad operativa. (Supervivencia)
-        - L2: Constructor de Relaciones. Foco en armonía y respeto mutuo. (Relaciones)
-        - L3: Gestor Organizador. Foco en eficiencia y resultados de calidad. (Autoestima)
-        - L4: Facilitador Influyente. Foco en innovación y adaptabilidad. (Transformación)
-        - L5: Integrador Inspirador. Foco en integridad y valores. (Cohesión Interna)
-        - L6: Mentor Socio. Foco en colaboración y mentoría. (Hacer la Diferencia)
-        - L7: Visionario Sabio. Foco en propósito y visión de largo plazo. (Servicio)
+        - L1: Gestor de Crisis. Foco en estabilidad y viabilidad operativa. (Supervivencia) [cite: 185, 193]
+        - L2: Constructor de Relaciones. Foco en armonía y respeto mutuo. (Relaciones) [cite: 200, 207]
+        - L3: Gestor Organizador. Foco en eficiencia y resultados de calidad. (Autoestima) [cite: 217, 226]
+        - L4: Facilitador Influyente. Foco en innovación y adaptabilidad. (Transformación) [cite: 238, 244]
+        - L5: Integrador Inspirador. Foco en integridad y valores. (Cohesión Interna) [cite: 257, 264]
+        - L6: Mentor Socio. Foco en colaboración y mentoría. (Hacer la Diferencia) [cite: 276, 282]
+        - L7: Visionario Sabio. Foco en propósito y visión de largo plazo. (Servicio) [cite: 294, 301]
 
         REGLAS DE ORO: 
         - INICIA DIRECTAMENTE. PROHIBIDO SALUDOS O INTRODUCCIONES o RESMENES O APRECIACIONES.
