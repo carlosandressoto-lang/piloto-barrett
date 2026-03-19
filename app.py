@@ -108,7 +108,8 @@ if df is not None:
     def generar_fig_reloj(vals, incluir_leyenda=False):
         anchos = [6, 5, 4, 3.2, 4, 5, 6] 
         v_rev = [vals[6], vals[5], vals[4], vals[3], vals[2], vals[1], vals[0]]
-        colors_barrett_fondo = ["rgb(33,115,182)"]*3 + ["rgb(140,183,42)"] + ["rgb(241,102,35)"]*3
+        # Colores Institucionales Barrett: Azul, Verde, Naranja
+        colors_barrett_line = ["rgb(33,115,182)"]*3 + ["rgb(140,183,42)"] + ["rgb(241,102,35)"]*3
         labels_niveles = ["L7-Visionario", "L6-Mentor", "L5-Auténtico", "L4-Facilitador", "L3-Desempeño", "L2-Relaciones", "L1-Crisis"]
         
         fig = go.Figure(go.Funnel(
@@ -116,18 +117,17 @@ if df is not None:
             x=anchos, text=[obtener_etiqueta(v) for v in v_rev], textinfo="text", 
             textfont=dict(color=[obtener_color_desarrollo(v) for v in v_rev], size=15, family='Arial Black'), 
             marker={
-                "color": "white", 
-                "line": {"width": 8, "color": colors_barrett_fondo} 
+                "color": "white", # Fondo blanco interior
+                "line": {"width": 12, "color": colors_barrett_line} # Borde grueso que crece hacia adentro
             }, 
             connector={"visible": False}
         ))
-        fig.update_traces(texttemplate="<span style='background-color: white; border: 1px solid #ddd; padding: 2px 10px;'> %{text} </span>")
         fig.update_layout(height=400, margin=dict(l=80 if incluir_leyenda else 10, r=10, t=10, b=10), 
                           yaxis=dict(visible=incluir_leyenda, tickfont=dict(color="#94a3b8", size=10)), 
                           xaxis=dict(visible=False), plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
         return fig
 
-    # --- 5. ASIGNACIÓN GLOBAL DE FIGURAS ---
+    # --- 5. ASIGNACIÓN GLOBAL ---
     fig_b1 = generar_fig_barras(v_auto, "Autovaloración", "#3498db")
     fig_b2 = generar_fig_barras(v_ind, "Individual (360)", "#2ecc71")
     fig_b3 = generar_fig_barras(v_org, "Promedio Organizacional", "#e74c3c")
@@ -171,7 +171,7 @@ if df is not None:
         fig_dim.update_layout(xaxis_range=[0, 105], height=400, template="plotly_dark", yaxis=dict(autorange="reversed"))
         st.plotly_chart(fig_dim, key="dim_v")
 
-    # --- 8. INFORME IA ---
+    # --- 8. INFORME IA (INTOCABLE) ---
     st.divider()
     if st.button("🚀 GENERAR INFORME EJECUTIVO"):
         prompt_maestro = f"""
