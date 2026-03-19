@@ -6,6 +6,7 @@ from fpdf import FPDF
 import io
 import tempfile
 import os
+import re
 
 # --- 1. CONFIGURACIÓN ---
 st.set_page_config(page_title="LDR Barrett - Confa", layout="wide")
@@ -105,12 +106,12 @@ if df is not None:
     with c2: st.plotly_chart(dibujar_barras(v_ind, "Individual (360)", "#2ecc71"), key="b2")
     with c3: st.plotly_chart(dibujar_barras(v_org, "Promedio Organizacional", "#e74c3c"), key="b3")
 
-    # --- 6. RELOJES ---
+    # --- 6. RELOJES (VERIFICADOS) ---
     st.divider()
     st.subheader("⏳ Evolución del Liderazgo (Semáforo de Madurez)")
     def dibujar_reloj_barrett(vals):
         anchos = [6, 5, 4, 3.2, 4, 5, 6] 
-        colors_barrett = ["rgba(111, 66, 193, 0.5)"]*3 + ["rgba(40, 167, 69, 0.5)"] + ["rgba(253, 126, 20, 0.5)"]*3
+        colors_barrett = ["rgba(111, 66, 193, 0.5)"]*3 + ["rgba(40, 167, 69, 0.4)"] + ["rgba(253, 126, 20, 0.5)"]*3
         v_rev = [vals[6], vals[5], vals[4], vals[3], vals[2], vals[1], vals[0]]
         etiquetas = [obtener_etiqueta_color(v)[0] for v in v_rev]
         col_txt = [obtener_etiqueta_color(v)[1] for v in v_rev]
@@ -122,12 +123,11 @@ if df is not None:
     with cl:
         st.markdown('<div class="titulo-col">Nivel Barrett</div>', unsafe_allow_html=True)
         st.markdown('<div class="leyenda-v3">' + ''.join([f'<div class="item-ley">{n}</div>' for n in ["L7 - Visionario", "L6 - Mentor", "L5 - Auténtico", "L4 - Facilitador", "L3 - Desempeño", "L2 - Relaciones", "L1 - Crisis"]]) + '</div>', unsafe_allow_html=True)
-    with cr1:
-        st.plotly_chart(dibujar_reloj_barrett(v_auto), key="r1")
-    with cr2:
-        st.plotly_chart(dibujar_reloj_barrett(v_ind), key="r2")
-    with cr3:
-        st.plotly_chart(dibujar_reloj_barrett(v_org), key="r3")
+    
+    fig_r1, fig_r2, fig_r3 = dibujar_reloj_barrett(v_auto), dibujar_reloj_barrett(v_ind), dibujar_reloj_barrett(v_org)
+    with cr1: st.plotly_chart(fig_r1, key="r1")
+    with cr2: st.plotly_chart(fig_r2, key="r2")
+    with cr3: st.plotly_chart(fig_r3, key="r3")
 
     # --- 7. RADAR Y DIMENSIONES ---
     st.divider()
@@ -148,7 +148,7 @@ if df is not None:
         fig_dim.update_layout(xaxis_range=[0, 105], height=400, template="plotly_dark", yaxis=dict(autorange="reversed"))
         st.plotly_chart(fig_dim, key="dim")
 
-    # --- 8. INFORME IA ---
+    # --- 8. INFORME IA (PROMPT VERIFICADO) ---
     st.divider()
     if st.button("🚀 GENERAR INFORME EJECUTIVO"):
         prompt_maestro = f"""
@@ -163,11 +163,11 @@ if df is not None:
         - Nivel 2: GESTOR DE RELACIONES - Apoyo de relaciones
         - Nivel 1: GESTOR DE CRISIS - Garantizar visibilidad
         ESTRUCTURA:
-        1. DESCRIPCIÓN POR NIVELES: Desglose L1 a L7 ascendente. Usa la NOMENCLATURA OBLIGATORIA y analiza el impacto según el 'Ponderado Individual' (Sin poner que es el ponderado individuale esas reduandancias sobran).
+        1. DESCRIPCIÓN POR NIVELES: Desglose L1 a L7 ascendente. Usa la NOMENCLATURA OBLIGATORIA y analiza el impacto según el 'Ponderado Individual' (Sin redundancias técnicas).
         2. ANÁLISIS DE AUTOVALORACIÓN: Autoconciencia frente a la visión del entorno (Ponderado individual).
         3. MATRIZ DE MADUREZ: Alineación estratégica Individual (Ponderado Individual) vs Organizacional (Ponderado organizacional).
-        4. PERFIL DE LIDERAZGO: Estilo (Nivel predominante y dimensión predominante según el promedio mas alto (Liderazgo, Trasnsicion, Gerencia)) y 3 recomendaciones apreciativas (punto seguido).
-        FILOSOFÍA: 100% Apreciativa. Sin lenguaje negativo. Inicia directamente.
+        4. PERFIL DE LIDERAZGO: Estilo predominante y 3 recomendaciones apreciativas (punto seguido).
+        FILOSOFÍA: 100% Apreciativa. Inicia directamente.
         """
         try:
             with st.spinner('Analizando datos...'):
@@ -181,47 +181,61 @@ if df is not None:
         st.markdown(f"### 📋 Informe Ejecutivo: {lider_sel}")
         st.write(texto_informe)
 
-        # --- 9. MÓDULO PDF CON IMÁGENES ---
+        # --- 9. MÓDULO PDF PROFESIONAL (VERIFICADO) ---
         st.divider()
         if st.button("📄 GENERAR REPORTE COMPLETO PDF"):
-            with st.spinner('Procesando imágenes y generando PDF...'):
+            with st.spinner('Generando PDF corporativo...'):
                 try:
                     pdf = FPDF()
                     pdf.set_auto_page_break(auto=True, margin=15)
+                    
+                    # PÁGINA 1: Radar y Dim
                     pdf.add_page()
                     pdf.set_font('Helvetica', 'B', 16)
                     pdf.cell(0, 10, 'REPORTE ESTRATEGICO DE LIDERAZGO (BARRETT)', ln=True, align='C')
                     pdf.set_font('Helvetica', '', 12)
-                    pdf.cell(0, 10, f'Líder Evaluado: {lider_sel}', ln=True, align='C')
-                    pdf.ln(5)
-
-                    # Exportar Radar
-                    with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmp_radar:
+                    pdf.cell(0, 10, f'Líder: {lider_sel}', ln=True, align='C')
+                    
+                    with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as t1, \
+                         tempfile.NamedTemporaryFile(delete=False, suffix=".png") as t2:
                         fig_radar.update_layout(template="plotly", paper_bgcolor='white', plot_bgcolor='white', font=dict(color="black"))
-                        fig_radar.write_image(tmp_radar.name, engine="kaleido", format="png")
-                        pdf.image(tmp_radar.name, x=10, y=35, w=110)
-                    if os.path.exists(tmp_radar.name): os.remove(tmp_radar.name)
-
-                    # Exportar Madurez
-                    with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmp_dim:
+                        fig_radar.write_image(t1.name, engine="kaleido")
+                        pdf.image(t1.name, x=10, y=35, w=100)
+                        
                         fig_dim.update_layout(template="plotly", paper_bgcolor='white', plot_bgcolor='white', font=dict(color="black"))
-                        fig_dim.write_image(tmp_dim.name, engine="kaleido", format="png")
-                        pdf.image(tmp_dim.name, x=125, y=50, w=75)
-                    if os.path.exists(tmp_dim.name): os.remove(tmp_dim.name)
-
-                    pdf.set_y(140)
+                        fig_dim.write_image(t2.name, engine="kaleido")
+                        pdf.image(t2.name, x=115, y=50, w=85)
+                    
+                    # PÁGINA 2: Los 3 Relojes
+                    pdf.add_page()
                     pdf.set_font('Helvetica', 'B', 14)
-                    pdf.cell(0, 10, 'Analisis Ejecutivo de Consciencia', ln=True)
-                    pdf.ln(2)
-                    pdf.set_font('Helvetica', '', 10)
-                    texto_pdf = texto_informe.encode('latin-1', 'replace').decode('latin-1')
-                    pdf.multi_cell(0, 7, texto_pdf)
+                    pdf.cell(0, 10, 'Evolucion de Madurez (Auto | Indiv | Org)', ln=True, align='C')
+                    with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tr1, \
+                         tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tr2, \
+                         tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tr3:
+                        
+                        for f, p in zip([fig_r1, fig_r2, fig_r3], [tr1.name, tr2.name, tr3.name]):
+                            f.update_layout(template="plotly", paper_bgcolor='white', font=dict(color="black"))
+                            f.write_image(p, engine="kaleido")
+                        
+                        pdf.image(tr1.name, x=10, y=30, w=60)
+                        pdf.image(tr2.name, x=75, y=30, w=60)
+                        pdf.image(tr3.name, x=140, y=30, w=60)
 
-                    # Reset charts to Dark
+                    # PÁGINA 3: Informe Limpio
+                    pdf.add_page()
+                    pdf.set_font('Helvetica', 'B', 14)
+                    pdf.cell(0, 10, 'Informe Ejecutivo Analitico', ln=True)
+                    pdf.ln(5)
+                    pdf.set_font('Helvetica', '', 10)
+                    limpio = texto_informe.replace("**", "").replace("###", "").replace("- ", "• ")
+                    limpio = limpio.encode('latin-1', 'replace').decode('latin-1')
+                    pdf.multi_cell(0, 7, limpio)
+
+                    # Reset Dashboard Charts to Dark
                     fig_radar.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)')
                     fig_dim.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)')
 
                     output = pdf.output()
                     st.download_button(label="📥 Descargar PDF Final", data=bytes(output), file_name=f"Reporte_{lider_sel}.pdf", mime="application/pdf")
-                except Exception as e:
-                    st.error(f"Error PDF: {e}")
+                except Exception as e: st.error(f"Error PDF: {e}")
