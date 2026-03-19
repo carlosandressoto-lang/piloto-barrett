@@ -168,6 +168,7 @@ if df is not None:
         prompt_maestro = f"""
         Actúa como un experto consultor senior en desarrollo de liderazgo (Richard Barrett). Genera un informe estratégico 360° para {lider_sel}.
         DATOS: {d.to_json()}
+        REGLA DE ORO: PROHIBIDO INCLUIR INTRODUCCIONES, SALUDOS, PREÁMBULOS O FRASES COMO "COMO EXPERTO CONSULTOR...". INICIA DIRECTAMENTE CON EL PUNTO 1.
         REGLA DE NOMENCLATURA OBLIGATORIA:
         - Nivel 7: LÍDER VISIONARIO - Propósito de vivir
         - Nivel 6: LÍDER MENTOR/SOCIO - Trabajo en la colaboración
