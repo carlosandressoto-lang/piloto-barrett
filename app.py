@@ -21,7 +21,6 @@ st.markdown("""
 try:
     api_key_segura = st.secrets["GEMINI_API_KEY"]
     genai.configure(api_key=api_key_segura)
-    # Volvemos al modelo flash-latest o 1.5 para asegurar estabilidad
     model = genai.GenerativeModel('gemini-2.5-flash')
 except Exception as e:
     st.error("Error: Configura 'GEMINI_API_KEY' en los Secrets de Streamlit.")
@@ -70,22 +69,28 @@ if df is not None:
     with c2: st.plotly_chart(dibujar_barras(v_ind, "Individual (360)", "#2ecc71"), use_container_width=True)
     with c3: st.plotly_chart(dibujar_barras(v_org, "Promedio Organizacional", "#e74c3c"), use_container_width=True)
 
-    # --- 6. RELOJES DE ARENA (CON SEMÁFORO DE TEXTO) ---
+    # --- 6. RELOJES DE ARENA (MEJORADO: CONTRASTE Y OPACIDAD) ---
     st.divider()
     st.subheader("⏳ Nivel de Desarrollo Barrett (Semáforo de Desempeño)")
 
     def obtener_etiqueta_color(v):
-        if v < 65: return "Bajo", "#ff4b4b"      # Rojo
-        if v < 75: return "Medio", "#f1c40f"    # Amarillo
-        if v < 85: return "Alto", "#2ecc71"     # Verde
-        return "Superior", "#3498db"            # Azul
+        if v < 65: return "Bajo", "#FF3131"      # Rojo brillante
+        if v < 75: return "Medio", "#FFD700"    # Amarillo Oro
+        if v < 85: return "Alto", "#39FF14"     # Verde Neón
+        return "Superior", "#00FFFF"            # Cian brillante
 
     def dibujar_reloj_semáforo(vals, titulo):
         levels = ['L7 - Visionario', 'L6 - Mentor', 'L5 - Auténtico', 'L4 - Facilitador', 'L3 - Desempeño', 'L2 - Relaciones', 'L1 - Crisis']
         anchos_hourglass = [5, 4, 3, 2.2, 3, 4, 5] 
-        colors_barrett = ["#6F42C1", "#6F42C1", "#6F42C1", "#28A745", "#FD7E14", "#FD7E14", "#FD7E14"]
         
-        # Generar etiquetas y colores de texto por cada nivel
+        # COLORES DE FONDO CON OPACIDAD (RGBA) para mejorar contraste
+        # 0.4 significa 40% de opacidad. Esto hace el fondo suave y el texto resalta.
+        colors_barrett_faded = [
+            "rgba(111, 66, 193, 0.4)", "rgba(111, 66, 193, 0.4)", "rgba(111, 66, 193, 0.4)", # Morados
+            "rgba(40, 167, 69, 0.4)",  # Verde
+            "rgba(253, 126, 20, 0.4)", "rgba(253, 126, 20, 0.4)", "rgba(253, 126, 20, 0.4)"  # Naranjas
+        ]
+        
         etiquetas = []
         colores_texto = []
         for i in [6, 5, 4, 3, 2, 1, 0]:
@@ -98,9 +103,9 @@ if df is not None:
             x=anchos_hourglass, 
             text=etiquetas, 
             textinfo="text", 
-            textfont=dict(color=colores_texto, size=15, family='Arial Black'), 
-            marker={"color": colors_barrett, "line": {"width": 2, "color": "white"}}, 
-            connector={"line": {"color": "white", "width": 1}, "fillcolor": "rgba(200, 200, 200, 0.1)"}
+            textfont=dict(color=colores_texto, size=16, family='Arial Black'), 
+            marker={"color": colors_barrett_faded, "line": {"width": 1.5, "color": "white"}}, 
+            connector={"line": {"color": "white", "width": 1}, "fillcolor": "rgba(255, 255, 255, 0.05)"}
         ))
         
         fig.update_layout(title=dict(text=titulo, x=0.5, font=dict(color='white')), height=500, margin=dict(l=150, r=20, t=50, b=50), yaxis=dict(autorange="reversed", tickfont=dict(color='white')), xaxis=dict(visible=False), plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
@@ -121,14 +126,10 @@ if df is not None:
         
         fig_radar.add_trace(go.Scatterpolar(r=v_auto, theta=cats, fill='toself', name='Auto', line_color='#3498db'))
         fig_radar.add_trace(go.Scatterpolar(r=v_ind, theta=cats, fill='toself', name='Individual', line_color='#2ecc71'))
-        # Añadimos el Organizacional en ROJO
         fig_radar.add_trace(go.Scatterpolar(r=v_org, theta=cats, fill='toself', name='Organizacional', line_color='#e74c3c'))
         
         fig_radar.update_layout(
-            polar=dict(
-                radialaxis=dict(visible=True, range=[0, 100], tickfont=dict(color='white')), 
-                angularaxis=dict(tickfont=dict(color='white'))
-            ), 
+            polar=dict(radialaxis=dict(visible=True, range=[0, 100], tickfont=dict(color='white')), angularaxis=dict(tickfont=dict(color='white'))), 
             height=500, template="plotly_dark", plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)'
         )
         st.plotly_chart(fig_radar, use_container_width=True)
