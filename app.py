@@ -13,7 +13,6 @@ st.markdown("""
     .stSelectbox div[data-baseweb="select"] { color: white !important; background-color: #1e293b; }
     .block-container { padding-top: 1rem; }
     h1 { color: #BFDBFE !important; text-align: center; }
-    /* Centrado real para los títulos de los relojes */
     .titulo-reloj { text-align: center; color: white; font-weight: bold; font-size: 1.2rem; margin-bottom: -10px; }
 </style>
 """, unsafe_allow_html=True)
@@ -24,9 +23,9 @@ try:
     genai.configure(api_key=api_key_segura)
     model = genai.GenerativeModel('gemini-2.5-flash')
 except Exception as e:
-    st.error("Error: Configura 'GEMINI_API_KEY' en los Secrets de Streamlit.")
+    st.error("Error: Configura 'GEMINI_API_KEY' en los Secrets.")
 
-# --- 3. CARGA DE DATOS (FUNCIONALIDAD RESTAURADA Y LIMPIA) ---
+# --- 3. CARGA DE DATOS ---
 @st.cache_data
 def load_data():
     try:
@@ -34,7 +33,7 @@ def load_data():
         df.columns = df.columns.str.strip()
         df['Nombre_Lider'] = df['Nombre_Lider'].astype(str).str.strip()
         
-        # ELIMINACIÓN CRÍTICA DE VALORES BASURA (0.0 y vacíos)
+        # FILTRO CRÍTICO: Eliminar basura
         df = df[df['Nombre_Lider'] != '0.0']
         df = df[df['Nombre_Lider'] != 'nan']
         df = df.dropna(subset=['Nombre_Lider'])
@@ -51,9 +50,8 @@ df = load_data()
 
 if df is not None:
     # --- 4. SELECCIÓN ---
-    st.title("🏛️ Índice del equilibrio - Dashboard LDR Barrett")
     lideres = sorted(df['Nombre_Lider'].unique())
-    lider_sel = st.selectbox("Seleccione el líder para el análisis detallado:", lideres)
+    lider_sel = st.selectbox("Seleccione el líder para el análisis 360°:", lideres)
     d = df[df['Nombre_Lider'] == lider_sel].iloc[0]
 
     gerencia_prom = (d.INDIV_L1 + d.INDIV_L2 + d.INDIV_L3) / 3
@@ -66,7 +64,7 @@ if df is not None:
         if v < 85: return "Alto", "#2ecc71"
         return "Superior", "#3498db"
 
-    # --- 5. BARRAS ORIGINALES (%) ---
+    # --- 5. BARRAS (%) ---
     st.divider()
     st.subheader("Distribución de Energía por Niveles de Conciencia (%)")
     c1, c2, c3 = st.columns(3)
@@ -79,10 +77,10 @@ if df is not None:
         return fig
 
     with c1: st.plotly_chart(dibujar_barras([d.AUTO_L1, d.AUTO_L2, d.AUTO_L3, d.AUTO_L4, d.AUTO_L5, d.AUTO_L6, d.AUTO_L7], "Autovaloración", "#3498db"), use_container_width=True)
-    with c2: st.plotly_chart(dibujar_barras([d.INDIV_L1, d.INDIV_L2, d.INDIV_L3, d.INDIV_L4, d.INDIV_L5, d.INDIV_L6, d.INDIV_L7], "Individual (360)", "#2ecc71"), use_container_width=True)
-    with c3: st.plotly_chart(dibujar_barras([d.ORG_L1, d.ORG_L2, d.ORG_L3, d.ORG_L4, d.ORG_L5, d.ORG_L6, d.ORG_L7], "Promedio Organizacional", "#e74c3c"), use_container_width=True)
+    with c2: st.plotly_chart(dibujar_barras([d.INDIV_L1, d.INDIV_L2, d.INDIV_L3, d.INDIV_L4, d.INDIV_L5, d.INDIV_L6, d.INDIV_L7], "Individual", "#2ecc71"), use_container_width=True)
+    with c3: st.plotly_chart(dibujar_barras([d.ORG_L1, d.ORG_L2, d.ORG_L3, d.ORG_L4, d.ORG_L5, d.ORG_L6, d.ORG_L7], "Cultura", "#e74c3c"), use_container_width=True)
 
-    # --- 6. RELOJES DE ARENA (ALINEACIÓN POR DISEÑO UNIFICADO) ---
+    # --- 6. RELOJES (ALINEADOS) ---
     st.divider()
     st.subheader("⏳ Evolución del Liderazgo (Escala de Madurez)")
     
@@ -90,37 +88,22 @@ if df is not None:
         niveles = ["L7 - Visionario", "L6 - Mentor", "L5 - Auténtico", "L4 - Facilitador", "L3 - Desempeño", "L2 - Relaciones", "L1 - Crisis"]
         anchos = [6, 5, 4, 3.2, 4, 5, 6] 
         colors_faded = ["rgba(111, 66, 193, 0.4)"]*3 + ["rgba(40, 167, 69, 0.4)"] + ["rgba(253, 126, 20, 0.4)"]*3
-        
-        # Invertir para que L7 esté arriba
         vals_rev = [vals[6], vals[5], vals[4], vals[3], vals[2], vals[1], vals[0]]
         etiquetas = [obtener_etiqueta_color(v)[0] for v in vals_rev]
         colores_t = [obtener_etiqueta_color(v)[1] for v in vals_rev]
-
-        fig = go.Figure(go.Funnel(
-            y=niveles, x=anchos, text=etiquetas, textinfo="text",
-            textfont=dict(color=colores_t, size=14, family='Arial Black'),
-            marker={"color": colors_faded, "line": {"width": 2, "color": "white"}},
-            connector={"visible": False}
-        ))
-        
-        fig.update_layout(
-            height=450, margin=dict(l=150 if con_leyenda else 20, r=20, t=20, b=20),
-            yaxis=dict(visible=con_leyenda, autorange="reversed", tickfont=dict(color="#94a3b8", size=12, family="Arial Black")),
-            xaxis=dict(visible=False), plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)',
-            showlegend=False
-        )
+        fig = go.Figure(go.Funnel(y=niveles, x=anchos, text=etiquetas, textinfo="text", textfont=dict(color=colores_t, size=14, family='Arial Black'), marker={"color": colors_faded, "line": {"width": 2, "color": "white"}}, connector={"visible": False}))
+        fig.update_layout(height=450, margin=dict(l=150 if con_leyenda else 20, r=20, t=20, b=20), yaxis=dict(visible=con_leyenda, autorange="reversed", tickfont=dict(color="#94a3b8", size=12, family="Arial Black")), xaxis=dict(visible=False), plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
         return fig
 
-    # Distribución de columnas para los títulos y los relojes
     t1, t2, t3 = st.columns([1.2, 1, 1])
     with t1: st.markdown('<div class="titulo-reloj">Auto</div>', unsafe_allow_html=True)
     with t2: st.markdown('<div class="titulo-reloj">Individual</div>', unsafe_allow_html=True)
     with t3: st.markdown('<div class="titulo-reloj">Cultura</div>', unsafe_allow_html=True)
 
     r1, r2, r3 = st.columns([1.2, 1, 1])
-    with r1: st.plotly_chart(dibujar_reloj_barrett([d.AUTO_L1, d.AUTO_L2, d.AUTO_L3, d.AUTO_L4, d.AUTO_L5, d.AUTO_L6, d.AUTO_L7], "Auto", con_leyenda=True), use_container_width=True)
-    with r2: st.plotly_chart(dibujar_reloj_barrett([d.INDIV_L1, d.INDIV_L2, d.INDIV_L3, d.INDIV_L4, d.INDIV_L5, d.INDIV_L6, d.INDIV_L7], "Individual", con_leyenda=False), use_container_width=True)
-    with r3: st.plotly_chart(dibujar_reloj_barrett([d.ORG_L1, d.ORG_L2, d.ORG_L3, d.ORG_L4, d.ORG_L5, d.ORG_L6, d.ORG_L7], "Cultura", con_leyenda=False), use_container_width=True)
+    with r1: st.plotly_chart(dibujar_reloj_barrett([d.AUTO_L1, d.AUTO_L2, d.AUTO_L3, d.AUTO_L4, d.AUTO_L5, d.AUTO_L6, d.AUTO_L7], "Auto", True), use_container_width=True)
+    with r2: st.plotly_chart(dibujar_reloj_barrett([d.INDIV_L1, d.INDIV_L2, d.INDIV_L3, d.INDIV_L4, d.INDIV_L5, d.INDIV_L6, d.INDIV_L7], "Indiv", False), use_container_width=True)
+    with r3: st.plotly_chart(dibujar_reloj_barrett([d.ORG_L1, d.ORG_L2, d.ORG_L3, d.ORG_L4, d.ORG_L5, d.ORG_L6, d.ORG_L7], "Cult", False), use_container_width=True)
 
     # --- 7. RADAR Y DIMENSIONES ---
     st.divider()
@@ -143,22 +126,35 @@ if df is not None:
         fig_dim.update_layout(xaxis_range=[0, 105], height=400, template="plotly_dark", yaxis=dict(autorange="reversed"))
         st.plotly_chart(fig_dim, use_container_width=True)
 
-    # --- 8. INFORME IA ---
+    # --- 8. INFORME IA RESTAURADO ---
     st.divider()
-    if st.button("✨ GENERAR INFORME EJECUTIVO"):
+    if st.button("🚀 GENERAR ANÁLISIS ESTRATÉGICO 360°"):
         prompt_maestro = f"""
-        Actúa como un experto consultor senior en desarrollo de liderazgo (Modelo Barrett). Genera un informe estratégico de alto impacto para el líder {lider_sel}.
-        DATOS: {d.to_json()}
+        Actúa como un experto consultor senior en desarrollo de liderazgo (Modelo Barrett). Genera un informe estratégico 360° de {lider_sel}.
+
+        DATOS FUENTE (Usa exclusivamente estos):
+        {d.to_json()}
         - Dimensiones: Gerencia L1-L3: {round(gerencia_prom,1)}%, Transición L4: {round(transicion_prom,1)}%, Liderazgo L5-L7: {round(liderazgo_prom,1)}%.
-        REGLAS: Inicia directamente sin preámbulos. Filosofía apreciativa. Ponderado Individual es la competencia real.
-        ESTRUCTURA: 1. Descripción niveles, 2. Sintonía de consciencia (Auto vs Indiv), 3. Alineación cultura, 4. Perfil y recomendaciones.
+
+        REGLAS DE ORO:
+        - INICIA DIRECTAMENTE CON EL ANÁLISIS. PROHIBIDO: preámbulos, fechas, nombres de consultor o advertencias de confidencialidad.
+        - FILOSOFÍA: 100% Apreciativa. Habla de "Oportunidades de Desarrollo" y "Potencial". Prohibido lenguaje negativo o señalar "errores".
+        - FOCO LIDERAZGO: No es evaluación de cargo ni desempeño laboral. Es evolución de consciencia. PROHIBIDO usar la palabra "competencias".
+        - DATOS: El Ponderado Individual es la visión real del entorno. Auto y Org son solo para comparar sintonía y alineación.
+
+        ESTRUCTURA DEL INFORME:
+        1. ANÁLISIS DE EVOLUCIÓN POR NIVELES: Realiza un desglose de los 7 niveles (L1-L7). Para cada nivel, describe qué significa el puntaje del 'Ponderado Individual', identificando talentos de consciencia y rutas para elevar el impacto. (No repitas esta info en otros puntos).
+        2. SINTONÍA DE CONSCIENCIA: Evalúa la alineación entre la autopercepción del líder frente a la percepción del entorno. Destaca puntos de acuerdo y áreas de descubrimiento personal.
+        3. INTEGRACIÓN CON EL PROPÓSITO ORGANIZACIONAL: Cómo la consciencia del líder impulsa o se sintoniza con la cultura actual de Confa.
+        4. EQUILIBRIO DE LIDERAZGO Y RUTA DE TRANSFORMACIÓN: Análisis matemático del equilibrio entre Gerencia, Transición y Liderazgo. Define la impronta del líder y entrega 3 rutas estratégicas para armonizar los 7 niveles.
+
         RÚBRICA: 0-65 Bajo, 66-75 Medio, 76-85 Alto, 85-100 Superior.
         NOMENCLATURA: L1 Líder de Crisis/Viabilidad, L2 Líder de Relaciones, L3 Líder de Desempeño, L4 Líder Facilitador, L5 Líder Auténtico, L6 Líder Mentor/Socio, L7 Líder Visionario.
         """
         try:
-            with st.spinner('Analizando datos...'):
+            with st.spinner('Procesando análisis 360°...'):
                 response = model.generate_content(prompt_maestro)
-                st.markdown(f"## Análisis Estratégico de Liderazgo Barrett: {lider_sel}")
+                st.markdown(f"## Análisis Estratégico de Liderazgo 360°: {lider_sel}")
                 st.markdown("---")
                 st.write(response.text)
         except Exception as e:
