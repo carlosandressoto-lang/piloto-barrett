@@ -69,8 +69,9 @@ def load_data():
 df = load_data()
 
 if df is not None:
+    # MEJORA: Búsqueda integrada en el selector (index=0 por defecto)
     lideres = sorted(df['Nombre_Lider'].unique())
-    lider_sel = st.selectbox("Seleccione el líder para el análisis detallado:", lideres)
+    lider_sel = st.selectbox("Seleccione el líder para el análisis detallado:", lideres, index=0)
     
     if "informe_cache" not in st.session_state:
         st.session_state.informe_cache = {}
@@ -110,15 +111,25 @@ if df is not None:
     with c2: st.plotly_chart(fig_b2, key="b2")
     with c3: st.plotly_chart(fig_b3, key="b3")
 
-    # --- 6. RELOJES (ESTRUCTURA DE COLUMNAS RESTAURADA) ---
+    # --- 6. RELOJES (MEJORA: COLORES BARRETT Y CONTRASTE) ---
     st.divider()
     st.subheader("⏳ Evolución del Liderazgo (Semáforo de Madurez)")
     def dibujar_reloj_barrett(vals):
         anchos = [6, 5, 4, 3.2, 4, 5, 6] 
-        colors_barrett = ["rgba(111, 66, 193, 0.5)"]*3 + ["rgba(40, 167, 69, 0.4)"] + ["rgba(253, 126, 20, 0.5)"]*3
+        # MEJORA: Colores oficiales Barrett para L5-L7 (Azul Oscuro)
+        colors_barrett = ["#1A237E"]*3 + ["rgba(40, 167, 69, 0.4)"] + ["rgba(253, 126, 20, 0.5)"]*3
         v_rev = [vals[6], vals[5], vals[4], vals[3], vals[2], vals[1], vals[0]]
         etiquetas = [obtener_etiqueta_color(v)[0] for v in v_rev]
-        fig = go.Figure(go.Funnel(y=[1,2,3,4,5,6,7], x=anchos, text=etiquetas, textinfo="text", textfont=dict(color=[obtener_etiqueta_color(v)[1] for v in v_rev], size=14, family='Arial Black'), marker={"color": colors_barrett, "line": {"width": 2, "color": "white"}}, connector={"visible": False}))
+        
+        # Lógica de color de fuente para legibilidad: Blanco sobre Azul, Color de etiqueta sobre el resto
+        col_fuente = []
+        for i, v in enumerate(v_rev):
+            if i < 3: # Niveles L7, L6, L5 (invertidos en la lista)
+                col_fuente.append("#FFFFFF") 
+            else:
+                col_fuente.append(obtener_etiqueta_color(v)[1])
+
+        fig = go.Figure(go.Funnel(y=[1,2,3,4,5,6,7], x=anchos, text=etiquetas, textinfo="text", textfont=dict(color=col_fuente, size=14, family='Arial Black'), marker={"color": colors_barrett, "line": {"width": 2, "color": "white"}}, connector={"visible": False}))
         fig.update_layout(height=400, margin=dict(l=10, r=10, t=10, b=10), yaxis=dict(visible=False), xaxis=dict(visible=False), plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
         return fig
 
@@ -127,7 +138,10 @@ if df is not None:
         st.markdown('<div class="titulo-col">Nivel Barrett</div>', unsafe_allow_html=True)
         st.markdown('<div class="leyenda-v3">' + ''.join([f'<div class="item-ley">{n}</div>' for n in ["L7 - Visionario", "L6 - Mentor", "L5 - Auténtico", "L4 - Facilitador", "L3 - Desempeño", "L2 - Relaciones", "L1 - Crisis"]]) + '</div>', unsafe_allow_html=True)
     
-    fig_r1, fig_r2, fig_r3 = dibujar_reloj_barrett(v_auto), dibujar_reloj_barrett(v_ind), dibujar_reloj_barrett(v_org)
+    fig_r1 = dibujar_reloj_barrett(v_auto)
+    fig_r2 = dibujar_reloj_barrett(v_ind)
+    fig_r3 = dibujar_reloj_barrett(v_org)
+
     with cr1: st.markdown('<div class="titulo-col">Autovaloración</div>', unsafe_allow_html=True); st.plotly_chart(fig_r1, key="r1")
     with cr2: st.markdown('<div class="titulo-col">Individual</div>', unsafe_allow_html=True); st.plotly_chart(fig_r2, key="r2")
     with cr3: st.markdown('<div class="titulo-col">Organizacional</div>', unsafe_allow_html=True); st.plotly_chart(fig_r3, key="r3")
@@ -151,22 +165,29 @@ if df is not None:
         fig_dim.update_layout(xaxis_range=[0, 105], height=400, template="plotly_dark", yaxis=dict(autorange="reversed"))
         st.plotly_chart(fig_dim, key="dim")
 
-    # --- 8. INFORME IA (MEJORADO CON RÚBRICA Y BRECHAS) ---
+    # --- 8. INFORME IA (INTOCABLE) ---
     st.divider()
     if st.button("🚀 GENERAR INFORME EJECUTIVO"):
         prompt_maestro = f"""
-        Actúa como consultor senior Barrett. Analiza a {lider_sel}. DATOS: {d.to_json()}
+        Actúa como un experto consultor senior en desarrollo de liderazgo (Richard Barrett). Genera un informe estratégico 360° para {lider_sel}.
+        DATOS: {d.to_json()}
         REGLA DE ORO: INICIA DIRECTAMENTE CON EL PUNTO 1. PROHIBIDO SALUDOS O INTRODUCCIONES.
-        NOMENCLATURA: L7: LÍDER VISIONARIO, L6: LÍDER MENTOR/SOCIO, L5: LÍDER AUTÉNTICO, L4: FACILITADOR/INNOVADOR, L3: GESTOR DE DESEMPEÑO, L2: GESTOR DE RELACIONES, L1: GESTOR DE CRISIS.
-        RÚBRICA: Bajo (<65), Medio (65-75), Alto (75-85), Superior (>85).
-        
-        ESTRUCTURA Y ANÁLISIS REQUERIDO:
-        1. DESCRIPCIÓN POR NIVELES: Orden L1-L7. Describe el nivel basándote en el 'Ponderado Individual' usando las categorías de la RÚBRICA. da una descripción apreciativa de los niveles de liderazgo y categorias según su Nivel de desarrollo de liderazgo de 'Ponderado Individual'
+        REGLA DE NOMENCLATURA OBLIGATORIA:
+        - Nivel 7: LÍDER VISIONARIO - Propósito de vivir
+        - Nivel 6: LÍDER MENTOR/SOCIO - Trabajo en la colaboración
+        - Nivel 5: LÍDER AUTÉNTICO - Autoexpresión genuina
+        - Nivel 4: FACILITADOR/INNOVADOR - Evolución de forma valiente
+        - Nivel 3: GESTOR DE DESEMPEÑO - Logrando la excelencia
+        - Nivel 2: GESTOR DE RELACIONES - Apoyo de relaciones
+        - Nivel 1: GESTOR DE CRISIS - Garantizar visibilidad
+
+        ESTRUCTURA DEL INFORME:
+        1. DESCRIPCIÓN POR NIVELES: Desglose L1 a L7 ascendente. Usa la NOMENCLATURA OBLIGATORIA y analiza el impacto según el 'Ponderado Individual'. da una descripción apreciativa de los niveles de liderazgo y categorias según su Nivel de desarrollo de liderazgo de 'Ponderado Individual'
         2. ANÁLISIS DE AUTOVALORACIÓN: Resalta brechas notorias entre Autoevaluacion y Ponderado Individual. Enfatiza los "puntos ciegos positivos" (donde el líder se califica Bajo/Medio pero el entorno(colaboradores, pares y jefe) lo califica Alto/Superior o viceversa).
         3. MATRIZ DE MADUREZ: Analiza diferencias significativas del líder (Ponderado individual) respecto al promedio organizacional(ponderado organizacional), tanto en fortalezas sobresalientes como en áreas con potencial de alineación.
-        4. PERFIL DE LIDERAZGO: Estilo predominante según promedios (Liderazgo: {round(liderazgo_prom,1)}%, Transición: {round(transicion_prom,1)}%, Gerencia: {round(gerencia_prom,1)}%) y 3 recomendaciones apreciativas (punto seguido).
-        
-        FILOSOFÍA: 100% Apreciativa. Tercera persona neutral.
+        4. PERFIL DE LIDERAZGO: Estilo (Nivel predominante y dimensión predominante según el promedio mas alto (Liderazgo: {round(liderazgo_prom,1)}%, Transición: {round(transicion_prom,1)}%, Gerencia: {round(gerencia_prom,1)}%)) y equilibrio de las 3 dimensiones, en base a ese equilibrio entrega 3 recomendaciones apreciativas (punto seguido).
+
+        FILOSOFÍA Y REDACCIÓN: 100% Apreciativa. Sin lenguaje negativo. HABLA SIEMPRE EN TERCERA PERSONA NEUTRAL. Inicia directamente.
         """
         try:
             with st.spinner('Analizando datos...'):
@@ -180,8 +201,9 @@ if df is not None:
         st.markdown(f"### 📋 Informe Ejecutivo: {lider_sel}")
         st.write(texto_informe)
 
-        if st.button("📄 GENERAR REPORTE CONSOLIDADO PDF"):
-            with st.spinner('Procesando PDF...'):
+        # --- 9. MÓDULO PDF (MEJORA: TÍTULOS Y NITIDEZ) ---
+        if st.button("📄 GENERAR REPORTE COMPLETO PDF"):
+            with st.spinner('Procesando PDF con títulos y alta definición...'):
                 try:
                     pdf = FPDF()
                     pdf.set_auto_page_break(auto=True, margin=15)
@@ -189,24 +211,41 @@ if df is not None:
                     pdf.set_font('Helvetica', 'B', 14)
                     pdf.cell(0, 10, 'REPORTE ESTRATEGICO DE LIDERAZGO (MODELO BARRETT)', ln=True, align='C')
                     pdf.set_font('Helvetica', '', 11)
-                    pdf.cell(0, 8, f'Líder: {lider_sel}', ln=True, align='C')
+                    pdf.cell(0, 8, f'Líder Evaluado: {lider_sel}', ln=True, align='C')
+                    pdf.ln(2)
 
                     with tempfile.TemporaryDirectory() as tmp_dir:
                         def save_chart(fig, name, w=600, h=300):
-                            fig.update_layout(template="plotly", paper_bgcolor='white', font=dict(color="black"), width=w, height=h)
+                            # MEJORA: Escala de resolución para mejor lectura de letras en PDF
+                            fig.update_layout(template="plotly", paper_bgcolor='white', font=dict(color="black", size=10), width=w, height=h)
                             path = os.path.join(tmp_dir, name)
-                            fig.write_image(path, engine="kaleido")
+                            fig.write_image(path, engine="kaleido", scale=2) 
                             return path
                         
+                        # MEJORA: Agregar títulos sobre cada imagen en el PDF
+                        pdf.set_font('Helvetica', 'B', 9)
+                        
+                        # Fila 1: Barras
+                        pdf.text(10, 28, "Distribucion de Energia por Niveles (Auto | Individual | Organizacional)")
                         pdf.image(save_chart(fig_b1, "b1.png"), x=10, y=30, w=60)
                         pdf.image(save_chart(fig_b2, "b2.png"), x=75, y=30, w=60)
                         pdf.image(save_chart(fig_b3, "b3.png"), x=140, y=30, w=60)
+                        
+                        # Fila 2: Radar y Dimensiones
+                        pdf.text(10, 83, "Radar de Alineacion Triple")
                         pdf.image(save_chart(fig_radar, "radar.png", 500, 400), x=10, y=85, w=95)
+                        pdf.text(110, 83, "Madurez Global por Dimensiones")
                         pdf.image(save_chart(fig_dim, "dim.png", 500, 350), x=110, y=95, w=90)
+                        
+                        # Fila 3: Relojes con títulos Barrett
+                        pdf.text(15, 163, "Evolucion: Autovaloracion")
                         pdf.image(save_chart(fig_r1, "r1.png", 400, 400), x=15, y=165, w=55)
+                        pdf.text(75, 163, "Evolucion: Individual (360)")
                         pdf.image(save_chart(fig_r2, "r2.png", 400, 400), x=75, y=165, w=55)
+                        pdf.text(135, 163, "Evolucion: Organizacional")
                         pdf.image(save_chart(fig_r3, "r3.png", 400, 400), x=135, y=165, w=55)
 
+                    # Hoja de Informe
                     pdf.add_page()
                     pdf.set_font('Helvetica', 'B', 14)
                     pdf.cell(0, 10, 'Analisis Ejecutivo de Consciencia', ln=True)
@@ -217,6 +256,10 @@ if df is not None:
                     limpio = limpio.encode('latin-1', 'replace').decode('latin-1')
                     pdf.multi_cell(0, 6, limpio)
 
+                    # Restaurar visual Dashboard a Dark para que no cambie el look del app
+                    for f in [fig_radar, fig_dim, fig_r1, fig_r2, fig_r3, fig_b1, fig_b2, fig_b3]:
+                        f.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)')
+
                     output = pdf.output()
-                    st.download_button(label="📥 Descargar PDF", data=bytes(output), file_name=f"Reporte_{lider_sel}.pdf", mime="application/pdf")
+                    st.download_button(label="📥 Descargar PDF Final Mejorado", data=bytes(output), file_name=f"Reporte_{lider_sel}.pdf", mime="application/pdf")
                 except Exception as e: st.error(f"Error PDF: {e}")
