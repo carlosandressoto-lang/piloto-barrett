@@ -72,6 +72,9 @@ if df is not None:
     lideres = sorted(df['Nombre_Lider'].unique())
     lider_sel = st.selectbox("Seleccione el líder para el análisis detallado:", lideres)
     
+    if "informe_cache" not in st.session_state:
+        st.session_state.informe_cache = {}
+        
     d = df[df['Nombre_Lider'] == lider_sel].iloc[0]
 
     gerencia_prom = (d.INDIV_L1 + d.INDIV_L2 + d.INDIV_L3) / 3
@@ -126,8 +129,8 @@ if df is not None:
                 font=dict(color=obtener_color_desarrollo(val), size=12, family='Arial Black'),
                 bgcolor="white",
                 bordercolor="rgba(255,255,255,0)",
-                borderpad=3,
-                width=ancho * 22.0
+                borderpad=4,
+                width=ancho * 25.5
             )
 
         fig.update_layout(
@@ -176,14 +179,7 @@ if df is not None:
         cats = ['L1','L2','L3','L4','L5','L6','L7']
         for val, name, color in zip([v_auto, v_ind, v_org], ['Auto', 'Individual', 'Organizacional'], ['#3498db', '#2ecc71', '#e74c3c']):
             fig_radar.add_trace(go.Scatterpolar(r=val, theta=cats, fill='toself', name=name, line_color=color))
-        # AJUSTE RADAR: Subimos leyenda (y=1.15) y aumentamos margen superior
-        fig_radar.update_layout(
-            polar=dict(radialaxis=dict(visible=True, range=[0, 100])), 
-            height=500, 
-            template="plotly_dark", 
-            margin=dict(t=80),
-            legend=dict(orientation="h", y=1.15, x=0.5, xanchor="center")
-        )
+        fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 100])), height=500, template="plotly_dark", legend=dict(orientation="h", y=1.1, x=0.5, xanchor="center"))
         st.plotly_chart(fig_radar, key="radar_v")
     with col_dim:
         st.subheader("⚖️ Índice del Equilibrio de Liderazgo")
@@ -192,10 +188,7 @@ if df is not None:
         fig_dim.update_layout(xaxis_range=[0, 105], height=400, template="plotly_dark", yaxis=dict(autorange="reversed"))
         st.plotly_chart(fig_dim, key="dim_v")
 
-    # --- 8. INFORME IA (INTOCABLE) ---
-    if "informe_cache" not in st.session_state:
-        st.session_state.informe_cache = {}
-
+    # --- 8. INFORME IA ---
     st.divider()
     if st.button("🚀 GENERAR INFORME EJECUTIVO"):
         prompt_maestro = f"""
@@ -217,10 +210,10 @@ if df is not None:
         - RÚBRICA: Bajo (<65), Medio (65-75), Alto (75-85), Superior (>85).
 
         ESTRUCTURA ESPEJO OBLIGATORIA:
-        1. DESCRIPCIÓN POR NIVELES: Lista de L1 a L7 con el nombre de contexto Barret (Ejemplo L1: Gestor de Crisis). Clasifica cada nivel basándote en el 'Ponderado Individual' usando la rúbrica (Bajo, Medio, Alto, Superior) y las definiciones Barrett anteriores para generar una descripción según el modelo barrat y el nivel de la rubrida del lider.
-        2. ANÁLISIS DE AUTOVALORACIÓN: Un párrafo. Analiza alineación percepción interna (Autoevaluacion) vs colectiva (Ponderado individual que es la evaluación de Jefe directo, Colaboradore a cargo y Pares). Resalta donde la influencia externa es mayor a la autopercepción, o aquellos puntos donde la autoevaluacion sea mayor en rubrica a lo evaluado pues son 2 cosas diferentes a trabajar segun el nivel de consiencia.
-        3. MATRIZ DE MADUREZ: Un párrafo sólido. Analiza sintonía del líder (Ponderado Individual) con el Ponderado Organizacional basándote en la Rúbrica.
-        4. PERFIL DE LIDERAZGO: Un párrafo sólido. Define el estilo predominante según el promedio más alto (Liderazgo: {round(liderazgo_prom,1)}%, Transición: {round(transicion_prom,1)}%, Gerencia: {round(gerencia_prom,1)}%) y ofrece 3 recomendaciones de expansión para llegar a un equilibrio de las 3 dimensiones (Liderazgo Transicion y Gerencia) punto seguido.
+        1. DESCRIPCIÓN POR NIVELES: Lista de L1 a L7 con el nombre de contexto Barret. Clasifica cada nivel basándote en el 'Ponderado Individual' usando la rúbrica y las definiciones anteriores. Siempre una lista de Nivel 1 a Nivel 7.
+        2. ANÁLISIS DE AUTOVALORACIÓN: Un párrafo. Analiza alineación percepción interna vs colectiva. Resalta donde la influencia externa es mayor a la autopercepción.
+        3. MATRIZ DE MADUREZ: Un párrafo sólido. Analiza sintonía del líder con el Ponderado Organizacional basándote en la Rúbrica.
+        4. PERFIL DE LIDERAZGO: Un párrafo sólido. Define el estilo predominante y ofrece 3 recomendaciones de expansión punto seguido.
         """
         try:
             with st.spinner('Consolidando informe espejo...'):
@@ -259,25 +252,28 @@ if df is not None:
                         pdf.image(save_chart(fig_b2, "b2.png"), x=75, y=42, w=60)
                         pdf.image(save_chart(fig_b3, "b3.png"), x=140, y=42, w=60)
 
+                        # AJUSTE RADAR: Subimos leyenda en PDF y aumentamos margen superior
+                        fig_radar.update_layout(template="plotly", paper_bgcolor='white', font=dict(color="black"), legend=dict(y=1.25), margin=dict(t=100))
                         pdf.text(10, 95, "2. Alineación de Consciencia y Entorno")
                         pdf.image(save_chart(fig_radar, "radar.png", 500, 400), x=10, y=98, w=95)
+                        
                         pdf.text(110, 95, "3. Índice del Equilibrio de Liderazgo")
                         pdf.image(save_chart(fig_dim, "dim.png", 500, 350), x=110, y=105, w=90)
 
+                        # AJUSTE PDF RELOJES: Títulos centrados y anchos igualados
                         pdf.text(15, 175, "4. Resultados Evaluación 360° (Niveles Barrett)")
-                        
-                        # AJUSTE PDF RELOJES: Títulos individuales y anchos igualados
                         pdf.set_font('Helvetica', 'B', 8)
-                        pdf.text(35, 182, "Autovaloración")
-                        pdf.text(88, 182, "Individual (360)")
-                        pdf.text(143, 182, "Organizacional")
                         
-                        # Generamos versión con leyenda para el PDF
-                        fig_r1_pdf = generar_fig_reloj(v_auto, incluir_leyenda=True)
-                        # w=75 para el que tiene leyenda, w=55 para los otros para que la gráfica central sea igual
-                        pdf.image(save_chart(fig_r1_pdf, "r1.png", 500, 400), x=10, y=183, w=65)
-                        pdf.image(save_chart(fig_r2, "r2.png", 400, 400), x=75, y=183, w=58)
-                        pdf.image(save_chart(fig_r3, "r3.png", 400, 400), x=133, y=183, w=58)
+                        # Coordenadas X calculadas para centrar títulos sobre los relojes
+                        pdf.text(38, 182, "Autovaloración")
+                        pdf.text(92, 182, "Individual (360)")
+                        pdf.text(147, 182, "Organizacional")
+                        
+                        fig_r1_p = generar_fig_reloj(v_auto, incluir_leyenda=True)
+                        # El primero (con leyenda) es más ancho (w=70) para no comprimir la gráfica central
+                        pdf.image(save_chart(fig_r1_p, "r1.png", 550, 400), x=10, y=183, w=68)
+                        pdf.image(save_chart(fig_r2, "r2.png", 400, 400), x=80, y=183, w=58)
+                        pdf.image(save_chart(fig_r3, "r3.png", 400, 400), x=140, y=183, w=58)
 
                     pdf.add_page()
                     pdf.set_font('Helvetica', 'B', 14)
@@ -290,5 +286,5 @@ if df is not None:
                     pdf.multi_cell(0, 6, limpio)
 
                     output = pdf.output()
-                    st.download_button(label="📥 Descargar PDF Final", data=bytes(output), file_name=f"Reporte_Liderazgo_{lider_sel}.pdf", mime="application/pdf")
+                    st.download_button(label="📥 Descargar PDF Final Mejorado", data=bytes(output), file_name=f"Reporte_Liderazgo_{lider_sel}.pdf", mime="application/pdf")
                 except Exception as e: st.error(f"Error PDF: {e}")
