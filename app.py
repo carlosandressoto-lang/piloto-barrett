@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 import google.generativeai as genai
 
 # --- 1. CONFIGURACIÓN ---
@@ -13,6 +14,7 @@ st.markdown("""
     .stSelectbox div[data-baseweb="select"] { color: white !important; background-color: #1e293b; }
     .block-container { padding-top: 1rem; }
     h1 { color: #BFDBFE !important; text-align: center; }
+    h3 { text-align: center; margin-bottom: 20px; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -66,63 +68,57 @@ if df is not None:
         labels = ['L7-Visionario', 'L6-Mentor', 'L5-Auténtico', 'L4-Facilitador', 'L3-Desempeño', 'L2-Relaciones', 'L1-Crisis']
         v_plot = [vals[6], vals[5], vals[4], vals[3], vals[2], vals[1], vals[0]]
         fig = go.Figure(go.Bar(x=v_plot, y=labels, orientation='h', marker_color=color, text=[f"{round(v,1)}%" for v in v_plot], textposition='inside'))
-        fig.update_layout(title=dict(text=titulo, x=0.5, font=dict(size=16)), xaxis_range=[0, 105], height=350, template="plotly_dark", margin=dict(l=10, r=10, t=40, b=20), yaxis=dict(autorange="reversed"))
+        fig.update_layout(title=dict(text=titulo, x=0.5), xaxis_range=[0, 105], height=350, template="plotly_dark", margin=dict(l=0, r=10, t=40, b=20), yaxis=dict(autorange="reversed"))
         return fig
 
     with c1: st.plotly_chart(dibujar_barras([d.AUTO_L1, d.AUTO_L2, d.AUTO_L3, d.AUTO_L4, d.AUTO_L5, d.AUTO_L6, d.AUTO_L7], "Autovaloración", "#3498db"), use_container_width=True)
     with c2: st.plotly_chart(dibujar_barras([d.INDIV_L1, d.INDIV_L2, d.INDIV_L3, d.INDIV_L4, d.INDIV_L5, d.INDIV_L6, d.INDIV_L7], "Individual", "#2ecc71"), use_container_width=True)
     with c3: st.plotly_chart(dibujar_barras([d.ORG_L1, d.ORG_L2, d.ORG_L3, d.ORG_L4, d.ORG_L5, d.ORG_L6, d.ORG_L7], "Cultura", "#e74c3c"), use_container_width=True)
 
-    # --- 6. RELOJES DE ARENA (SIMETRÍA Y ALINEACIÓN CORREGIDA) ---
+    # --- 6. RELOJES DE ARENA (SISTEMA INTEGRAL ALINEADO) ---
     st.divider()
     st.subheader("⏳ Evolución del Liderazgo (Escala de Madurez)")
     
-    col_vacia, col1, col2, col3, col4 = st.columns([0.2, 0.8, 1, 1, 1])
+    # Creamos un subplot de 1 fila y 3 columnas para asegurar simetría total
+    fig_evol = make_subplots(rows=1, cols=3, subplot_titles=("Auto", "Individual", "Cultura"), horizontal_spacing=0.05)
 
-    with col1:
-        niveles = ["L7 - Visionario", "L6 - Mentor", "L5 - Auténtico", "L4 - Facilitador", "L3 - Desempeño", "L2 - Relaciones", "L1 - Crisis"]
-        fig_leyenda = go.Figure()
-        fig_leyenda.add_trace(go.Scatter(
-            x=[0]*7, y=niveles, mode="text", 
-            text=niveles, textposition="middle left",
-            textfont=dict(color="#94a3b8", size=12, font='Arial Black')
-        ))
-        fig_leyenda.update_layout(
-            height=450, margin=dict(l=80, r=0, t=80, b=20),
-            xaxis=dict(visible=False, range=[-1, 1]),
-            yaxis=dict(visible=False, autorange="reversed"),
-            plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)'
-        )
-        st.plotly_chart(fig_leyenda, use_container_width=True)
+    anchos = [6, 5, 4, 3.5, 4, 5, 6]
+    niveles = ["L7 - Visionario", "L6 - Mentor", "L5 - Auténtico", "L4 - Facilitador", "L3 - Desempeño", "L2 - Relaciones", "L1 - Crisis"]
+    colors_faded = ["rgba(111, 66, 193, 0.4)"]*3 + ["rgba(40, 167, 69, 0.4)"] + ["rgba(253, 126, 20, 0.4)"]*3
 
-    def dibujar_reloj_alineado(vals, titulo):
-        anchos = [6, 5, 4, 3.5, 4, 5, 6] 
-        colors = ["rgba(111, 66, 193, 0.4)"]*3 + ["rgba(40, 167, 69, 0.4)"] + ["rgba(253, 126, 20, 0.4)"]*3
-        
-        vals_rev = [vals[6], vals[5], vals[4], vals[3], vals[2], vals[1], vals[0]]
-        etiquetas = [obtener_etiqueta_color(v)[0] for v in vals_rev]
-        col_txt = [obtener_etiqueta_color(v)[1] for v in vals_rev]
-        
-        fig = go.Figure(go.Funnel(
-            y=[7,6,5,4,3,2,1], x=anchos, text=etiquetas, textinfo="text",
-            textfont=dict(color=col_txt, size=14, family='Arial Black'),
-            marker={"color": colors, "line": {"width": 2, "color": "white"}},
-            connector={"visible": False}
-        ))
-        
-        fig.update_layout(
-            title=dict(text=titulo, x=0.5, y=0.9, font=dict(size=18, color="white")),
-            height=450, 
-            margin=dict(l=10, r=10, t=80, b=20), 
-            yaxis=dict(visible=False, autorange="reversed"),
-            xaxis=dict(visible=False), 
-            plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)'
-        )
-        return fig
+    data_sets = [
+        [d.AUTO_L7, d.AUTO_L6, d.AUTO_L5, d.AUTO_L4, d.AUTO_L3, d.AUTO_L2, d.AUTO_L1],
+        [d.INDIV_L7, d.INDIV_L6, d.INDIV_L5, d.INDIV_L4, d.INDIV_L3, d.INDIV_L2, d.INDIV_L1],
+        [d.ORG_L7, d.ORG_L6, d.ORG_L5, d.ORG_L4, d.ORG_L3, d.ORG_L2, d.ORG_L1]
+    ]
 
-    with col2: st.plotly_chart(dibujar_reloj_alineado([d.AUTO_L1, d.AUTO_L2, d.AUTO_L3, d.AUTO_L4, d.AUTO_L5, d.AUTO_L6, d.AUTO_L7], "Auto"), use_container_width=True)
-    with col3: st.plotly_chart(dibujar_reloj_alineado([d.INDIV_L1, d.INDIV_L2, d.INDIV_L3, d.INDIV_L4, d.INDIV_L5, d.INDIV_L6, d.INDIV_L7], "Individual"), use_container_width=True)
-    with col4: st.plotly_chart(dibujar_reloj_alineado([d.ORG_L1, d.ORG_L2, d.ORG_L3, d.ORG_L4, d.ORG_L5, d.ORG_L6, d.ORG_L7], "Cultura"), use_container_width=True)
+    for i, data in enumerate(data_sets):
+        etiquetas = [obtener_etiqueta_color(v)[0] for v in data]
+        col_txt = [obtener_etiqueta_color(v)[1] for v in data]
+        
+        fig_evol.add_trace(go.Funnel(
+            name=str(i),
+            y=niveles if i == 0 else [" "]*7, # Solo mostramos nombres en el primero
+            x=anchos,
+            text=etiquetas,
+            textinfo="text",
+            textfont=dict(color=col_txt, size=13, family='Arial Black'),
+            marker={"color": colors_faded, "line": {"width": 2, "color": "white"}},
+            connector={"visible": False},
+            showlegend=False
+        ), row=1, col=i+1)
+
+    fig_evol.update_layout(
+        height=500, template="plotly_dark",
+        margin=dict(l=150, r=20, t=80, b=20),
+        plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)',
+        yaxis=dict(tickfont=dict(size=12, color="#94a3b8", family="Arial Black")),
+        yaxis2=dict(visible=False), yaxis3=dict(visible=False)
+    )
+    # Forzamos que los ejes X no se vean
+    fig_evol.update_xaxes(visible=False)
+    
+    st.plotly_chart(fig_evol, use_container_width=True)
 
     # --- 7. RADAR Y DIMENSIONES ---
     st.divider()
@@ -149,25 +145,13 @@ if df is not None:
     st.divider()
     if st.button("🚀 GENERAR ANÁLISIS ESTRATÉGICO 360°"):
         prompt_maestro = f"""
-        Actúa como un experto consultor senior en desarrollo de liderazgo (Modelo Barrett). Genera un informe estratégico de alto impacto para el líder {lider_sel}.
-
-        DATOS FUENTE (Únicos datos reales):
-        {d.to_json()}
-        - Dimensiones Agrupadas: Gerencia: {round(gerencia_prom,1)}%, Transición: {round(transicion_prom,1)}%, Liderazgo: {round(liderazgo_prom,1)}%.
-
-        REGLAS DE ORO:
-        - INICIA DIRECTAMENTE CON EL ANÁLISIS. PROHIBIDO: preámbulos, fechas, nombres de consultor o advertencias de confidencialidad.
-        - FILOSOFÍA: 100% Apreciativa. Habla de "Oportunidades de Desarrollo" y "Potencial". Prohibido lenguaje negativo o señalar "errores".
-        - FOCO LIDERAZGO: No es evaluación de cargo ni desempeño laboral. Es evolución de consciencia 360°.
-
-        ESTRUCTURA DEL INFORME:
-        1. ANÁLISIS DE EVOLUCIÓN POR NIVELES: Describe el impacto observado (Ponderado Individual) para cada nivel (L1-L7). Identifica talentos y rutas para elevar la consciencia.
-        2. SINTONÍA DE CONSCIENCIA: Evalúa la alineación entre la autopercepción del líder y la percepción colectiva de su entorno.
-        3. INTEGRACIÓN CON EL PROPÓSITO ORGANIZACIONAL: Cómo la consciencia del líder impulsa o se sintoniza con la cultura de Confa.
-        4. EQUILIBRIO DE LIDERAZGO Y RUTA DE TRANSFORMACIÓN: Análisis del equilibrio entre Gerencia, Transición y Liderazgo. Define la impronta y entrega 3 recomendaciones tácticas de alto impacto.
-
+        Actúa como un experto consultor senior en desarrollo de liderazgo especializado en el Modelo de Barrett. 
+        Analiza a {lider_sel} bajo una óptica de Evaluación 360° de Liderazgo integral.
+        DATOS: {d.to_json()}
+        DIMENSIONES: Gerencia {round(gerencia_prom,1)}%, Transición {round(transicion_prom,1)}%, Liderazgo {round(liderazgo_prom,1)}%.
+        REGLAS: Inicia directamente, tono apreciativo, no hables de desempeño laboral sino de consciencia.
+        ESTRUCTURA: Evolución niveles, Sintonía consciencia, Integración cultural, Ruta de transformación.
         RÚBRICA: 0-65 Bajo, 66-75 Medio, 76-85 Alto, 85-100 Superior.
-        NOMENCLATURA: L1 Líder de Crisis/Viabilidad, L2 Líder de Relaciones, L3 Líder de Desempeño, L4 Líder Facilitador, L5 Líder Auténtico, L6 Líder Mentor/Socio, L7 Líder Visionario.
         """
         try:
             with st.spinner('Analizando consciencia...'):
