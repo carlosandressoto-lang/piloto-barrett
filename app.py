@@ -71,9 +71,12 @@ if df is not None:
     # --- 4. SELECCIÓN ---
     lideres = sorted(df['Nombre_Lider'].unique())
     lider_sel = st.selectbox("Seleccione el líder para el análisis detallado:", lideres)
+    
+    if "informe_cache" not in st.session_state:
+        st.session_state.informe_cache = {}
+        
     d = df[df['Nombre_Lider'] == lider_sel].iloc[0]
 
-    # Cálculos de dimensiones
     gerencia_prom = (d.INDIV_L1 + d.INDIV_L2 + d.INDIV_L3) / 3
     transicion_prom = d.INDIV_L4
     liderazgo_prom = (d.INDIV_L5 + d.INDIV_L6 + d.INDIV_L7) / 3
@@ -107,7 +110,7 @@ if df is not None:
     st.subheader("⏳ Evolución del Liderazgo (Semáforo de Madurez)")
     def dibujar_reloj_barrett(vals):
         anchos = [6, 5, 4, 3.2, 4, 5, 6] 
-        colors_barrett = ["rgba(111, 66, 193, 0.5)"]*3 + ["rgba(40, 167, 69, 0.4)"] + ["rgba(253, 126, 20, 0.5)"]*3
+        colors_barrett = ["rgba(111, 66, 193, 0.5)"]*3 + ["rgba(40, 167, 69, 0.5)"] + ["rgba(253, 126, 20, 0.5)"]*3
         v_rev = [vals[6], vals[5], vals[4], vals[3], vals[2], vals[1], vals[0]]
         etiquetas = [obtener_etiqueta_color(v)[0] for v in v_rev]
         col_txt = [obtener_etiqueta_color(v)[1] for v in v_rev]
@@ -120,13 +123,10 @@ if df is not None:
         st.markdown('<div class="titulo-col">Nivel Barrett</div>', unsafe_allow_html=True)
         st.markdown('<div class="leyenda-v3">' + ''.join([f'<div class="item-ley">{n}</div>' for n in ["L7 - Visionario", "L6 - Mentor", "L5 - Auténtico", "L4 - Facilitador", "L3 - Desempeño", "L2 - Relaciones", "L1 - Crisis"]]) + '</div>', unsafe_allow_html=True)
     with cr1:
-        st.markdown('<div class="titulo-col">Autovaloración</div>', unsafe_allow_html=True)
         st.plotly_chart(dibujar_reloj_barrett(v_auto), key="r1")
     with cr2:
-        st.markdown('<div class="titulo-col">Individual</div>', unsafe_allow_html=True)
         st.plotly_chart(dibujar_reloj_barrett(v_ind), key="r2")
     with cr3:
-        st.markdown('<div class="titulo-col">Organizacional</div>', unsafe_allow_html=True)
         st.plotly_chart(dibujar_reloj_barrett(v_org), key="r3")
 
     # --- 7. RADAR Y DIMENSIONES ---
@@ -150,7 +150,6 @@ if df is not None:
 
     # --- 8. INFORME IA ---
     st.divider()
-    if "informe_cache" not in st.session_state: st.session_state.informe_cache = {}
     if st.button("🚀 GENERAR INFORME EJECUTIVO"):
         prompt_maestro = f"""
         Actúa como un experto consultor senior en desarrollo de liderazgo (Richard Barrett). Genera un informe estratégico 360° para {lider_sel}.
@@ -182,38 +181,34 @@ if df is not None:
         st.markdown(f"### 📋 Informe Ejecutivo: {lider_sel}")
         st.write(texto_informe)
 
-        # --- 9. MÓDULO PDF AFINADO (CON IMÁGENES) ---
+        # --- 9. MÓDULO PDF CON IMÁGENES ---
         st.divider()
         if st.button("📄 GENERAR REPORTE COMPLETO PDF"):
             with st.spinner('Procesando imágenes y generando PDF...'):
                 try:
                     pdf = FPDF()
                     pdf.set_auto_page_break(auto=True, margin=15)
-                    
-                    # PÁGINA 1: Encabezado y Radar
                     pdf.add_page()
                     pdf.set_font('Helvetica', 'B', 16)
-                    pdf.cell(0, 10, 'REPORTE ESTRATEGICO DE LIDERAZGO (MODELO BARRETT)', ln=True, align='C')
+                    pdf.cell(0, 10, 'REPORTE ESTRATEGICO DE LIDERAZGO (BARRETT)', ln=True, align='C')
                     pdf.set_font('Helvetica', '', 12)
                     pdf.cell(0, 10, f'Líder Evaluado: {lider_sel}', ln=True, align='C')
                     pdf.ln(5)
 
                     # Exportar Radar
                     with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmp_radar:
-                        # Forzamos fondo blanco para el PDF
                         fig_radar.update_layout(template="plotly", paper_bgcolor='white', plot_bgcolor='white', font=dict(color="black"))
-                        fig_radar.write_image(tmp_radar.name, engine="kaleido")
+                        fig_radar.write_image(tmp_radar.name, engine="kaleido", format="png")
                         pdf.image(tmp_radar.name, x=10, y=35, w=110)
-                        os.unlink(tmp_radar.name)
+                    if os.path.exists(tmp_radar.name): os.remove(tmp_radar.name)
 
-                    # Exportar Madurez Global
+                    # Exportar Madurez
                     with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmp_dim:
                         fig_dim.update_layout(template="plotly", paper_bgcolor='white', plot_bgcolor='white', font=dict(color="black"))
-                        fig_dim.write_image(tmp_dim.name, engine="kaleido")
+                        fig_dim.write_image(tmp_dim.name, engine="kaleido", format="png")
                         pdf.image(tmp_dim.name, x=125, y=50, w=75)
-                        os.unlink(tmp_dim.name)
+                    if os.path.exists(tmp_dim.name): os.remove(tmp_dim.name)
 
-                    # PÁGINA 2: Informe de IA
                     pdf.set_y(140)
                     pdf.set_font('Helvetica', 'B', 14)
                     pdf.cell(0, 10, 'Analisis Ejecutivo de Consciencia', ln=True)
@@ -221,18 +216,12 @@ if df is not None:
                     pdf.set_font('Helvetica', '', 10)
                     texto_pdf = texto_informe.encode('latin-1', 'replace').decode('latin-1')
                     pdf.multi_cell(0, 7, texto_pdf)
-                    
-                    # Regresar gráficos al estilo Dark para el Dashboard
+
+                    # Reset charts to Dark
                     fig_radar.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)')
                     fig_dim.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)')
 
                     output = pdf.output()
-                    st.download_button(
-                        label="📥 Descargar PDF Final",
-                        data=bytes(output),
-                        file_name=f"Reporte_Integral_{lider_sel.replace(' ', '_')}.pdf",
-                        mime="application/pdf"
-                    )
+                    st.download_button(label="📥 Descargar PDF Final", data=bytes(output), file_name=f"Reporte_{lider_sel}.pdf", mime="application/pdf")
                 except Exception as e:
                     st.error(f"Error PDF: {e}")
-                    st.info("Nota: Requiere 'kaleido' instalado para procesar los gráficos.")
