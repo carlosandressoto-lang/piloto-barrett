@@ -98,7 +98,7 @@ if df is not None:
     with c2: st.plotly_chart(dibujar_barras(v_ind, "Individual (360)", "#2ecc71"), key="b2")
     with c3: st.plotly_chart(dibujar_barras(v_org, "Promedio Organizacional", "#e74c3c"), key="b3")
 
-    # --- 6. RELOJES (COLOR Y ALINEACIÓN RESTAURADOS) ---
+    # --- 6. RELOJES ---
     st.divider()
     st.subheader("⏳ Evolución del Liderazgo (Semáforo de Madurez)")
     def dibujar_reloj_barrett(vals):
@@ -148,8 +148,12 @@ if df is not None:
         fig_dim.update_layout(xaxis_range=[0, 105], height=400, template="plotly_dark", yaxis=dict(autorange="reversed"))
         st.plotly_chart(fig_dim, key="dim")
 
-    # --- 8. INFORME IA (BLINDADO) ---
+    # --- 8. INFORME IA (RECUPERADO ÍNTEGRO) ---
     st.divider()
+    
+    # Manejo de memoria para no gastar API innecesariamente
+    if "informe_cache" not in st.session_state: st.session_state.informe_cache = {}
+    
     if st.button("🚀 GENERAR INFORME EJECUTIVO"):
         prompt_maestro = f"""
         Actúa como un experto consultor senior en desarrollo de liderazgo (Richard Barrett). Genera un informe estratégico 360° para {lider_sel}.
@@ -166,18 +170,30 @@ if df is not None:
 
         ESTRUCTURA DEL INFORME:
         1. DESCRIPCIÓN POR NIVELES: Desglose del Nivel 1 al Nivel 7 en orden estrictamente ascendente. Usa la NOMENCLATURA OBLIGATORIA y analiza el impacto según el 'Ponderado Individual'.
-        2. ANÁLISIS DE AUTOVALORACIÓN: Autoconciencia frente a la visión del entorno.
-        3. ANÁLISIS DE PONDERADO INDIVIDUAL: Percepción 360° de la maestría observada.
-        4. MATRIZ DE MADUREZ: Alineación estratégica Individual vs Organizacional.
-        5. PERFIL DE LIDERAZGO: Definición de estilo y 3 recomendaciones apreciativas (punto seguido).
+        2. ANÁLISIS DE AUTOVALORACIÓN: Autoconciencia frente a la visión del entorno (Ponderado individual).
+        3. MATRIZ DE MADUREZ: Alineación estratégica Individual (Ponderado Individual) vs Organizacional(Ponderado organizacional). No es como la organización lo ve es como esta su evaluación 360° respecto al promedio organizacional
+        4. PERFIL DE LIDERAZGO: Definición de estilo según predominancia de dimensión (Liderazgo, Transición, Gerencia) y equilibrio de las 3 dimensiones, en base a ese equilibrio entrega 3 recomendaciones apreciativas (punto seguido).
 
         FILOSOFÍA: 100% Apreciativa. Sin lenguaje negativo ni etiquetas de error. Inicia directamente sin preámbulos.
         """
         try:
             with st.spinner('Analizando datos...'):
                 response = model.generate_content(prompt_maestro)
-                st.markdown(f"### 📋 Informe Ejecutivo: {lider_sel}")
-                st.markdown("---")
-                st.write(response.text)
+                st.session_state.informe_cache[lider_sel] = response.text
         except Exception as e:
             st.error(f"Error IA: {e}")
+
+    # Mostrar informe si existe en memoria para este líder
+    if lider_sel in st.session_state.informe_cache:
+        texto_informe = st.session_state.informe_cache[lider_sel]
+        st.markdown(f"### 📋 Informe Ejecutivo: {lider_sel}")
+        st.markdown("---")
+        st.write(texto_informe)
+        
+        # Botón de descarga
+        st.download_button(
+            label="📥 DESCARGAR INFORME (TXT)",
+            data=texto_informe,
+            file_name=f"Informe_Barrett_{lider_sel}.txt",
+            mime="text/plain"
+        )
