@@ -104,7 +104,7 @@ if df is not None:
     with c2: st.plotly_chart(dibujar_barras([d.INDIV_L1, d.INDIV_L2, d.INDIV_L3, d.INDIV_L4, d.INDIV_L5, d.INDIV_L6, d.INDIV_L7], "Individual", "#2ecc71"), use_container_width=True)
     with c3: st.plotly_chart(dibujar_barras([d.ORG_L1, d.ORG_L2, d.ORG_L3, d.ORG_L4, d.ORG_L5, d.ORG_L6, d.ORG_L7], "Cultura", "#e74c3c"), use_container_width=True)
 
-    # --- 6. RELOJES (SIMETRÍA TOTAL 4 COLUMNAS) ---
+    # --- 6. RELOJES (ESTRUCTURA DE 4 COLUMNAS APROBADA) ---
     st.divider()
     st.subheader("⏳ Evolución del Liderazgo (Escala de Madurez)")
     
@@ -158,31 +158,32 @@ if df is not None:
         fig_dim.update_layout(xaxis_range=[0, 105], height=400, template="plotly_dark", yaxis=dict(autorange="reversed"))
         st.plotly_chart(fig_dim, use_container_width=True)
 
-    # --- 8. INFORME IA CONSOLIDADO ---
+    # --- 8. INFORME IA CONSOLIDADO Y CORREGIDO ---
     st.divider()
     if st.button("🚀 GENERAR ANÁLISIS ESTRATÉGICO 360°"):
         prompt_maestro = f"""
         Actúa como un experto consultor senior en desarrollo de liderazgo (Modelo Barrett). Genera un informe estratégico 360° de {lider_sel}.
         DATOS FUENTE: {d.to_json()}
-        - Dimensiones: Gerencia L1-L3: {round(gerencia_prom,1)}%, Transición L4: {round(transicion_prom,1)}%, Liderazgo L5-L7: {round(liderazgo_prom,1)}%.
         
+        REGLAS DE NOMENCLATURA OBLIGATORIA:
+        - L1: GESTOR DE CRISIS (Driver: Garantizar viabilidad, estabilidad financiera, consciencia de gastos, ganancia).
+        - L2: LÍDER DE RELACIONES (Driver: Comunicación, respeto, relaciones con clientes y colaboradores).
+        - L3: LÍDER DE DESEMPEÑO (Driver: Resultados, eficiencia, productividad, mejores prácticas).
+        - L4: LÍDER FACILITADOR (Driver: Empoderamiento, adaptabilidad, innovación, aprendizaje).
+        - L5: LÍDER AUTÉNTICO (Driver: Valores compartidos, integridad, confianza, visión).
+        - L6: LÍDER MENTOR (Driver: Colaboración, desarrollo de talento, alianzas estratégicas).
+        - L7: LÍDER VISIONARIO (Driver: Servicio social, futuro, legado, ética).
+
         REGLAS DE ORO DE COMUNICACIÓN:
-        1. INICIA DIRECTAMENTE CON EL ANÁLISIS. Sin preámbulos, fechas, saludos ni etiquetas de consultoría.
-        2. TÍTULOS LIMPIOS Y EXACTOS (Sin paréntesis ni texto adicional):
+        1. INICIA DIRECTAMENTE CON EL ANÁLISIS. Sin preámbulos, fechas ni etiquetas de consultoría.
+        2. TÍTULOS LIMPIOS Y EXACTOS:
            - 1. ANÁLISIS DE EVOLUCIÓN POR NIVELES
            - 2. SINTONÍA DE CONSCIENCIA
            - 3. RESULTADO ORGANIZACIONAL
            - 4. RUTA DE TRANSFORMACIÓN
-        3. CONCEPTUALIZACIÓN CORRECTA: El 'Ponderado Individual' es la visión colectiva del entorno (pares, jefe y colaboradores).
-        4. FILOSOFÍA 100% APRECIATIVA: No señales errores. Habla de "talento" y "potencial de expansión".
-        5. PROHIBIDO USAR TÍTULOS INTERNOS como "Oportunidad de Desarrollo:". Integra las sugerencias de crecimiento en el flujo del párrafo usando puntos seguidos.
-        6. FOCO LIDERAZGO: No es desempeño laboral. Es evolución de consciencia Barrett.
-        
-        ESTRUCTURA:
-        1. ANÁLISIS DE EVOLUCIÓN POR NIVELES: Desglose L1-L7 basado en 'Individual'. Describe talento y ruta de expansión (punto seguido).
-        2. SINTONÍA DE CONSCIENCIA: Alineación Autopercepción vs Individual.
-        3. RESULTADO ORGANIZACIONAL: Sintonía del líder con el promedio organizacional.
-        4. RUTA DE TRANSFORMACIÓN: Análisis del equilibrio (Gerencia, Transición, Liderazgo) y 3 rutas estratégicas integrales.
+        3. CONCEPTUALIZACIÓN: El 'Ponderado Individual' es la visión colectiva del entorno profesional.
+        4. FILOSOFÍA 100% APRECIATIVA: Prohibido usar "Oportunidad de Desarrollo:". Integra sugerencias usando puntos seguidos.
+        5. PROHIBIDO: Usar nombres genéricos como "Supervivencia", "Autoestima" o "Nivel 1". Usa ÚNICAMENTE la nomenclatura obligatoria de arriba.
         """
         try:
             with st.spinner('Analizando consciencia...'):
