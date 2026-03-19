@@ -20,7 +20,6 @@ st.markdown("""
     h1 { color: #BFDBFE !important; text-align: center; }
     .titulo-col { text-align: center; font-weight: bold; color: #BFDBFE; margin-bottom: 10px; font-size: 1.1rem; }
     
-    /* Restauración de la leyenda visual para la App */
     .leyenda-v3 {
         display: flex;
         flex-direction: column;
@@ -39,6 +38,13 @@ st.markdown("""
         font-weight: bold;
         color: #94a3b8;
     }
+    .metric-box {
+        background-color: #1e293b;
+        padding: 10px;
+        border-radius: 10px;
+        text-align: center;
+        border: 1px solid #334155;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -50,17 +56,20 @@ try:
 except Exception as e:
     st.error("Error: Configura 'GEMINI_API_KEY' en los Secrets.")
 
-# --- 3. CARGA DE DATOS ---
+# --- 3. CARGA DE DATOS (CORREGIDO ENCODING) ---
 @st.cache_data
 def load_data():
     try:
-        df = pd.read_csv('Resultados_Gerentes.csv', sep=';', decimal=',')
+        # Añadido encoding='latin-1' para soportar Ñ y tildes del CSV de Excel
+        df = pd.read_csv('Resultados_Gerentes.csv', sep=';', decimal=',', encoding='latin-1')
         df.columns = df.columns.str.strip()
         df['Nombre_Lider'] = df['Nombre_Lider'].astype(str).str.strip()
         df = df[~df['Nombre_Lider'].isin(['0.0', 'nan', ''])]
         df = df.dropna(subset=['Nombre_Lider'])
-        cols_check = [c for c in df.columns if 'L' in c and any(x in c for x in ['AUTO', 'INDIV', 'ORG'])]
-        for col in cols_check:
+        
+        # Columnas de resultados + Columnas de evaluadores
+        cols_to_fix = [c for c in df.columns if ('L' in c and any(x in c for x in ['AUTO', 'INDIV', 'ORG'])) or 'CANT_' in c]
+        for col in cols_to_fix:
             df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
         return df
     except Exception as e:
@@ -74,6 +83,14 @@ if df is not None:
     lider_sel = st.selectbox("Seleccione el líder para el análisis detallado:", lideres)
     
     d = df[df['Nombre_Lider'] == lider_sel].iloc[0]
+
+    # Mostrar métricas de evaluadores en el Dash
+    st.markdown(f"""
+    <div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 20px;">
+        <div class="metric-box"><b>Total Evaluadores:</b><br><span style="font-size: 1.5rem; color: #BFDBFE;">{int(d.CANT_EVAL)}</span></div>
+        <div class="metric-box"><b>Auto:</b> {int(d.CANT_AUTO)} | <b>Jefe:</b> {int(d.CANT_JEFE)} | <b>Pares:</b> {int(d.CANT_PAR)} | <b>Colab:</b> {int(d.CANT_COL)}</div>
+    </div>
+    """, unsafe_allow_html=True)
 
     v_auto = [d.AUTO_L1, d.AUTO_L2, d.AUTO_L3, d.AUTO_L4, d.AUTO_L5, d.AUTO_L6, d.AUTO_L7]
     v_ind = [d.INDIV_L1, d.INDIV_L2, d.INDIV_L3, d.INDIV_L4, d.INDIV_L5, d.INDIV_L6, d.INDIV_L7]
@@ -95,7 +112,6 @@ if df is not None:
         if v < 85: return "Alto"
         return "Superior"
 
-    # --- 4. FUNCIONES DE DIBUJO ---
     def generar_fig_barras(vals, titulo, color):
         labels = ['L7 - Visionario', 'L6 - Mentor', 'L5 - Auténtico', 'L4 - Facilitador', 'L3 - Desempeño', 'L2 - Relaciones', 'L1 - Crisis']
         v_plot = [vals[6], vals[5], vals[4], vals[3], vals[2], vals[1], vals[0]]
@@ -131,17 +147,10 @@ if df is not None:
                 width=ancho * 22.0
             )
 
-        # COMPENSACIÓN DE MARGEN PARA SIMETRÍA (PDF)
         margen_l = 100 if (incluir_leyenda or forzar_pdf) else 10
-        
-        fig.update_layout(
-            height=400, 
-            margin=dict(l=margen_l, r=20, t=10, b=10), 
-            yaxis=dict(visible=incluir_leyenda, tickfont=dict(color="#94a3b8" if not incluir_leyenda else "black", size=10)), 
-            xaxis=dict(visible=False), 
-            plot_bgcolor='rgba(0,0,0,0)', 
-            paper_bgcolor='rgba(0,0,0,0)'
-        )
+        fig.update_layout(height=400, margin=dict(l=margen_l, r=20, t=10, b=10), 
+                          yaxis=dict(visible=incluir_leyenda, tickfont=dict(color="#94a3b8" if not incluir_leyenda else "black", size=10)), 
+                          xaxis=dict(visible=False), plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
         return fig
 
     # --- 5. RENDER DASHBOARD ---
@@ -154,23 +163,15 @@ if df is not None:
 
     st.divider()
     st.subheader("⏳ Resultados Evaluación 360°")
-    
-    # RESTAURACIÓN DE LA LEYENDA EN LA APP
     cl, cr1, cr2, cr3 = st.columns([1, 1, 1, 1])
     with cl:
         st.markdown('<div class="titulo-col">Nivel Barrett</div>', unsafe_allow_html=True)
         niveles = ["L7 - Visionario", "L6 - Mentor", "L5 - Auténtico", "L4 - Facilitador", "L3 - Desempeño", "L2 - Relaciones", "L1 - Crisis"]
         st.markdown('<div class="leyenda-v3">' + ''.join([f'<div class="item-ley">{n}</div>' for n in niveles]) + '</div>', unsafe_allow_html=True)
     
-    with cr1: 
-        st.markdown('<div class="titulo-col">Autovaloración</div>', unsafe_allow_html=True)
-        st.plotly_chart(generar_fig_reloj(v_auto, incluir_leyenda=False), key="r1_v")
-    with cr2: 
-        st.markdown('<div class="titulo-col">Individual (360)</div>', unsafe_allow_html=True)
-        st.plotly_chart(generar_fig_reloj(v_ind, incluir_leyenda=False), key="r2_v")
-    with cr3: 
-        st.markdown('<div class="titulo-col">Organizacional</div>', unsafe_allow_html=True)
-        st.plotly_chart(generar_fig_reloj(v_org, incluir_leyenda=False), key="r3_v")
+    with cr1: st.markdown('<div class="titulo-col">Autovaloración</div>', unsafe_allow_html=True); st.plotly_chart(generar_fig_reloj(v_auto), key="r1_v")
+    with cr2: st.markdown('<div class="titulo-col">Individual (360)</div>', unsafe_allow_html=True); st.plotly_chart(generar_fig_reloj(v_ind), key="r2_v")
+    with cr3: st.markdown('<div class="titulo-col">Promedio Organizacional</div>', unsafe_allow_html=True); st.plotly_chart(generar_fig_reloj(v_org), key="r3_v")
 
     # --- 6. RADAR Y DIMENSIONES ---
     st.divider()
@@ -181,7 +182,7 @@ if df is not None:
         cats = ['L1','L2','L3','L4','L5','L6','L7']
         for val, name, color in zip([v_auto, v_ind, v_org], ['Auto', 'Individual', 'Organizacional'], ['#3498db', '#2ecc71', '#e74c3c']):
             fig_radar.add_trace(go.Scatterpolar(r=val, theta=cats, fill='toself', name=name, line_color=color))
-        fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 100])), height=500, template="plotly_dark", legend=dict(orientation="h", y=1.25, x=0.5, xanchor="center"))
+        fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 100])), height=500, template="plotly_dark", legend=dict(orientation="h", y=1.1, x=0.5, xanchor="center"))
         st.plotly_chart(fig_radar, key="radar_v")
     with col_dim:
         st.subheader("⚖️ Índice del Equilibrio de Liderazgo")
@@ -190,7 +191,7 @@ if df is not None:
         fig_dim.update_layout(xaxis_range=[0, 105], height=400, template="plotly_dark", yaxis=dict(autorange="reversed"))
         st.plotly_chart(fig_dim, key="dim_v")
 
-    # --- 7. INFORME IA (SIN CAMBIOS) ---
+    # --- 7. INFORME IA (SIN TOCAR PROMPT, PASANDO DATOS NUEVOS EN EL JSON) ---
     if "informe_cache" not in st.session_state:
         st.session_state.informe_cache = {}
 
@@ -200,25 +201,25 @@ if df is not None:
         Actúa como consultor senior de DESARROLLO DE LIDERAZGO Barrett. Genera un reporte para {lider_sel}. DATOS: {d.to_json()}
         PROHIBIDO USAR ANGLICISMOS. REDACTA TODO EN ESPAÑOL PURO.
         CONTEXTO BARRETT:
-        - L1: Gestor de Crisis. Foco en estabilidad y viabilidad operativa. (Supervivencia)
-        - L2: Constructor de Relaciones. Foco en armonía y respeto mutuo. (Relaciones)
-        - L3: Gestor Organizador. Foco en eficiencia y resultados de calidad. (Autoestima)
-        - L4: Facilitador Influyente. Foco en innovación y adaptabilidad. (Transformación)
-        - L5: Integrador Inspirador. Foco en integridad y valores. (Cohesión Interna)
-        - L6: Mentor Socio. Foco en colaboración y mentoría. (Hacer la Diferencia)
-        - L7: Visionario Sabio. Foco en propósito y visión de largo plazo. (Servicio)
+        - L1: Gestor de Crisis. Foco en estabilidad financiera y viabilidad operativa.
+        - L2: Constructor de Relaciones. Foco en armonía, respeto mutuo y manejo de conflictos.
+        - L3: Gestor Organizador. Foco en eficiencia, orden y resultados de calidad.
+        - L4: Facilitador Influyente. Foco en innovación, aprendizaje continuo y adaptabilidad.
+        - L5: Integrador Inspirador. Foco en integridad, valores y cohesión interna.
+        - L6: Mentor Socio. Foco en colaboración, mentoría y alianzas estratégicas.
+        - L7: Visionario Sabio. Foco en propósito, servicio al mundo y visión de largo plazo.
 
         REGLAS DE ORO: 
         - INICIA DIRECTAMENTE. PROHIBIDO SALUDOS O INTRODUCCIONES o RESMENES O APRECIACIONES.
-       	- PROHIBIDO USAR: "desempeño", "brechas", "puntos ciegos" o hablar desde defectos o fallos, debe ser un feedback totalmente apreciativo.
+        - PROHIBIDO USAR: "desempeño", "brechas", "puntos ciegos" o hablar desde defectos o fallos, debe ser un feedback totalmente apreciativo.
         - USA: "desarrollo", "alineación", "influencia", "oportunidad de expansión".
         - RÚBRICA: Bajo (<65), Medio (65-75), Alto (75-85), Superior (>85).
 
         ESTRUCTURA ESPEJO OBLIGATORIA:
-        1. DESCRIPCIÓN POR NIVELES: Lista de L1 a L7 con el nombre de contexto Barret (Ejemplo L1: Gestor de Crisis). Clasifica cada nivel basándote en el 'Ponderado Individual' usando la rúbrica (Bajo, Medio, Alto, Superior) y las definiciones Barrett anteriores para generar una descripción según el modelo barret y el nivel de la rubrica del lider. Siempre una lista de Nivel 1 a Nivel 7 no lo hagas en 1 solo párrafo porque confunde
-        2. ANÁLISIS DE AUTOVALORACIÓN: Un párrafo. Analiza alineación percepción interna (Autoevaluacion) vs colectiva (Ponderado individual que es la evaluación de Jefe directo, Colaboradores a cargo y Pares). Resalta donde la influencia externa es mayor a la autopercepción, o aquellos puntos donde la autoevaluacion sea mayor en rubrica a lo evaluado pues son 2 cosas diferentes a trabajar segun el nivel de consiencia. 
-        3. MATRIZ DE MADUREZ: Un párrafo sólido. Analiza sintonía del líder (Ponderado Individual) con el Ponderado Organizacional basándote en la Rúbrica.
-        4. PERFIL DE LIDERAZGO: Un párrafo sólido. Define el estilo predominante según el promedio más alto (Liderazgo: {round(liderazgo_prom,1)}%, Transición: {round(transicion_prom,1)}%, Gerencia: {round(gerencia_prom,1)}%) y ofrece 3 recomendaciones de expansión para llegar a un equilibrio de las 3 dimensiones (Liderazgo Transicion y Gerencia) punto seguido.
+        1. DESCRIPCIÓN POR NIVELES: Lista desglosada de L1 a L7 con el nombre de contexto Barrett. Clasifica cada nivel basándote en el 'Ponderado Individual' usando la rúbrica y las definiciones Barrett anteriores. Siempre una lista de Nivel 1 a Nivel 7.
+        2. ANÁLISIS DE AUTOVALORACIÓN: Un párrafo. Analiza alineación percepción interna vs colectiva. Resalta donde la influencia externa es mayor a la autopercepción.
+        3. MATRIZ DE MADUREZ: Un párrafo sólido. Analiza sintonía del líder con el Ponderado Organizacional basándote en la Rúbrica.
+        4. PERFIL DE LIDERAZGO: Un párrafo sólido. Define el estilo predominante y ofrece 3 recomendaciones de expansión estratégica punto seguido.
         """
         try:
             with st.spinner('Consolidando informe...'):
@@ -241,7 +242,11 @@ if df is not None:
                     pdf.cell(0, 10, 'REPORTE ESTRATEGICO DE DESARROLLO DE LIDERAZGO', ln=True, align='C')
                     pdf.set_font('Helvetica', '', 11)
                     pdf.cell(0, 10, f'Líder Evaluado: {lider_sel}', ln=True, align='C')
-                    pdf.ln(10)
+                    
+                    pdf.set_font('Helvetica', 'I', 9)
+                    txt_evals = f"Total Evaluadores: {int(d.CANT_EVAL)} (Auto: {int(d.CANT_AUTO)}, Jefe: {int(d.CANT_JEFE)}, Pares: {int(d.CANT_PAR)}, Colab: {int(d.CANT_COL)})"
+                    pdf.cell(0, 8, txt_evals, ln=True, align='C')
+                    pdf.ln(5)
 
                     with tempfile.TemporaryDirectory() as tmp_dir:
                         def save_chart(fig, name, w=600, h=300):
@@ -251,31 +256,30 @@ if df is not None:
                             return path
                         
                         pdf.set_font('Helvetica', 'B', 10)
-                        pdf.text(10, 38, "1. Frecuencia de comportamientos por niveles (%)")
-                        pdf.image(save_chart(generar_fig_barras(v_auto, "Auto", "#3498db"), "b1.png"), x=10, y=42, w=60)
-                        pdf.image(save_chart(generar_fig_barras(v_ind, "Individual", "#2ecc71"), "b2.png"), x=75, y=42, w=60)
-                        pdf.image(save_chart(generar_fig_barras(v_org, "Organizacional", "#e74c3c"), "b3.png"), x=140, y=42, w=60)
+                        pdf.text(10, 43, "1. Frecuencia de comportamientos por niveles (%)")
+                        pdf.image(save_chart(generar_fig_barras(v_auto, "Auto", "#3498db"), "b1.png"), x=10, y=45, w=60)
+                        pdf.image(save_chart(generar_fig_barras(v_ind, "Individual", "#2ecc71"), "b2.png"), x=75, y=45, w=60)
+                        pdf.image(save_chart(generar_fig_barras(v_org, "Organizacional", "#e74c3c"), "b3.png"), x=140, y=45, w=60)
 
-                        pdf.text(10, 95, "2. Alineación de Consciencia y Entorno")
-                        pdf.image(save_chart(fig_radar, "radar.png", 500, 400), x=10, y=98, w=95)
-                        pdf.text(110, 95, "3. Índice del Equilibrio de Liderazgo")
+                        pdf.text(10, 98, "2. Alineación de Consciencia y Entorno")
+                        pdf.image(save_chart(fig_radar, "radar.png", 500, 400), x=10, y=101, w=95)
+                        pdf.text(110, 98, "3. Índice del Equilibrio de Liderazgo")
                         fig_dim_pdf = go.Figure(go.Bar(x=[liderazgo_prom, transicion_prom, gerencia_prom], y=['Liderazgo', 'Transición', 'Gerencia'], orientation='h', marker_color="#3498db"))
-                        pdf.image(save_chart(fig_dim_pdf, "dim.png", 500, 350), x=110, y=105, w=90)
+                        pdf.image(save_chart(fig_dim_pdf, "dim.png", 500, 350), x=110, y=108, w=90)
 
-                        # SIMETRÍA TOTAL EN PDF SIN AFECTAR LA APP
-                        pdf.text(15, 175, "4. Resultados Evaluación 360° (Niveles Barrett)")
+                        pdf.text(15, 178, "4. Resultados Evaluación 360° (Niveles Barrett)")
                         pdf.set_font('Helvetica', 'B', 8)
-                        pdf.text(45, 182, "Autovaloración")
-                        pdf.text(103, 182, "Individual (360)")
-                        pdf.text(158, 182, "Organizacional")
+                        pdf.text(45, 185, "Autovaloración")
+                        pdf.text(103, 185, "Individual (360)")
+                        pdf.text(158, 185, "Organizacional")
                         
                         r1_pdf = generar_fig_reloj(v_auto, incluir_leyenda=True)
                         r2_pdf = generar_fig_reloj(v_ind, incluir_leyenda=False, forzar_pdf=True)
                         r3_pdf = generar_fig_reloj(v_org, incluir_leyenda=False, forzar_pdf=True)
 
-                        pdf.image(save_chart(r1_pdf, "r1.png", 500, 400), x=15, y=184, w=60) 
-                        pdf.image(save_chart(r2_pdf, "r2.png", 500, 400), x=75, y=184, w=60) 
-                        pdf.image(save_chart(r3_pdf, "r3.png", 500, 400), x=135, y=184, w=60)
+                        pdf.image(save_chart(r1_pdf, "r1.png", 500, 400), x=15, y=187, w=60) 
+                        pdf.image(save_chart(r2_pdf, "r2.png", 500, 400), x=75, y=187, w=60) 
+                        pdf.image(save_chart(r3_pdf, "r3.png", 500, 400), x=135, y=187, w=60)
 
                     pdf.add_page()
                     pdf.set_font('Helvetica', 'B', 14)
