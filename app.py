@@ -77,6 +77,7 @@ if df is not None:
         
     d = df[df['Nombre_Lider'] == lider_sel].iloc[0]
 
+    # Cálculos de dimensiones (Para IA y Visual)
     gerencia_prom = (d.INDIV_L1 + d.INDIV_L2 + d.INDIV_L3) / 3
     transicion_prom = d.INDIV_L4
     liderazgo_prom = (d.INDIV_L5 + d.INDIV_L6 + d.INDIV_L7) / 3
@@ -110,7 +111,7 @@ if df is not None:
     with c2: st.plotly_chart(fig_b2, key="b2")
     with c3: st.plotly_chart(fig_b3, key="b3")
 
-    # --- 6. RELOJES (ALINEACIÓN CORREGIDA DASHBOARD) ---
+    # --- 6. RELOJES (ALINEACIÓN FIJA) ---
     st.divider()
     st.subheader("⏳ Evolución del Liderazgo (Semáforo de Madurez)")
     def dibujar_reloj_barrett(vals):
@@ -161,7 +162,7 @@ if df is not None:
         fig_dim.update_layout(xaxis_range=[0, 105], height=400, template="plotly_dark", yaxis=dict(autorange="reversed"))
         st.plotly_chart(fig_dim, key="dim")
 
-    # --- 8. INFORME IA ---
+    # --- 8. INFORME IA (VERIFICADO) ---
     st.divider()
     if st.button("🚀 GENERAR INFORME EJECUTIVO"):
         prompt_maestro = f"""
@@ -175,11 +176,13 @@ if df is not None:
         - Nivel 3: GESTOR DE DESEMPEÑO - Logrando la excelencia
         - Nivel 2: GESTOR DE RELACIONES - Apoyo de relaciones
         - Nivel 1: GESTOR DE CRISIS - Garantizar visibilidad
-        ESTRUCTURA:
+
+        ESTRUCTURA DEL INFORME:
         1. DESCRIPCIÓN POR NIVELES: Desglose L1 a L7 ascendente. Usa la NOMENCLATURA OBLIGATORIA y analiza el impacto según el 'Ponderado Individual'.
         2. ANÁLISIS DE AUTOVALORACIÓN: Autoconciencia frente a la visión del entorno (Ponderado individual vs Autoevaluacion).
         3. MATRIZ DE MADUREZ: Alineación estratégica Individual (Ponderado Individual) vs Organizacional (Ponderado organizacional).
         4. PERFIL DE LIDERAZGO: Estilo (Nivel predominante y dimensión predominante según el promedio mas alto (Liderazgo: {round(liderazgo_prom,1)}%, Transición: {round(transicion_prom,1)}%, Gerencia: {round(gerencia_prom,1)}%)) y equilibrio de las 3 dimensiones, en base a ese equilibrio entrega 3 recomendaciones apreciativas (punto seguido).
+
         FILOSOFÍA Y REDACCIÓN: 100% Apreciativa. Sin lenguaje negativo. HABLA SIEMPRE EN TERCERA PERSONA NEUTRAL. Inicia directamente.
         """
         try:
@@ -194,7 +197,7 @@ if df is not None:
         st.markdown(f"### 📋 Informe Ejecutivo: {lider_sel}")
         st.write(texto_informe)
 
-        # --- 9. MÓDULO PDF CONSOLIDADO ---
+        # --- 9. MÓDULO PDF (CONSOLIDADO) ---
         if st.button("📄 GENERAR REPORTE COMPLETO PDF"):
             with st.spinner('Procesando PDF...'):
                 try:
@@ -213,7 +216,6 @@ if df is not None:
                             fig.write_image(path, engine="kaleido")
                             return path
                         
-                        # PDF Hoja 1: Todo agrupado
                         pdf.image(save_chart(fig_b1, "b1.png"), x=10, y=30, w=60)
                         pdf.image(save_chart(fig_b2, "b2.png"), x=75, y=30, w=60)
                         pdf.image(save_chart(fig_b3, "b3.png"), x=140, y=30, w=60)
