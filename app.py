@@ -14,8 +14,26 @@ st.markdown("""
     .block-container { padding-top: 1rem; }
     h1 { color: #BFDBFE !important; text-align: center; }
     .titulo-col { text-align: center; font-weight: bold; color: #BFDBFE; margin-bottom: 10px; font-size: 1.1rem; }
-    .leyenda-v3 { display: flex; flex-direction: column; justify-content: space-between; height: 380px; margin-top: 55px; padding-right: 10px; border-right: 1px solid #334155; }
-    .item-ley { height: 50px; display: flex; align-items: center; justify-content: flex-end; font-size: 0.85rem; font-weight: bold; color: #94a3b8; }
+    
+    /* AJUSTE DE LEYENDA PARA ALINEACIÓN CON RELOJES */
+    .leyenda-v3 {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        height: 340px; /* Altura ajustada a la escala del funnel */
+        margin-top: 35px; /* Alineación con el primer bloque superior */
+        padding-right: 10px;
+        border-right: 1px solid #334155;
+    }
+    .item-ley {
+        height: 48px; /* Altura proporcional a cada nivel del funnel */
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        font-size: 0.85rem;
+        font-weight: bold;
+        color: #94a3b8;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -27,20 +45,14 @@ try:
 except Exception as e:
     st.error("Error: Configura 'GEMINI_API_KEY' en los Secrets.")
 
-# --- 3. CARGA DE DATOS (BLINDADA CONTRA 0.0 Y BASURA) ---
+# --- 3. CARGA DE DATOS ---
 @st.cache_data
 def load_data():
     try:
         df = pd.read_csv('Resultados_Gerentes.csv', sep=';', decimal=',')
         df.columns = df.columns.str.strip()
         df['Nombre_Lider'] = df['Nombre_Lider'].astype(str).str.strip()
-        
-        # FILTRO ROBUSTO: Solo nombres reales
-        df = df[df['Nombre_Lider'].notna()]
-        df = df[df['Nombre_Lider'] != '0.0']
-        df = df[df['Nombre_Lider'] != 'nan']
-        df = df[df['Nombre_Lider'] != '']
-        
+        df = df[~df['Nombre_Lider'].isin(['0.0', 'nan', ''])]
         cols_check = [c for c in df.columns if 'L' in c and any(x in c for x in ['AUTO', 'INDIV', 'ORG'])]
         for col in cols_check:
             df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
@@ -52,7 +64,6 @@ def load_data():
 df = load_data()
 
 if df is not None:
-    # --- 4. SELECCIÓN ---
     lideres = sorted(df['Nombre_Lider'].unique())
     lider_sel = st.selectbox("Seleccione el líder para el análisis estratégico:", lideres)
     d = df[df['Nombre_Lider'] == lider_sel].iloc[0]
@@ -77,7 +88,7 @@ if df is not None:
     with c2: st.plotly_chart(dibujar_barras(v_ind, "Individual (360)", "#2ecc71"), use_container_width=True, key="bar_ind")
     with c3: st.plotly_chart(dibujar_barras(v_org, "Promedio Organizacional", "#e74c3c"), use_container_width=True, key="bar_org")
 
-    # --- 6. RELOJES (SIMETRÍA Y ALINEACIÓN) ---
+    # --- 6. RELOJES ---
     st.divider()
     st.subheader("⏳ Evolución del Liderazgo (Semáforo de Madurez)")
 
@@ -104,11 +115,9 @@ if df is not None:
         return fig
 
     col_l, col_r1, col_r2, col_r3 = st.columns([1, 1, 1, 1])
-
     with col_l:
         st.markdown('<div class="titulo-col">Nivel Barrett</div>', unsafe_allow_html=True)
         st.markdown('<div class="leyenda-v3">' + ''.join([f'<div class="item-ley">{n}</div>' for n in ["L7 - Visionario", "L6 - Mentor", "L5 - Auténtico", "L4 - Facilitador", "L3 - Desempeño", "L2 - Relaciones", "L1 - Crisis"]]) + '</div>', unsafe_allow_html=True)
-
     with col_r1:
         st.markdown('<div class="titulo-col">Autovaloración</div>', unsafe_allow_html=True)
         st.plotly_chart(dibujar_reloj_limpio(v_auto), use_container_width=True, key="re_auto")
@@ -119,42 +128,33 @@ if df is not None:
         st.markdown('<div class="titulo-col">Organizacional</div>', unsafe_allow_html=True)
         st.plotly_chart(dibujar_reloj_limpio(v_org), use_container_width=True, key="re_org")
 
-    # --- 7. RADAR ---
-    st.divider()
-    st.subheader("Radar de Alineación Estratégica Triple (%)")
-    col_center_radar = st.columns([1, 4, 1])[1]
-    with col_center_radar:
-        fig_radar = go.Figure()
-        cats = ['L1','L2','L3','L4','L5','L6','L7']
-        for val, name, color in zip([v_auto, v_ind, v_org], ['Auto', 'Individual', 'Organizacional'], ['#3498db', '#2ecc71', '#e74c3c']):
-            fig_radar.add_trace(go.Scatterpolar(r=val, theta=cats, fill='toself', name=name, line_color=color))
-        fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 100])), height=600, template="plotly_dark", legend=dict(orientation="h", y=1.1, x=0.5, xanchor="center"))
-        st.plotly_chart(fig_radar, use_container_width=True, key="radar_final")
-
-    # --- 8. INFORME IA (PROMPT MAESTRO INTEGRAL) ---
+    # --- 8. INFORME IA (PROMPT MAESTRO CORREGIDO CON NOMENCLATURA) ---
     st.divider()
     if st.button("🚀 GENERAR INFORME EJECUTIVO"):
         prompt_maestro = f"""
-        Actúa como un experto consultor senior en desarrollo de liderazgo (Richard Barrett). Genera un informe estratégico 360° para {lider_sel}.
-        DATOS PARA EL ANÁLISIS: {d.to_json()}
-        
-        FILOSOFÍA DE FEEDBACK:
-        - Enfoque 100% en OPORTUNIDADES y POTENCIAL.
-        - Prohibido lenguaje negativo, señalar "errores" o usar etiquetas como "Oportunidad de Desarrollo:".
-        - NO incluyas introducciones cordiales. Inicia directamente.
+        CONTEXTO: Actúa como consultor senior Barrett. Analiza al líder {lider_sel}.
+        DATOS: {d.to_json()}
 
-        ESTRUCTURA DEL INFORME:
-        1. DESCRIPCIÓN POR NIVELES: Desglose analítico de los 7 niveles (L1 a L7). Identifica el potencial actual basándote en 'Ponderado Individual'.
-        2. ANÁLISIS DE AUTOVALORACIÓN: Evalúa la percepción del líder frente a la del entorno.
-        3. ANÁLISIS DE PONDERADO INDIVIDUAL: Evalúa las competencias reales observadas por el entorno profesional.
-        4. MATRIZ DE MADUREZ: Cruza Individual con Organizacional para determinar la alineación estratégica.
-        5. PERFIL DE LIDERAZGO: Define un (1) estilo predominante y propón tres recomendaciones de gran valor estratégico.
+        REGLA DE NOMENCLATURA OBLIGATORIA (No puedes usar otros nombres):
+        - Nivel 7: LÍDER VISIONARIO - Propósito de vivir
+        - Nivel 6: LÍDER MENTOR/SOCIO - Trabajo en la colaboración
+        - Nivel 5: LÍDER AUTÉNTICO - Autoexpresión genuina
+        - Nivel 4: FACILITADOR/INNOVADOR - Evolución de forma valiente
+        - Nivel 3: GESTOR DE DESEMPEÑO - Logrando la excelencia
+        - Nivel 2: GESTOR DE RELACIONES - Apoyo de relaciones
+        - Nivel 1: GESTOR DE CRISIS - Garantizar visibilidad
 
-        RÚBRICA: 0-65 Bajo | 65-75 Medio | 75-85 Alto | 85-100 Superior
-        TERMINOLOGÍA: Emplea terminología técnica de Barrett (Viabilidad, Relaciones, Desempeño, Evolución, etc.).
+        FILOSOFÍA: 100% Apreciativa (Oportunidades y Potencial). Sin lenguaje negativo.
+
+        ESTRUCTURA:
+        1. DESCRIPCIÓN POR NIVELES: Desglose del Nivel 1 al Nivel 7 en orden estrictamente ascendente. Para cada nivel usa la NOMENCLATURA OBLIGATORIA arriba definida y analiza el dato de 'Ponderado Individual'.
+        2. ANÁLISIS DE AUTOVALORACIÓN: Percepción del líder vs entorno.
+        3. ANÁLISIS DE PONDERADO INDIVIDUAL: Competencias reales 360°.
+        4. MATRIZ DE MADUREZ: Alineación estratégica Individual vs Organizacional.
+        5. PERFIL DE LIDERAZGO: 1 estilo predominante y 3 recomendaciones estratégicas.
         """
         try:
-            with st.spinner('Analizando datos bajo el modelo Barrett...'):
+            with st.spinner('Procesando análisis Barrett...'):
                 response = model.generate_content(prompt_maestro)
                 st.markdown(f"### 📋 Informe Ejecutivo: {lider_sel}")
                 st.markdown("---")
