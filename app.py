@@ -161,8 +161,8 @@ if df is not None:
         RÚBRICA: Bajo (<65), Medio (65-75), Alto (75-85), Superior (>85).
         
         ESTRUCTURA Y ANÁLISIS REQUERIDO:
-        1. DESCRIPCIÓN POR NIVELES: Orden L1-L7. Describe el desempeño basándote en el 'Ponderado Individual' usando las categorías de la RÚBRICA.
-        2. ANÁLISIS DE AUTOVALORACIÓN: Resalta brechas notorias entre Auto y Ponderado Individual. Enfatiza los "puntos ciegos positivos" (donde el líder se califica Bajo/Medio pero el entorno lo califica Alto/Superior o viceversa).
+        1. DESCRIPCIÓN POR NIVELES: Orden L1-L7. Describe el nivel basándote en el 'Ponderado Individual' usando las categorías de la RÚBRICA. da una descripción apreciativa de los niveles de liderazgo y categorias según su Nivel de desarrollo de liderazgo de 'Ponderado Individual'
+        2. ANÁLISIS DE AUTOVALORACIÓN: Resalta brechas notorias entre Autoevaluacion y Ponderado Individual. Enfatiza los "puntos ciegos positivos" (donde el líder se califica Bajo/Medio pero el entorno(colaboradores, pares y jefe) lo califica Alto/Superior o viceversa).
         3. MATRIZ DE MADUREZ: Analiza diferencias significativas del líder (Ponderado individual) respecto al promedio organizacional(ponderado organizacional), tanto en fortalezas sobresalientes como en áreas con potencial de alineación.
         4. PERFIL DE LIDERAZGO: Estilo predominante según promedios (Liderazgo: {round(liderazgo_prom,1)}%, Transición: {round(transicion_prom,1)}%, Gerencia: {round(gerencia_prom,1)}%) y 3 recomendaciones apreciativas (punto seguido).
         
