@@ -130,13 +130,13 @@ if df is not None:
                 bgcolor="white",
                 bordercolor="rgba(255,255,255,0)",
                 borderpad=4,
-                width=ancho * 25.5
+                width=ancho * 22.0
             )
 
         fig.update_layout(
             height=400, 
-            margin=dict(l=80 if incluir_leyenda else 10, r=10, t=10, b=10), 
-            yaxis=dict(visible=incluir_leyenda, tickfont=dict(color="#94a3b8", size=10)), 
+            margin=dict(l=100 if incluir_leyenda else 10, r=10, t=10, b=10), 
+            yaxis=dict(visible=incluir_leyenda, tickfont=dict(color="#94a3b8" if not incluir_leyenda else "black", size=10)), 
             xaxis=dict(visible=False), 
             plot_bgcolor='rgba(0,0,0,0)', 
             paper_bgcolor='rgba(0,0,0,0)'
@@ -252,28 +252,27 @@ if df is not None:
                         pdf.image(save_chart(fig_b2, "b2.png"), x=75, y=42, w=60)
                         pdf.image(save_chart(fig_b3, "b3.png"), x=140, y=42, w=60)
 
-                        # AJUSTE RADAR: Subimos leyenda en PDF y aumentamos margen superior
-                        fig_radar.update_layout(template="plotly", paper_bgcolor='white', font=dict(color="black"), legend=dict(y=1.25), margin=dict(t=100))
+                        # AJUSTE RADAR: Evitar traslape de L1
+                        fig_radar.update_layout(template="plotly", paper_bgcolor='white', font=dict(color="black"), legend=dict(y=1.2), margin=dict(t=100))
                         pdf.text(10, 95, "2. Alineación de Consciencia y Entorno")
                         pdf.image(save_chart(fig_radar, "radar.png", 500, 400), x=10, y=98, w=95)
-                        
                         pdf.text(110, 95, "3. Índice del Equilibrio de Liderazgo")
                         pdf.image(save_chart(fig_dim, "dim.png", 500, 350), x=110, y=105, w=90)
 
-                        # AJUSTE PDF RELOJES: Títulos centrados y anchos igualados
+                        # AJUSTE PDF RELOJES: Simetría absoluta y títulos centrados
                         pdf.text(15, 175, "4. Resultados Evaluación 360° (Niveles Barrett)")
                         pdf.set_font('Helvetica', 'B', 8)
                         
-                        # Coordenadas X calculadas para centrar títulos sobre los relojes
+                        # Coordenadas X calculadas para centrar títulos sobre el área del reloj
                         pdf.text(38, 182, "Autovaloración")
-                        pdf.text(92, 182, "Individual (360)")
-                        pdf.text(147, 182, "Organizacional")
+                        pdf.text(95, 182, "Individual (360)")
+                        pdf.text(150, 182, "Organizacional")
                         
-                        fig_r1_p = generar_fig_reloj(v_auto, incluir_leyenda=True)
-                        # El primero (con leyenda) es más ancho (w=70) para no comprimir la gráfica central
-                        pdf.image(save_chart(fig_r1_p, "r1.png", 550, 400), x=10, y=183, w=68)
-                        pdf.image(save_chart(fig_r2, "r2.png", 400, 400), x=80, y=183, w=58)
-                        pdf.image(save_chart(fig_r3, "r3.png", 400, 400), x=140, y=183, w=58)
+                        # Generamos versión con leyenda para el PDF compensando el ancho (w=85)
+                        fig_r1_pdf = generar_fig_reloj(v_auto, incluir_leyenda=True)
+                        pdf.image(save_chart(fig_r1_pdf, "r1.png", 650, 400), x=10, y=184, w=82) # Más ancho para alojar leyenda sin encoger figura
+                        pdf.image(save_chart(fig_r2, "r2.png", 400, 400), x=92, y=184, w=52) # Posición X movida para compensar r1
+                        pdf.image(save_chart(fig_r3, "r3.png", 400, 400), x=145, y=184, w=52)
 
                     pdf.add_page()
                     pdf.set_font('Helvetica', 'B', 14)
