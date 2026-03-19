@@ -198,16 +198,16 @@ if df is not None:
     st.divider()
     if st.button("🚀 GENERAR INFORME EJECUTIVO"):
         prompt_maestro = f"""
-        Actúa como consultor senior de DESARROLLO DE LIDERAZGO Barrett. Genera un reporte para {lider_sel}. DATOS: {d.to_json()}
+        Actúa como consultor senior de DESARROLLO DE LIDERAZGO Barrett. Genera un reporte para {lider_sel}. DATOS: {d.to_json()} donde AUTO es Autoevaluación, INDI es Ponmderado Individual ORG es Ponderado organizacional (Promedio de resultados organizacionales) y CANT es cantidad de respuestas o evaluadores. Si alguien tiene todo 0 en AUTO es porque no hizo Autoevalaucion para que lo tengas presente en la comparativa. Si ves que sus resultados INDI son muy bajos, revisa que al menos CANT_JEFE y CANT_PAR sean mínimo 1 si no ahí esta el error y lo dejaremos en el reporte ese hallazgo. Si no encontramos esas inconsistencias no mencionaremos por nada del mundo esta información en el resto del informe, si y solo si se cumplen una de esas restricciones.
         PROHIBIDO USAR ANGLICISMOS. REDACTA TODO EN ESPAÑOL PURO.
         CONTEXTO BARRETT:
-        - L1: Gestor de Crisis. Foco en estabilidad financiera y viabilidad operativa.
-        - L2: Constructor de Relaciones. Foco en armonía, respeto mutuo y manejo de conflictos.
-        - L3: Gestor Organizador. Foco en eficiencia, orden y resultados de calidad.
-        - L4: Facilitador Influyente. Foco en innovación, aprendizaje continuo y adaptabilidad.
-        - L5: Integrador Inspirador. Foco en integridad, valores y cohesión interna.
-        - L6: Mentor Socio. Foco en colaboración, mentoría y alianzas estratégicas.
-        - L7: Visionario Sabio. Foco en propósito, servicio al mundo y visión de largo plazo.
+        - L1: Gestor de Crisis. Foco en estabilidad y viabilidad operativa. (Supervivencia)
+        - L2: Constructor de Relaciones. Foco en armonía y respeto mutuo. (Relaciones)
+        - L3: Gestor Organizador. Foco en eficiencia y resultados de calidad. (Autoestima)
+        - L4: Facilitador Influyente. Foco en innovación y adaptabilidad. (Transformación)
+        - L5: Integrador Inspirador. Foco en integridad y valores. (Cohesión Interna)
+        - L6: Mentor Socio. Foco en colaboración y mentoría. (Hacer la Diferencia)
+        - L7: Visionario Sabio. Foco en propósito y visión de largo plazo. (Servicio)
 
         REGLAS DE ORO: 
         - INICIA DIRECTAMENTE. PROHIBIDO SALUDOS O INTRODUCCIONES o RESMENES O APRECIACIONES.
@@ -215,11 +215,11 @@ if df is not None:
         - USA: "desarrollo", "alineación", "influencia", "oportunidad de expansión".
         - RÚBRICA: Bajo (<65), Medio (65-75), Alto (75-85), Superior (>85).
 
-        ESTRUCTURA ESPEJO OBLIGATORIA:
-        1. DESCRIPCIÓN POR NIVELES: Lista desglosada de L1 a L7 con el nombre de contexto Barrett. Clasifica cada nivel basándote en el 'Ponderado Individual' usando la rúbrica y las definiciones Barrett anteriores. Siempre una lista de Nivel 1 a Nivel 7.
-        2. ANÁLISIS DE AUTOVALORACIÓN: Un párrafo. Analiza alineación percepción interna vs colectiva. Resalta donde la influencia externa es mayor a la autopercepción.
-        3. MATRIZ DE MADUREZ: Un párrafo sólido. Analiza sintonía del líder con el Ponderado Organizacional basándote en la Rúbrica.
-        4. PERFIL DE LIDERAZGO: Un párrafo sólido. Define el estilo predominante y ofrece 3 recomendaciones de expansión estratégica punto seguido.
+        ESTRUCTURA informe OBLIGATORIA:
+        1. DESCRIPCIÓN POR NIVELES: Lista de L1 a L7 con el nombre de contexto Barret (Ejemplo L1: Gestor de Crisis). Clasifica cada nivel basándote en el 'Ponderado Individual' usando la rúbrica (Bajo, Medio, Alto, Superior) y las definiciones Barrett anteriores para generar una descripción según el modelo barret y el nivel de la rubrica del lider. Siempre una lista de Nivel 1 a Nivel 7 no lo hagas en 1 solo párrafo porque confunde
+        2. ANÁLISIS DE AUTOVALORACIÓN: Un párrafo. Analiza alineación percepción interna (Autoevaluacion) vs colectiva (Ponderado individual que es la evaluación de Jefe directo, Colaboradore a cargo y Pares). Resalta donde la influencia externa es mayor a la autopercepción, o aquellos puntos donde la autoevaluacion sea mayor en rubrica a lo evaluado pues son 2 cosas diferentes a trabajar segun el nivel de consiencia.
+        3. MATRIZ DE MADUREZ: Un párrafo sólido. Analiza sintonía del líder (Ponderado Individual) con el Ponderado Organizacional basándote en la Rúbrica.
+        4. PERFIL DE LIDERAZGO: Un párrafo sólido. Define el estilo predominante según el promedio más alto (Liderazgo: {round(liderazgo_prom,1)}%, Transición: {round(transicion_prom,1)}%, Gerencia: {round(gerencia_prom,1)}%) y ofrece 3 recomendaciones de expansión para llegar a un equilibrio de las 3 dimensiones (Liderazgo Transicion y Gerencia) punto seguido.
         """
         try:
             with st.spinner('Consolidando informe...'):
