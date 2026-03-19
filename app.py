@@ -126,33 +126,34 @@ if df is not None:
         fig_dim.update_layout(xaxis_range=[0, 105], height=400, template="plotly_dark", yaxis=dict(autorange="reversed"))
         st.plotly_chart(fig_dim, use_container_width=True)
 
-    # --- 8. INFORME IA RESTAURADO ---
+    # --- 8. INFORME IA - LENGUAJE APRECIATIVO REFORZADO ---
     st.divider()
     if st.button("🚀 GENERAR ANÁLISIS ESTRATÉGICO 360°"):
         prompt_maestro = f"""
         Actúa como un experto consultor senior en desarrollo de liderazgo (Modelo Barrett). Genera un informe estratégico 360° de {lider_sel}.
 
-        DATOS FUENTE (Usa exclusivamente estos):
+        DATOS FUENTE:
         {d.to_json()}
         - Dimensiones: Gerencia L1-L3: {round(gerencia_prom,1)}%, Transición L4: {round(transicion_prom,1)}%, Liderazgo L5-L7: {round(liderazgo_prom,1)}%.
 
-        REGLAS DE ORO:
-        - INICIA DIRECTAMENTE CON EL ANÁLISIS. PROHIBIDO: preámbulos, fechas, nombres de consultor o advertencias de confidencialidad.
-        - FILOSOFÍA: 100% Apreciativa. Habla de "Oportunidades de Desarrollo" y "Potencial". Prohibido lenguaje negativo o señalar "errores".
-        - FOCO LIDERAZGO: No es evaluación de cargo ni desempeño laboral. Es evolución de consciencia. PROHIBIDO usar la palabra "competencias".
-        - DATOS: El Ponderado Individual es la visión real del entorno. Auto y Org son solo para comparar sintonía y alineación.
+        REGLAS DE ORO DE COMUNICACIÓN (GESTIÓN HUMANA):
+        - INICIA DIRECTAMENTE CON EL ANÁLISIS. Sin preámbulos, fechas ni saludos.
+        - FILOSOFÍA 100% APRECIATIVA: Usa un lenguaje que empodere. No señales errores. Habla de "talento de consciencia" y "potencial de expansión".
+        - PROHIBIDO USAR TÍTULOS COMO "Oportunidad de Desarrollo:" o "Debilidades:". 
+        - INTEGRACIÓN: Si vas a sugerir una ruta de crecimiento para un nivel, hazlo inmediatamente después de describir el talento del nivel, usando un punto seguido. Ejemplo: "...dirección clara en momentos de crisis. Es posible expandir este impacto mediante la co-creación estratégica con el equipo..."
+        - FOCO LIDERAZGO: No es evaluación de cargo. Es evolución de consciencia Barrett.
 
-        ESTRUCTURA DEL INFORME:
-        1. ANÁLISIS DE EVOLUCIÓN POR NIVELES: Realiza un desglose de los 7 niveles (L1-L7). Para cada nivel, describe qué significa el puntaje del 'Ponderado Individual', identificando talentos de consciencia y rutas para elevar el impacto. (No repitas esta info en otros puntos).
-        2. SINTONÍA DE CONSCIENCIA: Evalúa la alineación entre la autopercepción del líder frente a la percepción del entorno. Destaca puntos de acuerdo y áreas de descubrimiento personal.
-        3. INTEGRACIÓN CON EL PROPÓSITO ORGANIZACIONAL: Cómo la consciencia del líder impulsa o se sintoniza con la cultura actual de Confa.
-        4. EQUILIBRIO DE LIDERAZGO Y RUTA DE TRANSFORMACIÓN: Análisis matemático del equilibrio entre Gerencia, Transición y Liderazgo. Define la impronta del líder y entrega 3 rutas estratégicas para armonizar los 7 niveles.
+        ESTRUCTURA:
+        1. ANÁLISIS DE EVOLUCIÓN POR NIVELES: Desglose L1-L7 basado en el 'Ponderado Individual'. Describe el talento de consciencia observado y, acto seguido, la ruta para elevar su impacto.
+        2. SINTONÍA DE CONSCIENCIA: Alineación Auto vs Individual. Destaca acuerdos y áreas de descubrimiento personal positivo.
+        3. INTEGRACIÓN CULTURAL: Sintonía con la cultura de Confa.
+        4. RUTA DE TRANSFORMACIÓN: Análisis del equilibrio (Gerencia, Transición, Liderazgo) y 3 rutas estratégicas integrales.
 
-        RÚBRICA: 0-65 Bajo, 66-75 Medio, 76-85 Alto, 85-100 Superior.
         NOMENCLATURA: L1 Líder de Crisis/Viabilidad, L2 Líder de Relaciones, L3 Líder de Desempeño, L4 Líder Facilitador, L5 Líder Auténtico, L6 Líder Mentor/Socio, L7 Líder Visionario.
+        RÚBRICA: 0-65 Bajo, 66-75 Medio, 76-85 Alto, 85-100 Superior.
         """
         try:
-            with st.spinner('Procesando análisis 360°...'):
+            with st.spinner('Analizando consciencia...'):
                 response = model.generate_content(prompt_maestro)
                 st.markdown(f"## Análisis Estratégico de Liderazgo 360°: {lider_sel}")
                 st.markdown("---")
