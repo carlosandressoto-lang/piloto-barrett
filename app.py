@@ -47,7 +47,7 @@ try:
     genai.configure(api_key=api_key_segura)
     model = genai.GenerativeModel('gemini-2.5-flash')
 except Exception as e:
-    st.error("Error: Configura 'GEMINI_API_KEY' en los Secrets.")
+    st.error("Error: Configura 'GEMINI_API_KEY' in Secrets.")
 
 # --- 3. CARGA DE DATOS ---
 @st.cache_data
@@ -77,7 +77,6 @@ if df is not None:
         
     d = df[df['Nombre_Lider'] == lider_sel].iloc[0]
 
-    # Cálculos de dimensiones (Para IA y Visual)
     gerencia_prom = (d.INDIV_L1 + d.INDIV_L2 + d.INDIV_L3) / 3
     transicion_prom = d.INDIV_L4
     liderazgo_prom = (d.INDIV_L5 + d.INDIV_L6 + d.INDIV_L7) / 3
@@ -111,7 +110,7 @@ if df is not None:
     with c2: st.plotly_chart(fig_b2, key="b2")
     with c3: st.plotly_chart(fig_b3, key="b3")
 
-    # --- 6. RELOJES (ALINEACIÓN FIJA) ---
+    # --- 6. RELOJES (ESTRUCTURA DE COLUMNAS RESTAURADA) ---
     st.divider()
     st.subheader("⏳ Evolución del Liderazgo (Semáforo de Madurez)")
     def dibujar_reloj_barrett(vals):
@@ -119,8 +118,7 @@ if df is not None:
         colors_barrett = ["rgba(111, 66, 193, 0.5)"]*3 + ["rgba(40, 167, 69, 0.4)"] + ["rgba(253, 126, 20, 0.5)"]*3
         v_rev = [vals[6], vals[5], vals[4], vals[3], vals[2], vals[1], vals[0]]
         etiquetas = [obtener_etiqueta_color(v)[0] for v in v_rev]
-        col_txt = [obtener_etiqueta_color(v)[1] for v in v_rev]
-        fig = go.Figure(go.Funnel(y=[1,2,3,4,5,6,7], x=anchos, text=etiquetas, textinfo="text", textfont=dict(color=col_txt, size=14, family='Arial Black'), marker={"color": colors_barrett, "line": {"width": 2, "color": "white"}}, connector={"visible": False}))
+        fig = go.Figure(go.Funnel(y=[1,2,3,4,5,6,7], x=anchos, text=etiquetas, textinfo="text", textfont=dict(color=[obtener_etiqueta_color(v)[1] for v in v_rev], size=14, family='Arial Black'), marker={"color": colors_barrett, "line": {"width": 2, "color": "white"}}, connector={"visible": False}))
         fig.update_layout(height=400, margin=dict(l=10, r=10, t=10, b=10), yaxis=dict(visible=False), xaxis=dict(visible=False), plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
         return fig
 
@@ -129,19 +127,10 @@ if df is not None:
         st.markdown('<div class="titulo-col">Nivel Barrett</div>', unsafe_allow_html=True)
         st.markdown('<div class="leyenda-v3">' + ''.join([f'<div class="item-ley">{n}</div>' for n in ["L7 - Visionario", "L6 - Mentor", "L5 - Auténtico", "L4 - Facilitador", "L3 - Desempeño", "L2 - Relaciones", "L1 - Crisis"]]) + '</div>', unsafe_allow_html=True)
     
-    fig_r1 = dibujar_reloj_barrett(v_auto)
-    fig_r2 = dibujar_reloj_barrett(v_ind)
-    fig_r3 = dibujar_reloj_barrett(v_org)
-
-    with cr1:
-        st.markdown('<div class="titulo-col">Autovaloración</div>', unsafe_allow_html=True)
-        st.plotly_chart(fig_r1, key="r1")
-    with cr2:
-        st.markdown('<div class="titulo-col">Individual</div>', unsafe_allow_html=True)
-        st.plotly_chart(fig_r2, key="r2")
-    with cr3:
-        st.markdown('<div class="titulo-col">Organizacional</div>', unsafe_allow_html=True)
-        st.plotly_chart(fig_r3, key="r3")
+    fig_r1, fig_r2, fig_r3 = dibujar_reloj_barrett(v_auto), dibujar_reloj_barrett(v_ind), dibujar_reloj_barrett(v_org)
+    with cr1: st.markdown('<div class="titulo-col">Autovaloración</div>', unsafe_allow_html=True); st.plotly_chart(fig_r1, key="r1")
+    with cr2: st.markdown('<div class="titulo-col">Individual</div>', unsafe_allow_html=True); st.plotly_chart(fig_r2, key="r2")
+    with cr3: st.markdown('<div class="titulo-col">Organizacional</div>', unsafe_allow_html=True); st.plotly_chart(fig_r3, key="r3")
 
     # --- 7. RADAR Y DIMENSIONES ---
     st.divider()
@@ -162,29 +151,22 @@ if df is not None:
         fig_dim.update_layout(xaxis_range=[0, 105], height=400, template="plotly_dark", yaxis=dict(autorange="reversed"))
         st.plotly_chart(fig_dim, key="dim")
 
-    # --- 8. INFORME IA (VERIFICADO) ---
+    # --- 8. INFORME IA (MEJORADO CON RÚBRICA Y BRECHAS) ---
     st.divider()
     if st.button("🚀 GENERAR INFORME EJECUTIVO"):
         prompt_maestro = f"""
-        Actúa como un experto consultor senior en desarrollo de liderazgo (Richard Barrett). Genera un informe estratégico 360° para {lider_sel}.
-        DATOS: {d.to_json()}
-        REGLA DE ORO: PROHIBIDO INCLUIR INTRODUCCIONES, SALUDOS, PREÁMBULOS O FRASES COMO "COMO EXPERTO CONSULTOR...". INICIA DIRECTAMENTE CON EL PUNTO 1.
-        REGLA DE NOMENCLATURA OBLIGATORIA:
-        - Nivel 7: LÍDER VISIONARIO - Propósito de vivir
-        - Nivel 6: LÍDER MENTOR/SOCIO - Trabajo en la colaboración
-        - Nivel 5: LÍDER AUTÉNTICO - Autoexpresión genuina
-        - Nivel 4: FACILITADOR/INNOVADOR - Evolución de forma valiente
-        - Nivel 3: GESTOR DE DESEMPEÑO - Logrando la excelencia
-        - Nivel 2: GESTOR DE RELACIONES - Apoyo de relaciones
-        - Nivel 1: GESTOR DE CRISIS - Garantizar visibilidad
-
-        ESTRUCTURA DEL INFORME:
-        1. DESCRIPCIÓN POR NIVELES: Desglose L1 a L7 ascendente. Usa la NOMENCLATURA OBLIGATORIA y analiza el impacto según el 'Ponderado Individual'.
-        2. ANÁLISIS DE AUTOVALORACIÓN: Autoconciencia frente a la visión del entorno (Ponderado individual vs Autoevaluacion).
-        3. MATRIZ DE MADUREZ: Alineación estratégica Individual (Ponderado Individual) vs Organizacional (Ponderado organizacional).
-        4. PERFIL DE LIDERAZGO: Estilo (Nivel predominante y dimensión predominante según el promedio mas alto (Liderazgo: {round(liderazgo_prom,1)}%, Transición: {round(transicion_prom,1)}%, Gerencia: {round(gerencia_prom,1)}%)) y equilibrio de las 3 dimensiones, en base a ese equilibrio entrega 3 recomendaciones apreciativas (punto seguido).
-
-        FILOSOFÍA Y REDACCIÓN: 100% Apreciativa. Sin lenguaje negativo. HABLA SIEMPRE EN TERCERA PERSONA NEUTRAL. Inicia directamente.
+        Actúa como consultor senior Barrett. Analiza a {lider_sel}. DATOS: {d.to_json()}
+        REGLA DE ORO: INICIA DIRECTAMENTE CON EL PUNTO 1. PROHIBIDO SALUDOS O INTRODUCCIONES.
+        NOMENCLATURA: L7: LÍDER VISIONARIO, L6: LÍDER MENTOR/SOCIO, L5: LÍDER AUTÉNTICO, L4: FACILITADOR/INNOVADOR, L3: GESTOR DE DESEMPEÑO, L2: GESTOR DE RELACIONES, L1: GESTOR DE CRISIS.
+        RÚBRICA: Bajo (<65), Medio (65-75), Alto (75-85), Superior (>85).
+        
+        ESTRUCTURA Y ANÁLISIS REQUERIDO:
+        1. DESCRIPCIÓN POR NIVELES: Orden L1-L7. Describe el desempeño basándote en el 'Ponderado Individual' usando las categorías de la RÚBRICA.
+        2. ANÁLISIS DE AUTOVALORACIÓN: Resalta brechas notorias entre Auto y Ponderado Individual. Enfatiza los "puntos ciegos positivos" (donde el líder se califica Bajo/Medio pero el entorno lo califica Alto/Superior o viceversa).
+        3. MATRIZ DE MADUREZ: Analiza diferencias significativas del líder (Ponderado individual) respecto al promedio organizacional(ponderado organizacional), tanto en fortalezas sobresalientes como en áreas con potencial de alineación.
+        4. PERFIL DE LIDERAZGO: Estilo predominante según promedios (Liderazgo: {round(liderazgo_prom,1)}%, Transición: {round(transicion_prom,1)}%, Gerencia: {round(gerencia_prom,1)}%) y 3 recomendaciones apreciativas (punto seguido).
+        
+        FILOSOFÍA: 100% Apreciativa. Tercera persona neutral.
         """
         try:
             with st.spinner('Analizando datos...'):
@@ -198,8 +180,7 @@ if df is not None:
         st.markdown(f"### 📋 Informe Ejecutivo: {lider_sel}")
         st.write(texto_informe)
 
-        # --- 9. MÓDULO PDF (CONSOLIDADO) ---
-        if st.button("📄 GENERAR REPORTE COMPLETO PDF"):
+        if st.button("📄 GENERAR REPORTE CONSOLIDADO PDF"):
             with st.spinner('Procesando PDF...'):
                 try:
                     pdf = FPDF()
@@ -220,10 +201,8 @@ if df is not None:
                         pdf.image(save_chart(fig_b1, "b1.png"), x=10, y=30, w=60)
                         pdf.image(save_chart(fig_b2, "b2.png"), x=75, y=30, w=60)
                         pdf.image(save_chart(fig_b3, "b3.png"), x=140, y=30, w=60)
-                        
                         pdf.image(save_chart(fig_radar, "radar.png", 500, 400), x=10, y=85, w=95)
                         pdf.image(save_chart(fig_dim, "dim.png", 500, 350), x=110, y=95, w=90)
-                        
                         pdf.image(save_chart(fig_r1, "r1.png", 400, 400), x=15, y=165, w=55)
                         pdf.image(save_chart(fig_r2, "r2.png", 400, 400), x=75, y=165, w=55)
                         pdf.image(save_chart(fig_r3, "r3.png", 400, 400), x=135, y=165, w=55)
