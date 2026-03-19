@@ -179,9 +179,9 @@ if df is not None:
         REGLA DE ORO: INICIA DIRECTAMENTE. PROHIBIDO SALUDOS O INTRODUCCIONES. NO USES TÉRMINOS COMO "DESEMPEÑO", "BRECHAS" O "PUNTOS CIEGOS".
         
         ESTRUCTURA OBLIGATORIA (ESPEJO):
-        1. DESCRIPCIÓN POR NIVELES: Analiza obligatoriamente CADA nivel (L1 a L7) por separado en una lista. Usa la nomenclatura Barrett (ej: L7: LÍDER VISIONARIO). Describe el estado de desarrollo basándote en el 'Ponderado Individual'.
-        2. ANÁLISIS DE AUTOVALORACIÓN: Un solo párrafo. Analiza la alineación entre la percepción interna y externa del entorno. Resalta áreas donde la influencia del líder es mayor de lo percibido por él mismo.
-        3. MATRIZ DE MADUREZ: Un solo párrafo. Analiza la sintonía del líder con el promedio organizacional. Destaca fortalezas que impulsan la cultura corporativa.
+        1. DESCRIPCIÓN POR NIVELES: Analiza obligatoriamente CADA nivel (L1 a L7) por separado en una lista. Usa la nomenclatura Barrett (ej: Nivel 7: Lider visionario, Nivel 6 Lider Mentor Socio, Nivel 5: Lider Autentico). Describe el estado de desarrollo basándote en el 'Ponderado Individual' convertido a Niveles según la rubrica.
+        2. ANÁLISIS DE AUTOVALORACIÓN: Un solo párrafo. Analiza la alineación entre la percepción interna (Autoevaluación) y externa (Ponderado individual que lo componen la evaluación de Jefe inmediato, De sus colaboradores y de sus Pares) . Resalta áreas donde la influencia del líder es mayor de lo percibido por él mismo.
+        3. MATRIZ DE MADUREZ: Un solo párrafo. Analiza la sintonía del líder (Ponderado Individual) con el promedio organizacional. Destaca fortalezas que impulsan la cultura corporativa (Ponderado organizacional).
         4. PERFIL DE LIDERAZGO: Un solo párrafo. Define el estilo predominante según el promedio más alto (Liderazgo: {round(liderazgo_prom,1)}%, Transición: {round(transicion_prom,1)}%, Gerencia: {round(gerencia_prom,1)}%) y 3 recomendaciones apreciativas punto seguido.
 
         FILOSOFÍA: 100% Apreciativa. Tercera persona neutral.
