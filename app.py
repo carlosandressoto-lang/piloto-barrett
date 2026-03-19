@@ -190,7 +190,7 @@ if df is not None:
 
         REGLAS DE ORO: 
         - INICIA DIRECTAMENTE. PROHIBIDO SALUDOS O INTRODUCCIONES o RESMENES O APRECIACIONES.
-       	- PROHIBIDO USAR: "desempeño", "brechas", "puntos ciegos" o hablar desde defectos o fallos, debe ser un feedback totalmente apreciativo.
+        - PROHIBIDO USAR: "desempeño", "brechas", "puntos ciegos" o hablar desde defectos o fallos, debe ser un feedback totalmente apreciativo.
         - USA: "desarrollo", "alineación", "influencia", "oportunidad de expansión".
         - RÚBRICA: Bajo (<65), Medio (65-75), Alto (75-85), Superior (>85).
 
