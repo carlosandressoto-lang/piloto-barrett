@@ -24,7 +24,7 @@ st.markdown("""
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-        height: 340px; 
+        height: 340px; F
         margin-top: 35px; 
         padding-right: 10px;
         border-right: 1px solid #334155;
@@ -182,7 +182,7 @@ if df is not None:
         cats = ['L1','L2','L3','L4','L5','L6','L7']
         for val, name, color in zip([v_auto, v_ind, v_org], ['Auto', 'Individual', 'Organizacional'], ['#3498db', '#2ecc71', '#e74c3c']):
             fig_radar.add_trace(go.Scatterpolar(r=val, theta=cats, fill='toself', name=name, line_color=color))
-        fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 100])), height=500, template="plotly_dark", legend=dict(orientation="h", y=1.1, x=0.5, xanchor="center"))
+        fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 100])), height=500, template="plotly_dark", legend=dict(orientation="h", y=1.25, x=0.5, xanchor="center"))
         st.plotly_chart(fig_radar, key="radar_v")
     with col_dim:
         st.subheader("⚖️ Índice del Equilibrio de Liderazgo")
