@@ -53,21 +53,26 @@ try:
 except Exception as e:
     st.error("Error: Configura 'GEMINI_API_KEY' en los Secrets.")
 
-# --- 3. CARGA DE DATOS ---
+# --- 3. CARGA DE DATOS (AHORA DESDE GOOGLE SHEETS) ---
 @st.cache_data
 def load_data():
     try:
-        df = pd.read_csv('Resultados_Gerentes.csv', sep=';', decimal=',', encoding='latin-1')
+        # Usamos la URL que configuraste en Secrets
+        csv_url = st.secrets["GSHEET_URL"]
+        df = pd.read_csv(csv_url, decimal=',')
+        
         df.columns = df.columns.str.strip()
         df['Nombre_Lider'] = df['Nombre_Lider'].astype(str).str.strip()
         df = df[~df['Nombre_Lider'].isin(['0.0', 'nan', ''])]
         df = df.dropna(subset=['Nombre_Lider'])
+        
+        # Columnas de resultados + Columnas de evaluadores
         cols_to_fix = [c for c in df.columns if ('L' in c and any(x in c for x in ['AUTO', 'INDIV', 'ORG'])) or 'CANT_' in c]
         for col in cols_to_fix:
             df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
         return df
     except Exception as e:
-        st.error(f"Error crítico de datos: {e}")
+        st.error(f"Error crítico al conectar con Google Sheets: {e}")
         return None
 
 df = load_data()
@@ -152,7 +157,7 @@ if df is not None:
         cats = ['L1','L2','L3','L4','L5','L6','L7']
         for val, name, color in zip([v_auto, v_ind, v_org], ['Auto', 'Individual', 'Organizacional'], ['#3498db', '#2ecc71', '#e74c3c']):
             fig_radar.add_trace(go.Scatterpolar(r=val, theta=cats, fill='toself', name=name, line_color=color))
-        fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 100])), height=500, template="plotly_dark", legend=dict(orientation="h", y=1.25, x=0.5, xanchor="center"))
+        fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 100])), height=500, template="plotly_dark", legend=dict(orientation="h", y=1.1, x=0.5, xanchor="center"))
         st.plotly_chart(fig_radar, key="radar_v")
     with col_dim:
         st.subheader("⚖️ Índice del Equilibrio de Liderazgo")
@@ -184,6 +189,10 @@ if df is not None:
         - PROHIBIDO USAR: "desempeño", "brechas", "puntos ciegos" o hablar desde defectos o fallos, debe ser un feedback totalmente apreciativo.
         - USA: "desarrollo", "alineación", "influencia", "oportunidad de expansión".
         - RÚBRICA: Bajo (<65), Medio (65-75), Alto (75-85), Superior (>85).
+        - SI CANT_JEFE es 0: Debes iniciar el informe con una ADVERTENCIA ESTRATÉGICA indicando que el ponderado individual se ve severamente afectado (sesgo a la baja) debido a la ausencia de la valoración del líder directo (40% del peso).
+        - SI CANT_PAR es 0: Debes iniciar el informe con una ADVERTENCIA ESTRATÉGICA indicando que el ponderado individual se ve severamente afectado (sesgo a la baja) debido a la ausencia de la valoración del minimo 1 par (20% del peso si tiene colaboradores a cargo, 40% si no tiene colaboradores a cargo).
+        - SI CANT_AUTO es 0: Indica que no existe punto de comparación interno.
+        - Si no hay estos ceros, no menciones nada de esto.
 
         ESTRUCTURA informe OBLIGATORIA:
         1. DESCRIPCIÓN POR NIVELES: Lista de L1 a L7 con el nombre de contexto Barret (Ejemplo L1: Gestor de Crisis). Clasifica cada nivel basándote en el 'Ponderado Individual' usando la rúbrica (Bajo, Medio, Alto, Superior) y las definiciones Barrett anteriores para generar una descripción según el modelo Barret y el nivel de la rubrica del líder. Siempre una lista de Nivel 1 a Nivel 7 no lo hagas en 1 solo párrafo porque confunde
@@ -212,6 +221,7 @@ if df is not None:
                     pdf.cell(0, 10, 'REPORTE ESTRATEGICO DE DESARROLLO DE LIDERAZGO', ln=True, align='C')
                     pdf.set_font('Helvetica', '', 11)
                     pdf.cell(0, 10, f'Líder Evaluado: {lider_sel}', ln=True, align='C')
+                    
                     pdf.set_font('Helvetica', 'I', 9)
                     txt_evals = f"Total Evaluadores: {int(d.CANT_EVAL)} (Auto: {int(d.CANT_AUTO)}, Jefe: {int(d.CANT_JEFE)}, Pares: {int(d.CANT_PAR)}, Colab: {int(d.CANT_COL)})"
                     pdf.cell(0, 8, txt_evals, ln=True, align='C')
@@ -233,7 +243,6 @@ if df is not None:
                         pdf.text(10, 98, "2. Alineación de Consciencia y Entorno")
                         pdf.image(save_chart(fig_radar, "radar.png", 500, 400), x=10, y=101, w=95)
                         
-                        # --- CORRECCIÓN PDF: ÍNDICE DE EQUILIBRIO CON ETIQUETAS ---
                         pdf.text(110, 98, "3. Índice del Equilibrio de Liderazgo")
                         vals_dim_pdf = [liderazgo_prom, transicion_prom, gerencia_prom]
                         nombres_dim_pdf = ['Liderazgo (L5-L7)', 'Transición (L4)', 'Gerencia (L1-L3)']
