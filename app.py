@@ -41,7 +41,6 @@ def load_data():
         df = df[~df['Nombre_Lider'].isin(['0.0', 'nan', ''])]
         df = df.dropna(subset=['Nombre_Lider'])
         
-        # Columnas Barrett + Potencial + Desempeño + Cantidades
         cols_to_fix = [c for c in df.columns if ('L' in c and any(x in c for x in ['AUTO', 'INDIV', 'ORG'])) or 'CANT_' in c or 'POT' in c or 'DES' == c]
         for col in cols_to_fix:
             df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
@@ -54,12 +53,10 @@ df = load_data()
 
 # --- 4. LÓGICA NINEBOX CONFA (9 CUADRANTES PDF) ---
 def obtener_cuadrante_confa(pot, des):
-    # Eje Y: Potencial (IND_POT)
     if pot < 60: p_label = "BAJO"
     elif pot < 80: p_label = "MEDIO"
     else: p_label = "ALTO"
     
-    # Eje X: Desempeño (DES)
     if des <= 1: d_label = "BAJO"
     elif des <= 2: d_label = "MEDIO"
     else: d_label = "ALTO"
@@ -77,6 +74,12 @@ def obtener_cuadrante_confa(pot, des):
     }
     return mapping.get((p_label, d_label), "No clasificado")
 
+# Función para re-escalar el eje Y y que se vea homogéneo (0-60, 60-80, 80-100 iguales)
+def escalar_visual_potencial(val):
+    if val <= 60: return (val / 60) * 33.33
+    elif val <= 80: return 33.33 + ((val - 60) / 20) * 33.33
+    else: return 66.66 + ((val - 80) / 20) * 33.33
+
 if df is not None:
     lideres = sorted(df['Nombre_Lider'].unique())
     lider_sel = st.selectbox("Seleccione el líder para el análisis detallado:", lideres)
@@ -90,7 +93,6 @@ if df is not None:
     </div>
     """, unsafe_allow_html=True)
 
-    # --- BARRETT DATA ---
     v_auto = [d.AUTO_L1, d.AUTO_L2, d.AUTO_L3, d.AUTO_L4, d.AUTO_L5, d.AUTO_L6, d.AUTO_L7]
     v_ind = [d.INDIV_L1, d.INDIV_L2, d.INDIV_L3, d.INDIV_L4, d.INDIV_L5, d.INDIV_L6, d.INDIV_L7]
     v_org = [d.ORG_L1, d.ORG_L2, d.ORG_L3, d.ORG_L4, d.ORG_L5, d.ORG_L6, d.ORG_L7]
@@ -99,7 +101,6 @@ if df is not None:
     transicion_prom = d.INDIV_L4
     gerencia_prom = (d.INDIV_L1 + d.INDIV_L2 + d.INDIV_L3) / 3
 
-    # Funciones Visuales (Respetadas)
     def obtener_color_desarrollo(v):
         if v < 65: return "#ff4b4b" 
         if v < 75: return "#f1c40f" 
@@ -132,7 +133,6 @@ if df is not None:
         fig.update_layout(height=400, margin=dict(l=margen_l, r=20, t=10, b=10), yaxis=dict(visible=incluir_leyenda, tickfont=dict(size=10)), xaxis=dict(visible=False), plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
         return fig
 
-    # --- RENDER DASHBOARD ---
     st.divider()
     st.subheader("📊 Frecuencia de comportamientos por niveles (%)")
     c1, c2, c3 = st.columns(3)
@@ -168,32 +168,40 @@ if df is not None:
         fig_dim.update_layout(xaxis_range=[0, 105], height=400, template="plotly_dark", yaxis=dict(autorange="reversed"))
         st.plotly_chart(fig_dim, key="dim_v")
 
-    # --- SECCIÓN NINEBOX (INTEGRADA) ---
+    # --- SECCIÓN NINEBOX INTEGRAL CON ESCALA HOMOGÉNEA ---
     st.divider()
     st.subheader("🟦 Mapa de Talento NineBox Confa")
     cnb1, cnb2 = st.columns([1.5, 1])
     cuadrante = obtener_cuadrante_confa(d.IND_POT, d.DES)
+    
     with cnb1:
         fig_nb = go.Figure()
-        # Zonas de fondo
-        fig_nb.add_shape(type="rect", x0=2.5, y0=80, x1=3.5, y1=100, fillcolor="green", opacity=0.2, line_width=0)
-        fig_nb.add_shape(type="rect", x0=0.5, y0=0, x1=1.5, y1=60, fillcolor="red", opacity=0.2, line_width=0)
-        # Punto del líder
-        fig_nb.add_trace(go.Scatter(x=[d.DES], y=[d.IND_POT], mode='markers+text', marker=dict(size=20, color='#BFDBFE', line=dict(width=2, color='white')), text=[lider_sel], textposition="top center"))
-        fig_nb.update_layout(xaxis=dict(title="Desempeño (1-3)", tickvals=[1,2,3], range=[0.5, 3.5]), yaxis=dict(title="Potencial IND_POT (%)", range=[0, 105]), template="plotly_dark", height=450)
-        st.plotly_chart(fig_nb, key="nb_v")
+        # 9 Cuadrantes con colores diferenciados (Fríos a Cálidos/Neutros)
+        cuadrantes_specs = [
+            (0.5, 1.5, 0, 33.33, "#440154", "ICEBERG"),            (1.5, 2.5, 0, 33.33, "#482878", "EFECTIVOS"),         (2.5, 3.5, 0, 33.33, "#3b528b", "PROF. CONFIABLES"),
+            (0.5, 1.5, 33.33, 66.66, "#31688e", "DILEMA"),        (1.5, 2.5, 33.33, 66.66, "#21918c", "EMP. CLAVE"),    (2.5, 3.5, 33.33, 66.66, "#5ec962", "FUT. ESTRELLAS"),
+            (0.5, 1.5, 66.66, 100, "#b5de2b", "ENIGMA"),          (1.5, 2.5, 66.66, 100, "#fde725", "ESTRELLA CREC."),  (2.5, 3.5, 66.66, 100, "#f89441", "SUPERESTRELLAS")
+        ]
+        for x0, x1, y0, y1, color, label in cuadrantes_specs:
+            fig_nb.add_shape(type="rect", x0=x0, y0=y0, x1=x1, y1=y1, fillcolor=color, opacity=0.4, line=dict(color="white", width=1))
+            fig_nb.add_annotation(x=(x0+x1)/2, y=y1-2, text=label, showarrow=False, font=dict(size=8, color="rgba(255,255,255,0.5)"))
+
+        y_visual = escalar_visual_potencial(d.IND_POT)
+        fig_nb.add_trace(go.Scatter(x=[d.DES], y=[y_visual], mode='markers+text', marker=dict(size=25, color='white', symbol='diamond', line=dict(width=3, color='#BFDBFE')), text=[lider_sel], textposition="top center"))
+        fig_nb.update_layout(xaxis=dict(title="Desempeño (1-3)", tickvals=[1,2,3], range=[0.5, 3.5]), yaxis=dict(title="Potencial (Escala Homogénea)", tickvals=[0, 33.33, 66.66, 100], ticktext=["0%", "60%", "80%", "100%"], range=[-5, 105]), template="plotly_dark", height=500)
+        st.plotly_chart(fig_nb, key="nb_v", use_container_width=True)
+
     with cnb2:
         st.markdown(f"""
         <div class="metric-box" style="text-align: left;">
             <h3 style="color:#BFDBFE; margin:0;">{cuadrante}</h3>
-            <p><b>Potencial (IND_POT):</b> {d.IND_POT}% | <b>Desempeño (DES):</b> {d.DES}</p>
+            <p><b>Potencial:</b> {d.IND_POT}% | <b>Desempeño:</b> {d.DES}</p>
             <p><b>Autoevaluación Potencial:</b> {d.AUTO_POT}%</p>
             <hr style="border:0.5px solid #334155;">
             <p style="font-size:0.85rem;">Cruce estratégico basado en el Análisis de Talento Confa 2018.</p>
         </div>
         """, unsafe_allow_html=True)
 
-    # --- 7. INFORME IA (PROMPT MAESTRO INTEGRADO) ---
     if "informe_cache" not in st.session_state:
         st.session_state.informe_cache = {}
 
@@ -201,11 +209,7 @@ if df is not None:
     if st.button("🚀 GENERAR INFORME"):
         tipo_sujeto = "GERENCIA" if es_gerencia else "LÍDER"
         prompt_maestro = f"""
-        Actúa como consultor senior de DESARROLLO DE LIDERAZGO Barrett. Genera un reporte para {lider_sel}. 
-        DATOS: {d.to_json()} donde AUTO es Autoevaluación, INDI es Ponderado Individual, ORG es Ponderado organizacional (Promedio de resultados organizacionales) y CANT es cantidad de respuestas o evaluadores. 
-        Si alguien tiene todo 0 en AUTO es porque no hizo Autoevalaucion para que lo tengas presente en la comparativa. 
-        Si ves que sus resultados INDI son muy bajos, revisa que al menos CANT_JEFE y CANT_PAR sean mínimo 1, si no ahí esta el error y dejaremos en el reporte ese hallazgo de forma obligatoria pues seria un sesgo matemático. Si no encontramos esas inconsistencias no mencionaremos por nada del mundo esta información en el resto del informe, si y solo si se cumplen una de esas restricciones.
-        
+        Actúa como consultor senior de DESARROLLO DE LIDERAZGO Barrett. Genera un reporte para {lider_sel}. DATOS: {d.to_json()} donde AUTO es Autoevaluación, INDI es Ponderado Individual, ORG es Ponderado organizacional (Promedio de resultados organizacionales) y CANT es cantidad de respuestas o evaluadores. Si alguien tiene todo 0 en AUTO es porque no hizo Autoevalaucion para que lo tengas presente en la comparativa. Si ves que sus resultados INDI son muy bajos, revisa que al menos CANT_JEFE y CANT_PAR sean mínimo 1, si no ahí esta el error y dejaremos en el reporte ese hallazgo de forma obligatoria pues seria un sesgo matemático. Si no encontramos esas inconsistencias no mencionaremos por nada del mundo esta información en el resto del informe, si y solo si se cumplen una de esas restricciones.
         PROHIBIDO USAR ANGLICISMOS. REDACTA TODO EN ESPAÑOL PURO.
         CONTEXTO BARRETT:
         - L1: Gestor de Crisis. Foco en estabilidad y viabilidad operativa. (Supervivencia)
@@ -224,54 +228,30 @@ if df is not None:
         - SI CANT_JEFE es 0: Debes iniciar el informe con una ADVERTENCIA ESTRATÉGICA indicando que el ponderado individual se ve severamente afectado (sesgo a la baja) debido a la ausencia de la valoración del líder directo (40% del peso).
         - SI CANT_PAR es 0: Debes iniciar el informe con una ADVERTENCIA ESTRATÉGICA indicando que el ponderado individual se ve severamente afectado (sesgo a la baja) debido a la ausencia de la valoración del minimo 1 par (20% del peso si tiene colaboradores a cargo, 40% si no tiene colaboradores a cargo).
         - SI CANT_AUTO es 0: Indica que no existe punto de comparación interno.
-        
-       ANÁLISIS DE POTENCIAL Y NINEBOX (CONFA 2018)
-        5. Identifica el cuadrante: {cuadrante}. 
-        USA ESTAS DEFINICIONES ESTRICTAS SEGÚN EL CUADRANTE:
-        - ENIGMA: Líder con alto potencial pero desempeño bajo. Puesto incorrecto o jefe que no ha sabido descubrir su potencial. Requiere retroalimentación y guía.
-        - FUTURA ESTRELLA EN CRECIMIENTO: Alto potencial, desempeño medio. Motivar mediante retos para que salgan de zona de confort y demuestren habilidades.
-        - FUTUROS LIDERES (SUPERESTRELLAS): Alto desempeño y potencial. Mejor opción para sucesiones y jerarquía. Reconocer y premiar esfuerzos.
-        - DILEMA: Potencial promedio, desempeño bajo. Trabajar motivación y compromiso otorgando retos.
-        - EMPLEADOS CLAVES: Potencial y desempeño promedio. Prometedores, necesitan ser motivados a dar lo mejor.
-        - FUTURAS ESTRELLAS: Alto desempeño, potencial promedio. Capacidad para puestos clave, requieren seguir creciendo.
-        - ICEBERG: Bajo potencial y bajo desempeño. Observar avances; si no hay logros, considerar desvinculación.
-        - EFECTIVOS: Potencial bajo, desempeño promedio (cumplen expectativas). Presentar cambios en actividades para incitar aprendizaje.
-        - PROFESIONALES CONFIABLES: Desempeño excepcional, bajo potencial liderazgo. Reconocer esfuerzo y desarrollar liderazgo para sucesiones futuras.
-        
-        ANALIZA TAMBIÉN:
-        - AUTO_POT ({d.AUTO_POT}%) vs IND_POT ({d.IND_POT}%): Contraste autopercepción vs realidad colectiva.
-        - TENDENCIA: Qué tan cerca está de las transiciones (Rubrica: Bajo <60, Medio 60-80, Alto >80).
-        
-        SI ES {tipo_sujeto} = "GERENCIA": 
-        - No hables de sucesiones personales ni retroalimentación individual.
-        - Habla de "Capacidad instalada del talento", "Cultura de resultados de la gerencia" y "Estrategia de retención del talento grupal".
+        - Si no hay estos ceros, no menciones nada de esto.
 
         ESTRUCTURA informe OBLIGATORIA:
-	1. DESCRIPCIÓN POR NIVELES: Lista de L1 a L7 con el nombre de contexto Barret (Ejemplo L1: Gestor de Crisis). Clasifica cada nivel basándote en el 'Ponderado Individual' usando la rúbrica (Bajo, Medio, Alto, Superior) y las definiciones Barrett anteriores para generar una descripción según el modelo Barret y el nivel de la rubrica del líder. Siempre una lista de Nivel 1 a Nivel 7 no lo hagas en 1 solo párrafo porque confunde
+        1. DESCRIPCIÓN POR NIVELES: Lista de L1 a L7 con el nombre de contexto Barret (Ejemplo L1: Gestor de Crisis). Clasifica cada nivel basándote en el 'Ponderado Individual' usando la rúbrica (Bajo, Medio, Alto, Superior) y las definiciones Barrett anteriores para generar una descripción según el modelo Barret y el nivel de la rubrica del líder. Siempre una lista de Nivel 1 a Nivel 7 no lo hagas en 1 solo párrafo porque confunde
         2. ANÁLISIS DE AUTOVALORACIÓN: Un párrafo. Analiza alineación percepción interna (Autoevaluacion) vs colectiva (Ponderado individual que es la evaluación de Jefe directo, Colaboradores a cargo y Pares). Resalta donde la influencia externa es mayor a la autopercepción, o aquellos puntos donde la autoevaluacion sea mayor en rubrica a lo evaluado pues son 2 cosas diferentes a trabajar según el nivel de conciencia.
         3. MATRIZ DE MADUREZ: Un párrafo sólido. Analiza sintonía del líder (Ponderado Individual) con el Ponderado Organizacional basándote en la Rúbrica.
         4. PERFIL DE LIDERAZGO: Un párrafo sólido. Define el estilo predominante según el promedio más alto (Liderazgo: {round(liderazgo_prom,1)}%, Transición: {round(transicion_prom,1)}%, Gerencia: {round(gerencia_prom,1)}%) y ofrece 3 recomendaciones de expansión para llegar a un equilibrio de las 3 dimensiones (Liderazgo Transicion y Gerencia) punto seguido.
-        5. POSICIONAMIENTO ESTRATÉGICO DE TALENTO (Potencial y NineBox): Un párrafo sólido y técnico. Identifica el cuadrante asignado ({cuadrante}) y utiliza su definición estratégica de Confa 2018 para explicar la situación actual del evaluado. Analiza la brecha o alineación entre la AUTO_POT ({d.AUTO_POT}%) y el IND_POT ({d.IND_POT}%), determinando si existe una sobrevaloración o una subvaloración del propio potencial de crecimiento. Establece la 'Tendencia de Transición' evaluando qué tan cerca está de los límites de la rúbrica (Bajo <60, Medio 60-80, Alto >80) y define, basándose en el cruce con DES (Nivel {d.DES}), qué acciones de retención, motivación o movilidad interna son imperativas para maximizar su valor en la organización. Si el IND_POT es significativamente más alto que la AUTO_POT, resalta el "Talento Oculto"; si es al contrario, analiza la necesidad de un ajuste de expectativas de carrera. Termina con una frase sobre la proyección de este perfil hacia posiciones de mayor jerarquía o roles técnicos expertos según sea el caso.
         """
         try:
             with st.spinner('Consolidando informe...'):
                 response = model.generate_content(prompt_maestro)
                 st.session_state.informe_cache[lider_sel] = response.text
-        except Exception as e:
-            st.error(f"Error IA: {e}")
+        except Exception as e: st.error(f"Error IA: {e}")
 
     if lider_sel in st.session_state.informe_cache:
         st.markdown(f"### 📋 Informe Estratégico Integral: {lider_sel}")
         st.write(st.session_state.informe_cache[lider_sel])
 
-if st.button("📄 GENERAR REPORTE PDF"):
+        if st.button("📄 GENERAR REPORTE PDF"):
             with st.spinner('Procesando PDF...'):
                 try:
                     pdf = FPDF()
                     pdf.set_auto_page_break(auto=True, margin=15)
                     pdf.add_page()
-                    
-                    # --- ENCABEZADO ---
                     pdf.set_font('Helvetica', 'B', 14)
                     pdf.cell(0, 10, 'REPORTE ESTRATEGICO INTEGRAL (BARRETT + TALENTO)', ln=True, align='C')
                     pdf.set_font('Helvetica', '', 11)
@@ -285,45 +265,29 @@ if st.button("📄 GENERAR REPORTE PDF"):
                             fig.write_image(path, engine="kaleido", scale=2) 
                             return path
                         
-                        # --- PÁGINA 1: GRÁFICOS BARRETT ---
                         pdf.set_font('Helvetica', 'B', 10)
                         pdf.text(10, 43, "1. Frecuencia de comportamientos por niveles (%)")
                         pdf.image(save_chart(generar_fig_barras(v_auto, "Auto", "#3498db"), "b1.png"), x=10, y=45, w=60)
                         pdf.image(save_chart(generar_fig_barras(v_ind, "Individual", "#2ecc71"), "b2.png"), x=75, y=45, w=60)
                         pdf.image(save_chart(generar_fig_barras(v_org, "Organizacional", "#e74c3c"), "b3.png"), x=140, y=45, w=60)
-
                         pdf.text(10, 98, "2. Alineación de Consciencia y Entorno")
                         pdf.image(save_chart(fig_radar, "radar.png", 500, 400), x=10, y=101, w=95)
-                        
                         pdf.text(110, 98, "3. Índice del Equilibrio de Liderazgo")
                         pdf.image(save_chart(fig_dim, "dim.png", 500, 350), x=110, y=108, w=90)
-
                         pdf.text(15, 178, "4. Resultados Evaluación 360° (Niveles Barrett)")
-                        r1_pdf = generar_fig_reloj(v_auto, incluir_leyenda=True)
-                        r2_pdf = generar_fig_reloj(v_ind, incluir_leyenda=False, forzar_pdf=True)
-                        r3_pdf = generar_fig_reloj(v_org, incluir_leyenda=False, forzar_pdf=True)
+                        r1_pdf = generar_fig_reloj(v_auto, incluir_leyenda=True); r2_pdf = generar_fig_reloj(v_ind, incluir_leyenda=False, forzar_pdf=True); r3_pdf = generar_fig_reloj(v_org, incluir_leyenda=False, forzar_pdf=True)
                         pdf.image(save_chart(r1_pdf, "r1.png", 500, 400), x=15, y=187, w=60) 
                         pdf.image(save_chart(r2_pdf, "r2.png", 500, 400), x=75, y=187, w=60) 
                         pdf.image(save_chart(r3_pdf, "r3.png", 500, 400), x=135, y=187, w=60)
 
-                        # --- PÁGINA 2: NINEBOX Y TEXTO ---
                         pdf.add_page()
                         pdf.set_font('Helvetica', 'B', 12)
                         pdf.cell(0, 10, '5. Posicionamiento Estratégico NineBox Confa', ln=True)
-                        # Guardamos y pegamos la gráfica NineBox
                         pdf.image(save_chart(fig_nb, "ninebox_pdf.png", 600, 400), x=35, y=25, w=140)
-                        
-                        pdf.set_y(105) # Bajamos el cursor después de la imagen
-                        pdf.set_font('Helvetica', 'B', 12)
-                        pdf.cell(0, 10, 'Análisis Ejecutivo Integral', ln=True)
-                        pdf.ln(2)
-                        pdf.set_font('Helvetica', '', 10)
-                        
-                        # Limpiamos el texto para el PDF (caracteres especiales)
-                        limpio = st.session_state.informe_cache[lider_sel].replace("**", "").replace("###", "").replace("- ", "• ")
-                        limpio = limpio.encode('latin-1', 'replace').decode('latin-1')
+                        pdf.set_y(105); pdf.set_font('Helvetica', 'B', 12); pdf.cell(0, 10, 'Análisis Ejecutivo Integral', ln=True); pdf.ln(2); pdf.set_font('Helvetica', '', 10)
+                        limpio = st.session_state.informe_cache[lider_sel].replace("**", "").replace("###", "").replace("- ", "• ").encode('latin-1', 'replace').decode('latin-1')
                         pdf.multi_cell(0, 6, limpio)
 
                     output = pdf.output()
                     st.download_button(label="📥 Descargar Reporte Integral PDF", data=bytes(output), file_name=f"Reporte_Integral_{lider_sel}.pdf", mime="application/pdf")
-                except Exception as e: st.error(f"Error crítico en PDF: {e}")
+                except Exception as e: st.error(f"Error PDF: {e}")
