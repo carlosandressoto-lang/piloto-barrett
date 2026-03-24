@@ -74,7 +74,7 @@ def obtener_cuadrante_confa(pot, des):
     }
     return mapping.get((p_label, d_label), "No clasificado")
 
-# Función para re-escalar el eje Y visualmente manteniendo el 0, 60, 80 y 100 como hitos visuales
+# Función para re-escalar el eje Y y que se vea homogéneo (0-60, 60-80, 80-100 iguales)
 def escalar_visual_potencial(val):
     if val <= 60: return (val / 60) * 33.33
     elif val <= 80: return 33.33 + ((val - 60) / 20) * 33.33
@@ -93,7 +93,6 @@ if df is not None:
     </div>
     """, unsafe_allow_html=True)
 
-    # --- BARRETT DATA ---
     v_auto = [d.AUTO_L1, d.AUTO_L2, d.AUTO_L3, d.AUTO_L4, d.AUTO_L5, d.AUTO_L6, d.AUTO_L7]
     v_ind = [d.INDIV_L1, d.INDIV_L2, d.INDIV_L3, d.INDIV_L4, d.INDIV_L5, d.INDIV_L6, d.INDIV_L7]
     v_org = [d.ORG_L1, d.ORG_L2, d.ORG_L3, d.ORG_L4, d.ORG_L5, d.ORG_L6, d.ORG_L7]
@@ -169,7 +168,7 @@ if df is not None:
         fig_dim.update_layout(xaxis_range=[0, 105], height=400, template="plotly_dark", yaxis=dict(autorange="reversed"))
         st.plotly_chart(fig_dim, key="dim_v")
 
-    # --- SECCIÓN NINEBOX INTEGRAL CON ESCALA HOMOGÉNEA Y DATOS REALES ---
+    # --- SECCIÓN NINEBOX INTEGRAL CON ESCALA HOMOGÉNEA ---
     st.divider()
     st.subheader("🟦 Mapa de Talento NineBox Confa")
     cnb1, cnb2 = st.columns([1.5, 1])
@@ -177,7 +176,7 @@ if df is not None:
     
     with cnb1:
         fig_nb = go.Figure()
-        # 9 Cuadrantes delimitados por color
+        # 9 Cuadrantes con colores diferenciados (Fríos a Cálidos/Neutros)
         cuadrantes_specs = [
             (0.5, 1.5, 0, 33.33, "#440154", "ICEBERG"),            (1.5, 2.5, 0, 33.33, "#482878", "EFECTIVOS"),         (2.5, 3.5, 0, 33.33, "#3b528b", "PROF. CONFIABLES"),
             (0.5, 1.5, 33.33, 66.66, "#31688e", "DILEMA"),        (1.5, 2.5, 33.33, 66.66, "#21918c", "EMP. CLAVE"),    (2.5, 3.5, 33.33, 66.66, "#5ec962", "FUT. ESTRELLAS"),
@@ -187,30 +186,16 @@ if df is not None:
             fig_nb.add_shape(type="rect", x0=x0, y0=y0, x1=x1, y1=y1, fillcolor=color, opacity=0.4, line=dict(color="white", width=1))
             fig_nb.add_annotation(x=(x0+x1)/2, y=y1-2, text=label, showarrow=False, font=dict(size=8, color="rgba(255,255,255,0.5)"))
 
-        # Escalamos visualmente para ubicar el punto, pero mantenemos el valor d.IND_POT para el texto
         y_visual = escalar_visual_potencial(d.IND_POT)
-        fig_nb.add_trace(go.Scatter(
-            x=[d.DES], 
-            y=[y_visual], 
-            mode='markers+text', 
-            marker=dict(size=25, color='white', symbol='diamond', line=dict(width=3, color='#BFDBFE')), 
-            text=[f"{lider_sel} ({round(d.IND_POT,2)}%)"], # Valor real en etiqueta
-            textposition="top center",
-            hovertext=f"Potencial Real: {d.IND_POT}%<br>Desempeño: {d.DES}" # Valor real en hover
-        ))
-        
-        fig_nb.update_layout(
-            xaxis=dict(title="Desempeño (1-3)", tickvals=[1,2,3], range=[0.5, 3.5]), 
-            yaxis=dict(title="Potencial (Escala Confa)", tickvals=[0, 33.33, 66.66, 100], ticktext=["0%", "60%", "80%", "100%"], range=[-5, 105]), 
-            template="plotly_dark", height=500
-        )
+        fig_nb.add_trace(go.Scatter(x=[d.DES], y=[y_visual], mode='markers+text', marker=dict(size=25, color='white', symbol='diamond', line=dict(width=3, color='#BFDBFE')), text=[lider_sel], textposition="top center"))
+        fig_nb.update_layout(xaxis=dict(title="Desempeño (1-3)", tickvals=[1,2,3], range=[0.5, 3.5]), yaxis=dict(title="Potencial (Escala Homogénea)", tickvals=[0, 33.33, 66.66, 100], ticktext=["0%", "60%", "80%", "100%"], range=[-5, 105]), template="plotly_dark", height=500)
         st.plotly_chart(fig_nb, key="nb_v", use_container_width=True)
 
     with cnb2:
         st.markdown(f"""
         <div class="metric-box" style="text-align: left;">
             <h3 style="color:#BFDBFE; margin:0;">{cuadrante}</h3>
-            <p><b>Potencial (IND_POT):</b> {d.IND_POT}% | <b>Desempeño (DES):</b> {d.DES}</p>
+            <p><b>Potencial:</b> {d.IND_POT}% | <b>Desempeño:</b> {d.DES}</p>
             <p><b>Autoevaluación Potencial:</b> {d.AUTO_POT}%</p>
             <hr style="border:0.5px solid #334155;">
             <p style="font-size:0.85rem;">Cruce estratégico basado en el Análisis de Talento Confa 2018.</p>
@@ -261,7 +246,7 @@ if df is not None:
         st.markdown(f"### 📋 Informe Estratégico Integral: {lider_sel}")
         st.write(st.session_state.informe_cache[lider_sel])
 
-        if st.button("📄 GENERAR REPORTE PDF"):
+        if st.button("📄 GENERAR INFORME"):
             with st.spinner('Procesando PDF...'):
                 try:
                     pdf = FPDF()
