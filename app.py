@@ -14,15 +14,15 @@ st.set_page_config(page_title="LDR Barrett - Confa", layout="wide")
 if "informe_cache" not in st.session_state:
     st.session_state.informe_cache = {}
 
-# CSS Homogéneo para modo Dark: Fuentes claras y contenedores elegantes
+# CSS Homogéneo: Color #1E293B para visibilidad total en Light y Dark
 st.markdown("""
 <style>
     .main { font-family: 'Helvetica Neue', sans-serif; }
-    h1, h2, h3 { color: #BFDBFE !important; text-align: center; }
-    .titulo-col { text-align: center; font-weight: bold; margin-bottom: 10px; font-size: 1.1rem; color: #BFDBFE; }
-    .metric-box { background-color: rgba(30, 41, 59, 0.5); padding: 15px; border-radius: 10px; text-align: left; border: 1px solid #334155; color: white; }
-    .leyenda-v3 { display: flex; flex-direction: column; justify-content: space-between; height: 340px; margin-top: 35px; padding-right: 10px; border-right: 1px solid #334155; }
-    .item-ley { height: 48px; display: flex; align-items: center; justify-content: flex-end; font-size: 0.85rem; font-weight: bold; color: #BFDBFE; }
+    h1 { color: #1E293B !important; text-align: center; }
+    .titulo-col { text-align: center; font-weight: bold; margin-bottom: 10px; font-size: 1.1rem; color: #1E293B !important; }
+    .metric-box { background-color: rgba(30, 41, 59, 0.05); padding: 15px; border-radius: 10px; text-align: left; border: 1px solid #1E293B; color: #1E293B; }
+    .leyenda-v3 { display: flex; flex-direction: column; justify-content: space-between; height: 340px; margin-top: 35px; padding-right: 10px; border-right: 2px solid #1E293B; }
+    .item-ley { height: 48px; display: flex; align-items: center; justify-content: flex-end; font-size: 0.85rem; font-weight: bold; color: #1E293B !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -64,7 +64,7 @@ def obtener_cuadrante_confa(pot, des):
     else: d_label = "ALTO"
     mapping = {
         ("ALTO", "BAJO"): "ENIGMA: Diamante en bruto", ("ALTO", "MEDIO"): "FUTURA ESTRELLA EN CRECIMIENTO", ("ALTO", "ALTO"): "FUTUROS LIDERES: Superestrellas",
-        ("MEDIO", "BAJO"): "DILEMA", ("MEDIO", "MEDIO"): "EMPLEADOS CLAVES", ("MEDIO", "ALTO"): "FUTURAS ESTRELLAS",
+        ("MEDIO", "BAJO"): "DILEMA", ("MEDIO", "MEDIO"): "EMPLEADOS CLAVE", ("MEDIO", "ALTO"): "FUTURAS ESTRELLAS",
         ("BAJO", "BAJO"): "ICEBERG", ("BAJO", "MEDIO"): "EFECTIVOS", ("BAJO", "ALTO"): "PROFESIONALES CONFIABLES"
     }
     return mapping.get((p_label, d_label), "No clasificado")
@@ -111,13 +111,7 @@ if df is not None:
     d = df[df['Nombre_Lider'] == lider_sel].iloc[0]
     es_gerencia = lider_sel.startswith("GER_")
 
-    st.markdown(f"""
-    <div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 20px;">
-        <div class="metric-box"><b>Total Evaluadores:</b><br><span style="font-size: 1.5rem; color: #BFDBFE;">{int(d.CANT_EVAL)}</span></div>
-        <div class="metric-box"><b>Auto:</b> {int(d.CANT_AUTO)} | <b>Jefe:</b> {int(d.CANT_JEFE)} | <b>Pares:</b> {int(d.CANT_PAR)} | <b>Colab:</b> {int(d.CANT_COL)}</div>
-    </div>
-    """, unsafe_allow_html=True)
-
+    # Cálculos Barrett
     v_auto = [d.AUTO_L1, d.AUTO_L2, d.AUTO_L3, d.AUTO_L4, d.AUTO_L5, d.AUTO_L6, d.AUTO_L7]
     v_ind = [d.INDIV_L1, d.INDIV_L2, d.INDIV_L3, d.INDIV_L4, d.INDIV_L5, d.INDIV_L6, d.INDIV_L7]
     v_org = [d.ORG_L1, d.ORG_L2, d.ORG_L3, d.ORG_L4, d.ORG_L5, d.ORG_L6, d.ORG_L7]
@@ -171,7 +165,7 @@ if df is not None:
         fig_nb = go.Figure()
         quads = [
             (0.5, 1.5, 0, 33.33, "#440154", "ICEBERG"), (1.5, 2.5, 0, 33.33, "#482878", "EFECTIVOS"), (2.5, 3.5, 0, 33.33, "#3b528b", "PROF. CONFIABLES"),
-            (0.5, 1.5, 33.33, 66.66, "#31688e", "DILEMA"), (1.5, 2.5, 33.33, 66.66, "#21918c", "EMP. CLAVE"), (2.5, 3.5, 33.33, 66.66, "#5ec962", "FUT. ESTRELLAS"),
+            (0.5, 1.5, 33.33, 66.66, "#31688e", "DILEMA"), (1.5, 2.5, 33.33, 66.66, "#21918c", "EMPLEADOS CLAVE"), (2.5, 3.5, 33.33, 66.66, "#5ec962", "FUTURAS ESTRELLAS"),
             (0.5, 1.5, 66.66, 100, "#b5de2b", "ENIGMA"), (1.5, 2.5, 66.66, 100, "#fde725", "ESTRELLA CREC."), (2.5, 3.5, 66.66, 100, "#f89441", "SUPERESTRELLAS")
         ]
         for x0, x1, y0, y1, color, label in quads:
@@ -181,7 +175,7 @@ if df is not None:
         fig_nb.update_layout(xaxis=dict(title="Desempeño", tickvals=[1,2,3], range=[0.4, 3.6]), yaxis=dict(title="Potencial (%)", tickvals=[0, 33.3, 66.6, 100], range=[-5, 105]), template="plotly_dark", height=500, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
         st.plotly_chart(fig_nb, use_container_width=True)
     with cnb2:
-        st.markdown(f"""<div class="metric-box"><h3 style="color:#BFDBFE; margin:0;">{cuadrante}</h3><hr style="border:0.5px solid #334155; margin:15px 0;"><p><b>Potencial Individual:</b> {round(d.IND_POT,2)}%</p><p><b>Desempeño:</b> {d.DES}</p><p><b>Autoevaluación Potencial:</b> {round(d.AUTO_POT,2)}%</p></div>""", unsafe_allow_html=True)
+        st.markdown(f"""<div class="metric-box"><h3 style="color:#1E293B; margin:0;">{cuadrante}</h3><hr style="border:0.5px solid #1E293B; margin:15px 0;"><p><b>Potencial Individual:</b> {round(d.IND_POT,2)}%</p><p><b>Desempeño:</b> {d.DES}</p><p><b>Autoevaluación Potencial:</b> {round(d.AUTO_POT,2)}%</p></div>""", unsafe_allow_html=True)
 
     # BLOQUE 5: INFORME (PROMPT MAESTRO)
     st.divider()
@@ -232,7 +226,7 @@ if df is not None:
                 st.write(res.text)
         except Exception as e: st.error(e)
 
-    # --- DESCARGA PDF (FIXED BYTES) ---
+    # --- DESCARGA PDF ---
     if lider_sel in st.session_state.informe_cache:
         if st.button("📄 DESCARGAR PDF"):
             try:
@@ -241,7 +235,7 @@ if df is not None:
                 pdf.set_font('Helvetica', 'B', 16)
                 pdf.cell(0, 10, 'REPORTE ESTRATEGICO INTEGRAL', ln=True, align='C')
                 with tempfile.TemporaryDirectory() as tmp_dir:
-                    # Forzamos fondo blanco HD solo para la imagen del PDF
+                    # Fondo blanco HD solo para PDF
                     fig_nb.update_layout(template="plotly", paper_bgcolor='white', plot_bgcolor='white', font=dict(color='black'))
                     nb_p = os.path.join(tmp_dir, "nb.png")
                     fig_nb.write_image(nb_p, engine="kaleido", scale=4)
