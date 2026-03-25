@@ -293,39 +293,46 @@ if df is not None:
                     img_dim = save_pdf_chart(fig_dim, "dim.png")
                     pdf.image(img_radar, x=10, w=95); pdf.image(img_dim, x=110, y=pdf.get_y()-65, w=90)
                     
-# 3. Niveles de Madurez Barrett (Relojes) - SOLUCIÓN DE SIMETRÍA MATEMÁTICA
-                    pdf.ln(15) 
-                    pdf.set_font('Helvetica', 'B', 11)
-                    pdf.cell(0, 10, '3. Niveles de Madurez Barrett (Relojes)', ln=True)
-                    
-                    # Función con márgenes estandarizados para evitar deformaciones
-                    def save_pdf_chart_v3(fig, name, title="", tiene_leyenda=False):
-                        fig.update_layout(
-                            template="plotly", paper_bgcolor='white', plot_bgcolor='white', 
-                            font=dict(color='black'),
-                            title=dict(text=title, x=0.5, font=dict(size=14), y=0.95),
-                            # Si tiene leyenda, le damos espacio a la izquierda, si no, lo cerramos
-                            margin=dict(t=60, b=20, l=80 if tiene_leyenda else 10, r=10)
-                        )
-                        path = os.path.join(tmp_dir, name)
-                        fig.write_image(path, engine="kaleido", scale=2)
-                        return path
+# 3. Niveles de Madurez Barrett (Relojes) - ESTRATEGIA DE GEMELOS IDÉNTICOS
+pdf.ln(15) 
+pdf.set_font('Helvetica', 'B', 11)
+pdf.cell(0, 10, '3. Niveles de Madurez Barrett (Relojes)', ln=True)
 
-                    # Generamos los 3 con la misma lógica de márgenes
-                    img_r1 = save_pdf_chart_v3(generar_fig_reloj(v_auto, incluir_leyenda=True), "r1p.png", title="Autoevaluacion", tiene_leyenda=True)
-                    img_r2 = save_pdf_chart_v3(generar_fig_reloj(v_ind, incluir_leyenda=False), "r2p.png", title="Individual", tiene_leyenda=False)
-                    img_r3 = save_pdf_chart_v3(generar_fig_reloj(v_org, incluir_leyenda=False), "r3p.png", title="Organizacional", tiene_leyenda=False)
+# Función estandarizada: TODAS las imágenes se generan igualitas
+def save_pdf_chart_final(fig, name, title=""):
+    fig.update_layout(
+        template="plotly", paper_bgcolor='white', plot_bgcolor='white', 
+        font=dict(color='black'),
+        title=dict(text=title, x=0.5, font=dict(size=14), y=0.95),
+        margin=dict(t=60, b=20, l=10, r=10) # Margen pequeño y fijo para las tres
+    )
+    path = os.path.join(tmp_dir, name)
+    fig.write_image(path, engine="kaleido", scale=2)
+    return path
 
-                    y_relojes = pdf.get_y()
-                    
-                    # AJUSTE DE TAMAÑOS: 
-                    # Reducimos el ancho general para que no se pisen y el escalado sea real.
-                    # Al darle w=68 al primero y w=50 a los otros, la zona de color queda igualada.
-                    pdf.image(img_r1, x=10, y=y_relojes, w=68) 
-                    pdf.image(img_r2, x=82, y=y_relojes, w=50) 
-                    pdf.image(img_r3, x=137, y=y_relojes, w=50)
-                    
-                    pdf.ln(50)
+# Generamos las 3 SIN leyenda nativa para que el dibujo sea idéntico
+img_r1 = save_pdf_chart_final(generar_fig_reloj(v_auto, incluir_leyenda=False), "r1p.png", title="Autoevaluacion")
+img_r2 = save_pdf_chart_final(generar_fig_reloj(v_ind, incluir_leyenda=False), "r2p.png", title="Individual")
+img_r3 = save_pdf_chart_final(generar_fig_reloj(v_org, incluir_leyenda=False), "r3p.png", title="Organizacional")
+
+y_pos = pdf.get_y()
+
+# Insertamos las 3 con el MISMO ancho (w=53)
+# Las movemos a la derecha para dejar espacio a la leyenda manual
+pdf.image(img_r1, x=35, y=y_pos, w=53) 
+pdf.image(img_r2, x=88, y=y_pos, w=53) 
+pdf.image(img_r3, x=141, y=y_pos, w=53)
+
+# Escribimos la leyenda manualmente a la izquierda para alinearla perfecto
+pdf.set_font('Helvetica', '', 8)
+pdf.set_text_color(100, 100, 100)
+niveles = ["L7-Visionario", "L6-Mentor", "L5-Autentico", "L4-Facilitador", "L3-Desempeno", "L2-Relaciones", "L1-Crisis"]
+for i, txt in enumerate(niveles):
+    # El multiplicador 5.15 es el ajuste para la altura de las barras
+    pdf.text(10, y_pos + 16 + (i * 5.15), txt)
+
+pdf.set_text_color(0, 0, 0) # Reset color para el resto del informe
+pdf.ln(45)
                     # PÁGINA 2
                     pdf.add_page()
                     pdf.set_font('Helvetica', 'B', 11)
