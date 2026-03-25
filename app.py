@@ -130,7 +130,7 @@ if df is not None:
     with c2: st.markdown("<div class='titulo-seccion'>Ponderado Individual</div>", unsafe_allow_html=True); st.plotly_chart(generar_fig_barras(v_ind, "", "#2ecc71"), use_container_width=True)
     with c3: st.markdown("<div class='titulo-seccion'>Ponderado Organizacional</div>", unsafe_allow_html=True); st.plotly_chart(generar_fig_barras(v_org, "", "#e74c3c"), use_container_width=True)
 
-st.divider()
+    st.divider()
     st.subheader("⏳ Resultados Evaluación 360° (Niveles Barrett)")
     
     # Proporción ajustada para que la leyenda tenga espacio suficiente
@@ -181,6 +181,7 @@ st.divider()
         f3 = generar_fig_reloj(v_org)
         f3.update_layout(**fig_config_fix)
         st.plotly_chart(f3, key="r3_dash", use_container_width=True, config={'displayModeBar': False})
+        
     st.divider()
     col_radar, col_dim = st.columns([1, 1])
     with col_radar:
