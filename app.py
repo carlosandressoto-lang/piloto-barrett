@@ -256,7 +256,7 @@ if df is not None:
 
     # --- DESCARGA PDF INTEGRAL ---
     if lider_sel in st.session_state.informe_cache:
-        if st.button("📄 GENERAR REPORTE PDF"):
+        if st.button("📄 DESCARGAR PDF"):
             try:
                 pdf = FPDF()
                 pdf.set_auto_page_break(auto=True, margin=15)
