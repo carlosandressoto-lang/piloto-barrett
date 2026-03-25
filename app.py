@@ -119,7 +119,7 @@ if df is not None:
         fig.update_layout(height=400, margin=dict(l=margen_l, r=20, t=10, b=10), yaxis=dict(visible=incluir_leyenda, tickfont=dict(size=10)), xaxis=dict(visible=False), plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
         return fig
 
-    # --- RENDER BARRETT DASHBOARD ---
+    # --- RENDER DASHBOARD ---
     st.divider()
     st.markdown(f"""<div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 20px;">
         <div class="metric-box"><b>Total Evaluadores:</b><br><span style="font-size: 1.5rem; color: #BFDBFE;">{int(d.CANT_EVAL)}</span></div>
@@ -174,16 +174,11 @@ if df is not None:
         ]
         for x0, x1, y0, y1, color, label in cuadrantes_specs:
             fig_nb.add_shape(type="rect", x0=x0, y0=y0, x1=x1, y1=y1, fillcolor=color, opacity=0.4, line=dict(color="white", width=1))
-            fig_nb.add_annotation(x=(x0+x1)/2, y=y1-2.5, text=f"<b>{label}</b>", showarrow=False, font=dict(size=8, color="black"))
+            fig_nb.add_annotation(x=(x0+x1)/2, y=y1-2, text=f"<b>{label}</b>", showarrow=False, font=dict(size=8, color="black"))
 
+        # Lógica de posición: Si está muy arriba (>88%) o cerca de líneas clave, baja el texto
         val_p = d.IND_POT
-        if val_p < 10: pos = "top center"
-        elif 54 <= val_p <= 60: pos = "bottom center"
-        elif 60 < val_p <= 66: pos = "top center"
-        elif 74 <= val_p < 80: pos = "bottom center"
-        elif 80 <= val_p <= 86: pos = "top center"
-        elif val_p >= 90: pos = "bottom center"
-        else: pos = "top center"
+        pos = "bottom center" if (54 <= val_p <= 62 or 74 <= val_p <= 82 or val_p >= 88) else "top center"
 
         nombre_wrap = lider_sel.replace(' ', '<br>', 1) if len(lider_sel) > 15 else lider_sel
         fig_nb.add_trace(go.Scatter(
@@ -192,8 +187,13 @@ if df is not None:
             text=[f"<b>{nombre_wrap}</b><br>({round(d.IND_POT,2)}%)"], textposition=pos,
             hoverinfo="all", 
             hovertemplate=f"Potencial Real: {round(d.IND_POT,2)}%<br>Desempeño: {d.DES}<extra></extra>",
-            textfont=dict(size=10, color="black") # NEGRO PARA CONTRASTE ESTÁTICO
+            # CONTRASTE ABSOLUTO: Texto Negro con Halo Blanco
+            textfont=dict(size=10, color="black")
         ))
+        
+        # Efecto Halo para que se vea sobre cualquier color de fondo
+        fig_nb.update_traces(selector=dict(mode='markers+text'), textfont_outlinecolor="white", textfont_outlinewidth=3)
+        
         fig_nb.update_layout(xaxis=dict(title="Desempeño (1-3)", tickvals=[1,2,3], range=[0.5, 3.5]), yaxis=dict(title="Potencial (Escala Confa)", tickvals=[0, 33.33, 66.66, 100], ticktext=["0%", "60%", "80%", "100%"], range=[-5, 105]), template="plotly_dark", height=500)
         st.plotly_chart(fig_nb, key="nb_v", use_container_width=True)
 
@@ -246,7 +246,7 @@ if df is not None:
                 response = model.generate_content(prompt_maestro)
                 st.session_state.informe_cache[lider_sel] = response.text
                 st.write(response.text)
-        except Exception as e: st.error(f"Error IA: {e}")
+        except Exception as e: st.error(f"IA Error: {e}")
 
     if lider_sel in st.session_state.informe_cache:
         if st.button("📄 GENERAR REPORTE PDF"):
