@@ -132,7 +132,7 @@ if df is not None:
 
     st.divider()
     st.subheader("⏳ Resultados Evaluación 360° (Niveles Barrett)")
-    cl, cr1, cr2, cr3 = st.columns([1.2, 1, 1, 1])
+    cl, cr1, cr2, cr3 = st.columns([1, 1, 1, 1])
     with cl:
         st.markdown("<div class='titulo-seccion'>Nivel Barrett</div>", unsafe_allow_html=True)
         niv_labels = ["L7-Visionario", "L6-Mentor", "L5-Auténtico", "L4-Facilitador", "L3-Desempeño", "L2-Relaciones", "L1-Crisis"]
