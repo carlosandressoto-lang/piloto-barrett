@@ -70,6 +70,38 @@ def escalar_visual_potencial(val):
     elif val <= 80: return 33.33 + ((val - 60) / 20) * 33.33
     else: return 66.66 + ((val - 80) / 20) * 33.33
 
+def obtener_color_desarrollo(v):
+    if v < 65: return "#ff4b4b" 
+    if v < 75: return "#f1c40f" 
+    if v < 85: return "#2ecc71" 
+    return "rgb(33, 115, 182)"
+
+def obtener_etiqueta(v):
+    if v < 65: return "Bajo"
+    if v < 75: return "Medio"
+    if v < 85: return "Alto"
+    return "Superior"
+
+def generar_fig_barras(vals, titulo, color):
+    labels = ['L7 - Visionario', 'L6 - Mentor', 'L5 - Auténtico', 'L4 - Facilitador', 'L3 - Desempeño', 'L2 - Relaciones', 'L1 - Crisis']
+    v_plot = [vals[6], vals[5], vals[4], vals[3], vals[2], vals[1], vals[0]]
+    fig = go.Figure(go.Bar(x=v_plot, y=labels, orientation='h', marker_color=color, text=[f"{round(v,1)}%" for v in v_plot], textposition='inside'))
+    fig.update_layout(title=dict(text=titulo, x=0.5), xaxis_range=[0, 105], height=350, template="plotly_dark", margin=dict(l=0, r=10, t=40, b=20), yaxis=dict(autorange="reversed"))
+    return fig
+
+def generar_fig_reloj(vals, incluir_leyenda=False, forzar_pdf=False):
+    anchos_base = [6, 5, 4, 3.2, 4, 5, 6] 
+    v_rev = [vals[6], vals[5], vals[4], vals[3], vals[2], vals[1], vals[0]]
+    colors_barrett = ["rgb(33,115,182)"]*3 + ["rgb(140,183,42)"] + ["rgb(241,102,35)"]*3
+    labels_niveles = ["L7-Visionario", "L6-Mentor", "L5-Auténtico", "L4-Facilitador", "L3-Desempeño", "L2-Relaciones", "L1-Crisis"]
+    fig = go.Figure()
+    fig.add_trace(go.Funnel(y=labels_niveles if incluir_leyenda else [1,2,3,4,5,6,7], x=anchos_base, textinfo="none", hoverinfo="none", marker={"color": colors_barrett, "line": {"width": 1, "color": "rgba(255,255,255,0.3)"}}, connector={"visible": False}))
+    for i, (val, ancho) in enumerate(zip(v_rev, anchos_base)):
+        fig.add_annotation(x=0, y=i if incluir_leyenda else i+1, text=obtener_etiqueta(val), showarrow=False, font=dict(color=obtener_color_desarrollo(val), size=12, family='Arial Black'), bgcolor="white", bordercolor="rgba(255,255,255,0)", borderpad=4, width=ancho * 22.0)
+    margen_l = 100 if (incluir_leyenda or forzar_pdf) else 10
+    fig.update_layout(height=400, margin=dict(l=margen_l, r=20, t=10, b=10), yaxis=dict(visible=incluir_leyenda, tickfont=dict(size=10)), xaxis=dict(visible=False), plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
+    return fig
+
 if df is not None:
     lideres = sorted(df['Nombre_Lider'].unique())
     lider_sel = st.selectbox("Seleccione el líder para el análisis detallado:", lideres)
@@ -82,39 +114,6 @@ if df is not None:
     liderazgo_prom = (d.INDIV_L5 + d.INDIV_L6 + d.INDIV_L7) / 3
     transicion_prom = d.INDIV_L4
     gerencia_prom = (d.INDIV_L1 + d.INDIV_L2 + d.INDIV_L3) / 3
-
-    # Funciones de color Barrett
-    def obtener_color_desarrollo(v):
-        if v < 65: return "#ff4b4b" 
-        if v < 75: return "#f1c40f" 
-        if v < 85: return "#2ecc71" 
-        return "rgb(33, 115, 182)"
-
-    def obtener_etiqueta(v):
-        if v < 65: return "Bajo"
-        if v < 75: return "Medio"
-        if v < 85: return "Alto"
-        return "Superior"
-
-    def generar_fig_barras(vals, titulo, color):
-        labels = ['L7 - Visionario', 'L6 - Mentor', 'L5 - Auténtico', 'L4 - Facilitador', 'L3 - Desempeño', 'L2 - Relaciones', 'L1 - Crisis']
-        v_plot = [vals[6], vals[5], vals[4], vals[3], vals[2], vals[1], vals[0]]
-        fig = go.Figure(go.Bar(x=v_plot, y=labels, orientation='h', marker_color=color, text=[f"{round(v,1)}%" for v in v_plot], textposition='inside'))
-        fig.update_layout(title=dict(text=titulo, x=0.5), xaxis_range=[0, 105], height=350, template="plotly_dark", margin=dict(l=0, r=10, t=40, b=20), yaxis=dict(autorange="reversed"))
-        return fig
-
-    def generar_fig_reloj(vals, incluir_leyenda=False, forzar_pdf=False):
-        anchos_base = [6, 5, 4, 3.2, 4, 5, 6] 
-        v_rev = [vals[6], vals[5], vals[4], vals[3], vals[2], vals[1], vals[0]]
-        colors_barrett = ["rgb(33,115,182)"]*3 + ["rgb(140,183,42)"] + ["rgb(241,102,35)"]*3
-        labels_niveles = ["L7-Visionario", "L6-Mentor", "L5-Auténtico", "L4-Facilitador", "L3-Desempeño", "L2-Relaciones", "L1-Crisis"]
-        fig = go.Figure()
-        fig.add_trace(go.Funnel(y=labels_niveles if incluir_leyenda else [1,2,3,4,5,6,7], x=anchos_base, textinfo="none", hoverinfo="none", marker={"color": colors_barrett, "line": {"width": 1, "color": "rgba(255,255,255,0.3)"}}, connector={"visible": False}))
-        for i, (val, ancho) in enumerate(zip(v_rev, anchos_base)):
-            fig.add_annotation(x=0, y=i if incluir_leyenda else i+1, text=obtener_etiqueta(val), showarrow=False, font=dict(color=obtener_color_desarrollo(val), size=12, family='Arial Black'), bgcolor="white", bordercolor="rgba(255,255,255,0)", borderpad=4, width=ancho * 22.0)
-        margen_l = 100 if (incluir_leyenda or forzar_pdf) else 10
-        fig.update_layout(height=400, margin=dict(l=margen_l, r=20, t=10, b=10), yaxis=dict(visible=incluir_leyenda, tickfont=dict(size=10)), xaxis=dict(visible=False), plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
-        return fig
 
     # --- RENDER DASHBOARD ---
     st.divider()
@@ -158,16 +157,16 @@ if df is not None:
         fig_dim.update_layout(xaxis_range=[0, 105], height=400, template="plotly_dark", yaxis=dict(autorange="reversed"))
         st.plotly_chart(fig_dim, key="dim_v")
 
-    # --- SECCIÓN NINEBOX DINÁMICA ---
+    # --- SECCIÓN NINEBOX ---
     st.divider()
     st.subheader("🟦 Mapa de Talento NineBox Confa")
     cnb1, cnb2 = st.columns([1.5, 1])
     cuadrante = obtener_cuadrante_confa(d.IND_POT, d.DES)
     
     with cnb1:
-        # LÓGICA DE COLOR DINÁMICO SEGÚN EL TEMA
+        # DETECCIÓN DE TEMA PARA COLORES DINÁMICOS
         theme_is_dark = st.get_option("theme.base") == "dark"
-        color_dinamico = "white" if theme_is_dark else "black"
+        color_texto_ninbox = "white" if theme_is_dark else "black"
         
         fig_nb = go.Figure()
         cuadrantes_specs = [
@@ -177,21 +176,21 @@ if df is not None:
         ]
         for x0, x1, y0, y1, color, label in cuadrantes_specs:
             fig_nb.add_shape(type="rect", x0=x0, y0=y0, x1=x1, y1=y1, fillcolor=color, opacity=0.4, line=dict(color="white", width=1))
-            fig_nb.add_annotation(x=(x0+x1)/2, y=y1-2, text=f"<b>{label}</b>", showarrow=False, font=dict(size=8, color=color_dinamico))
+            fig_nb.add_annotation(x=(x0+x1)/2, y=y1-2, text=f"<b>{label}</b>", showarrow=False, font=dict(size=8, color=color_texto_ninbox))
 
         val_p = d.IND_POT
         if val_p < 10: pos = "top center"
         elif 28 <= val_p <= 38 or 62 <= val_p <= 70 or 76 <= val_p <= 84 or val_p >= 90: pos = "bottom center"
         else: pos = "top center"
 
-        # WRAP DE NOMBRE RECALIBRADO
         nombre_wrap = lider_sel.replace(' ', '<br>', 1) if len(lider_sel) > 15 else lider_sel
         fig_nb.add_trace(go.Scatter(
-            x=[d.DES], y=[d.IND_POT], mode='markers+text', opacity=1, 
+            x=[d.DES], y=[escalar_visual_potencial(d.IND_POT)], mode='markers+text', 
             marker=dict(size=12, color='white', symbol='diamond', line=dict(width=2, color='#BFDBFE')), 
             text=[f"<b>{nombre_wrap}</b><br>({round(d.IND_POT,2)}%)"], textposition=pos,
-            hovertemplate=f"Potencial: {round(d.IND_POT,2)}%<br>Desempeño: {d.DES}<extra></extra>",
-            textfont=dict(size=9, color=color_dinamico)
+            hoverinfo="all", 
+            hovertemplate=f"Potencial Real: {round(d.IND_POT,2)}%<br>Desempeño: {d.DES}<extra></extra>",
+            textfont=dict(size=9, color=color_texto_ninbox)
         ))
         fig_nb.update_layout(xaxis=dict(title="Desempeño (1-3)", tickvals=[1,2,3], range=[0.5, 3.5]), yaxis=dict(title="Potencial (Escala Confa)", tickvals=[0, 33.33, 66.66, 100], ticktext=["0%", "60%", "80%", "100%"], range=[-5, 105]), template="plotly_dark" if theme_is_dark else "plotly", height=500)
         st.plotly_chart(fig_nb, key="nb_v", use_container_width=True)
@@ -224,7 +223,7 @@ if df is not None:
         - L6: Mentor Socio. Foco en colaboración y mentoría. (Hacer la Diferencia)
         - L7: Visionario Sabio. Foco en propósito y visión de largo plazo. (Servicio)
         CONTEXTO NINEBOX CONFA
-        Usa las 9 definiciones de CONFA para el análisis:
+        Usa las 9 definiciones de CONFA 2018 para el análisis:
         -ENIGMA: Líder con alto potencial pero desempeño bajo (ubicarlo bien o revisar jefe).
         -ESTRELLA CRECIENTE: Alto potencial, desempeño esperado (sacar de zona de confort).
         -SUPERESTRELLA: Mejor opción para sucesión (reconocer y premiar).
