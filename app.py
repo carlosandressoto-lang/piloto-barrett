@@ -121,18 +121,103 @@ if df is not None:
     transicion_prom = d.INDIV_L4
     gerencia_prom = (d.INDIV_L1 + d.INDIV_L2 + d.INDIV_L3) / 3
 
-    # DASHBOARD WEB (Omitido visual por brevedad, se asume igual)
+    # DASHBOARD WEB
+    st.subheader("📊 Frecuencia de comportamientos por niveles (%)")
+    cw1, cw2, cw3 = st.columns(3)
+    with cw1: st.plotly_chart(generar_fig_barras(v_auto, "Autovaloración", "#3498db"), use_container_width=True)
+    with cw2: st.plotly_chart(generar_fig_barras(v_ind, "Ponderado Individual", "#2ecc71"), use_container_width=True)
+    with cw3: st.plotly_chart(generar_fig_barras(v_org, "Ponderado Organizacional", "#e74c3c"), use_container_width=True)
 
-    # BLOQUE 5: INFORME IA
+    st.divider()
+    cl, cr1, cr2, cr3 = st.columns([1.2, 1, 1, 1])
+    with cl:
+        st.markdown("<div class='titulo-seccion'>Nivel Barrett</div>", unsafe_allow_html=True)
+        niv_labels = ["L7-Visionario", "L6-Mentor", "L5-Auténtico", "L4-Facilitador", "L3-Desempeño", "L2-Relaciones", "L1-Crisis"]
+        st.markdown('<div class="leyenda-v3">' + ''.join([f'<div class="item-ley">{n}</div>' for n in niv_labels]) + '</div>', unsafe_allow_html=True)
+    with cr1: st.plotly_chart(generar_fig_reloj(v_auto), use_container_width=True)
+    with cr2: st.plotly_chart(generar_fig_reloj(v_ind), use_container_width=True)
+    with cr3: st.plotly_chart(generar_fig_reloj(v_org), use_container_width=True)
+
+    st.divider()
+    col_radar, col_dim = st.columns([1.5, 1])
+    with col_radar:
+        st.subheader("🎯 Alineación de Consciencia")
+        fig_radar = go.Figure()
+        cats = ['L1','L2','L3','L4','L5','L6','L7']
+        for val, name, color in zip([v_auto, v_ind, v_org], ['Auto', 'Individual', 'Org'], ['#3498db', '#2ecc71', '#e74c3c']):
+            fig_radar.add_trace(go.Scatterpolar(r=val, theta=cats, fill='toself', name=name, line_color=color))
+        fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 100])), template="plotly_dark", height=500, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+        st.plotly_chart(fig_radar, use_container_width=True)
+    with col_dim:
+        st.subheader("⚖️ Índice de Equilibrio")
+        v_dim = [liderazgo_prom, transicion_prom, gerencia_prom]
+        fig_dim = go.Figure(go.Bar(x=v_dim, y=['Liderazgo', 'Transición', 'Gerencia'], orientation='h', marker_color='#3498db', text=[f"{round(v,1)}%" for v in v_dim], textposition='inside'))
+        fig_dim.update_layout(xaxis_range=[0, 105], height=400, template="plotly_dark", yaxis=dict(autorange="reversed"), paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+        st.plotly_chart(fig_dim, use_container_width=True)
+
+    st.divider()
+    cnb1, cnb2 = st.columns([1.5, 1])
+    cuadrante = obtener_cuadrante_confa(d.IND_POT, d.DES)
+    with cnb1:
+        fig_nb = go.Figure()
+        quads = [(0.5, 1.5, 0, 33.33, "#440154", "ICEBERG"), (1.5, 2.5, 0, 33.33, "#482878", "EFECTIVOS"), (2.5, 3.5, 0, 33.33, "#3b528b", "PROF. CONFIABLES"), (0.5, 1.5, 33.33, 66.66, "#31688e", "DILEMA"), (1.5, 2.5, 33.33, 66.66, "#21918c", "EMPLEADOS CLAVE"), (2.5, 3.5, 33.33, 66.66, "#5ec962", "FUTURAS ESTRELLAS"), (0.5, 1.5, 66.66, 100, "#b5de2b", "ENIGMA"), (1.5, 2.5, 66.66, 100, "#fde725", "ESTRELLA CREC."), (2.5, 3.5, 66.66, 100, "#f89441", "SUPERESTRELLAS")]
+        for x0, x1, y0, y1, color, label in quads:
+            fig_nb.add_shape(type="rect", x0=x0, y0=y0, x1=x1, y1=y1, fillcolor=color, opacity=0.75, line=dict(color="rgba(255,255,255,0.3)", width=1))
+            fig_nb.add_annotation(x=(x0+x1)/2, y=y1-2.5, text=f"<b>{label}</b>", showarrow=False, font=dict(size=9, color="white"))
+        fig_nb.add_trace(go.Scatter(x=[d.DES], y=[escalar_visual_potencial(d.IND_POT)], mode='markers', marker=dict(size=14, color='red', symbol='diamond', line=dict(width=2, color='white'))))
+        fig_nb.update_layout(xaxis=dict(title="Desempeño", tickvals=[1,2,3], range=[0.4, 3.6]), yaxis=dict(title="Potencial (%)", tickvals=[0, 33.3, 66.6, 100], range=[-5, 105]), template="plotly_dark", height=500, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+        st.plotly_chart(fig_nb, use_container_width=True)
+    with cnb2:
+        st.markdown(f"<div class='metric-box'><h3>{cuadrante}</h3><hr><p><b>Potencial Individual:</b> {round(d.IND_POT,2)}%</p><p><b>Desempeño:</b> {d.DES}</p><p><b>Autoevaluación Potencial:</b> {round(d.AUTO_POT,2)}%</p></div>", unsafe_allow_html=True)
+
+    # BLOQUE 5: INFORME (RESTAURADO COMPLETO)
     st.divider()
     if st.button("🚀 GENERAR INFORME"):
         if es_gerencia:
-            contexto_ger = "ADAPTACIÓN GERENCIA: El evaluado es una GERENCIA. Habla de 'Capacidad instalada del talento' y 'Cultura grupal'."
+            contexto_ger = "ADAPTACIÓN GERENCIA: El evaluado es una GERENCIA. No hables de retroalimentación personal ni sucesiones individuales. Habla de 'Capacidad instalada del talento', 'Cultura de resultados grupal' y 'Estrategia de retención del talento del área'."
         else:
             contexto_ger = "Evaluado: Líder Individual."
 
-        prompt_maestro = f"""Actúa como consultor senior de Barrett. Genera reporte para {lider_sel}. DATOS: {d.to_json()}. {contexto_ger} 
-        REGLAS: Sin anglicismos, feedback apreciativo, 5 puntos obligatorios. (Prompt Maestro Original Completo)"""
+        prompt_maestro = f"""Actúa como consultor senior de DESARROLLO DE LIDERAZGO Barrett. Genera un reporte para {lider_sel}. DATOS: {d.to_json()} donde AUTO es Autoevaluación, INDI es Ponderado Individual, ORG es Ponderado organizacional (Promedio de resultados organizacionales) y CANT es cantidad de respuestas o evaluadores. Si alguien tiene todo 0 en AUTO es porque no hizo Autoevalaucion para que lo tengas presente en la comparativa. Si ves que sus resultados INDI son muy bajos, revisa que al menos CANT_JEFE y CANT_PAR sean mínimo 1, si no ahí esta el error y dejaremos en el reporte ese hallazgo de forma obligatoria pues seria un sesgo matemático. Si no encontramos esas inconsistencias no mencionaremos por nada del mundo esta información en el resto del informe, si y solo si se cumplen una de esas restricciones.
+        {contexto_ger}
+        PROHIBIDO USAR ANGLICISMOS. REDACTA TODO EN ESPAÑOL PURO.
+        CONTEXTO BARRETT:
+        - L1: Gestor de Crisis. Foco en estabilidad y viabilidad operativa. (Supervivencia)
+        - L2: Constructor de Relaciones. Foco en armonía y respeto mutuo. (Relaciones)
+        - L3: Gestor Organizador. Foco en eficiencia y resultados de calidad. (Autoestima)
+        - L4: Facilitador Influyente. Foco en innovación y adaptabilidad. (Transformación)
+        - L5: Integrador Inspirador. Foco en integridad y valores. (Cohesión Interna)
+        - L6: Mentor Socio. Foco en colaboración y mentoría. (Hacer la Diferencia)
+        - L7: Visionario Sabio. Foco en propósito y visión de largo plazo. (Servicio)
+        CONTEXTO NINEBOX CONFA
+        Usa las 9 definiciones de CONFA 2018 para el análisis:
+        -ENIGMA: Líder con alto potencial pero desempeño bajo (ubicarlo bien o revisar jefe).
+        -ESTRELLA CRECIENTE: Alto potencial, desempeño esperado (sacar de zona de confort).
+        -SUPERESTRELLA: Mejor opción para sucesión (reconocer y premiar).
+        -DILEMA: Potencial medio, desempeño bajo (trabajar motivación).
+        -EMPLEADO CLAVE: Prometedor (retar y motivar).
+        -FUTURA ESTRELLA: Alto desempeño, potencial medio (puestos clave).
+        -ICEBERG: Bajo potencial y desempeño (observar o decidir desvinculación).
+        -EFECTIVO: Desempeño medio, bajo potencial (incitar a aprender cosas nuevas).
+        -PROFESIONAL CONFIABLE: Desempeño excepcional, bajo potencial liderazgo (reconocer esfuerzo y desarrollar liderazgo).
+
+        REGLAS DE ORO: 
+        - INICIA DIRECTAMENTE. PROHIBIDO SALUDOS O INTRODUCCIONES o RESMENES O APRECIACIONES.
+        - PROHIBIDO USAR: "desempeño", "brechas", "puntos ciegos" o hablar desde defectos o fallos, debe ser un feedback totalmente apreciativo.
+        - USA: "desarrollo", "alineación", "influencia", "oportunidad de expansión".
+        - RÚBRICA: Bajo (<65), Medio (65-75), Alto (75-85), Superior (>85).
+        - SI CANT_JEFE es 0: Debes iniciar el informe con una ADVERTENCIA ESTRATÉGICA indicando que el ponderado individual se ve severamente afectado (sesgo a la baja) debido a la ausencia de la valoración del líder directo (40% del peso).
+        - SI CANT_PAR es 0: Debes iniciar el informe con una ADVERTENCIA ESTRATÉGICA indicando que el ponderado individual se ve severamente afectado (sesgo a la baja) debido a la ausencia de la valoración del minimo 1 par (20% del peso si tiene colaboradores a cargo, 40% si no tiene colaboradores a cargo).
+        - SI CANT_AUTO es 0: Indica que no existe punto de comparación interno.
+        - Si no hay estos ceros, no menciones nada de esto.
+
+        ESTRUCTURA informe OBLIGATORIA:
+        1. DESCRIPCIÓN POR NIVELES: Lista de L1 a L7 con el nombre de contexto Barret (Ejemplo L1: Gestor de Crisis). Clasifica cada nivel basándote en el 'Ponderado Individual' usando la rúbrica (Bajo, Medio, Alto, Superior) y las definiciones Barrett anteriores para generar una descripción según el modelo Barret y el nivel de la rubrica del líder. Siempre una lista de Nivel 1 a Nivel 7 no lo hagas en 1 solo párrafo porque confunde
+        2. ANÁLISIS DE AUTOVALORACIÓN: Un párrafo. Analiza alineación percepción interna (Autoevaluacion) vs colectiva (Ponderado individual que es la evaluación de Jefe directo, Colaboradores a cargo y Pares). Resalta donde la influencia externa es mayor a la autopercepción, o aquellos puntos donde la autoevaluacion sea mayor en rubrica a lo evaluado pues son 2 cosas diferentes a trabajar según el nivel de conciencia.
+        3. MATRIZ DE MADUREZ: Un párrafo sólido. Analiza sintonía del líder (Ponderado Individual) con el Ponderado Organizacional basándote en la Rúbrica.
+        4. PERFIL DE LIDERAZGO: Un párrafo sólido. Define el estilo predominante según el promedio más alto (Liderazgo: {round(liderazgo_prom,1)}%, Transición: {round(transicion_prom,1)}%, Gerencia: {round(gerencia_prom,1)}%) y ofrece 3 recomendaciones de expansión para llegar a un equilibrio de las 3 dimensiones (Liderazgo Transicion y Gerencia) punto seguido.
+        5. POSICIONAMIENTO ESTRATÉGICO DE TALENTO (Potencial y NineBox): Un párrafo sólido y técnico. Identifica el cuadrante asignado ({cuadrante}) y utiliza su definición estratégica de Confa 2018 para explicar la situación actual del evaluado. Analiza la brecha o alineación entre la AUTO_POT ({d.AUTO_POT}%) y el IND_POT ({d.IND_POT}%), determinando si existe una sobrevaloración o una subvaloración del propio potencial de crecimiento. Establece la 'Tendencia de Transición' evaluando qué tan cerca está de los límites de la rúbrica (Bajo <60, Medio 60-80, Alto >80) y define, basándose en el cruce con DES (Nivel {d.DES}), qué acciones de retención, motivación o movilidad interna son imperativas para maximizar su valor en la organización. Si el IND_POT es significativamente más alto que la AUTO_POT, resalta el "Talento Oculto"; si es al contrario, analiza la necesidad de un ajuste de expectativas de carrera. Termina con una frase sobre la proyección de este perfil hacia posiciones de mayor jerarquía o roles técnicos expertos según sea el caso.
+        """
         try:
             with st.spinner('Analizando...'):
                 res = model.generate_content(prompt_maestro)
@@ -140,7 +225,7 @@ if df is not None:
                 st.write(res.text)
         except Exception as e: st.error(e)
 
-    # --- REPORTE PDF (SOLUCIÓN DE CLONES Y SYNTAX FIX) ---
+    # --- REPORTE PDF (SIMETRÍA TOTAL Y CERRADO CORRECTO) ---
     if lider_sel in st.session_state.informe_cache:
         if st.button("📄 DESCARGAR REPORTE PDF"):
             try:
@@ -156,7 +241,7 @@ if df is not None:
                     pdf.add_page()
                     pdf.set_font('Helvetica', 'B', 16); pdf.cell(0, 10, 'REPORTE ESTRATEGICO INTEGRAL', ln=True, align='C')
                     
-                    # 1. BARRAS (CLONES)
+                    # 1. BARRAS
                     pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, '1. Frecuencia de comportamientos por niveles (%)', ln=True)
                     img_b1 = save_pdf_clones(generar_fig_barras(v_auto, "", "#3498db"), "b1.png", title="Autovaloracion")
                     img_b2 = save_pdf_clones(generar_fig_barras(v_ind, "", "#2ecc71"), "b2.png", title="Individual")
@@ -169,21 +254,19 @@ if df is not None:
                     fig_radar.update_layout(template="plotly", paper_bgcolor='white', plot_bgcolor='white', font=dict(color='black'))
                     img_radar_path = os.path.join(tmp_dir, "radar.png"); fig_radar.write_image(img_radar_path, engine="kaleido", scale=2); pdf.image(img_radar_path, x=50, w=110)
 
-                    # 3. RELOJES (CLONES)
+                    # 3. RELOJES
                     pdf.add_page(); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, '3. Niveles de Madurez Barrett (Relojes)', ln=True)
                     img_r1 = save_pdf_clones(generar_fig_reloj(v_auto, False), "r1.png", title="Auto")
                     img_r2 = save_pdf_clones(generar_fig_reloj(v_ind, False), "r2.png", title="Indiv")
                     img_r3 = save_pdf_clones(generar_fig_reloj(v_org, False), "r3.png", title="Org")
                     y_relojes = pdf.get_y()
                     pdf.image(img_r1, x=35, y=y_relojes, w=53); pdf.image(img_r2, x=88, y=y_relojes, w=53); pdf.image(img_r3, x=141, y=y_relojes, w=53)
-                    
-                    # LEYENDA MANUAL
                     pdf.set_font('Helvetica', '', 8); pdf.set_text_color(100, 100, 100)
                     niveles = ["L7-Visionario", "L6-Mentor", "L5-Autentico", "L4-Facilitador", "L3-Desempeno", "L2-Relaciones", "L1-Crisis"]
                     for i, txt in enumerate(niveles): pdf.text(10, y_relojes + 16 + (i * 5.15), txt)
                     pdf.set_text_color(0, 0, 0)
 
-                    # PÁGINA FINAL: NineBox y Texto
+                    # 4. NINEBOX Y TEXTO
                     pdf.add_page(); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, '4. Mapa NineBox y Analisis', ln=True)
                     fig_nb.update_layout(template="plotly", paper_bgcolor='white', plot_bgcolor='white', font=dict(color='black'))
                     img_nb = os.path.join(tmp_dir, "nb.png"); fig_nb.write_image(img_nb, scale=4); pdf.image(img_nb, x=25, w=160)
