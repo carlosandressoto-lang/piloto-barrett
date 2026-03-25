@@ -242,14 +242,14 @@ if df is not None:
                     img_r2 = save_pdf_chart_final(generar_fig_reloj(v_ind, False), "r2p.png", "Indiv")
                     img_r3 = save_pdf_chart_final(generar_fig_reloj(v_org, False), "r3p.png", "Org")
                     
-                    pdf.image(img_r1, x=50, y=y_relojes_base+15, w=60)
+                    pdf.image(img_r1, x=35, y=y_relojes_base+20, w=60)
                     pdf.image(img_r2, x=88, y=y_relojes_base+15, w=60)
                     pdf.image(img_r3, x=141, y=y_relojes_base+15, w=60)
                     
                     pdf.set_font('Helvetica', '', 7); pdf.set_text_color(100, 100, 100)
                     niv_manual = ["L7-Visionario", "L6-Mentor", "L5-Autentico", "L4-Facilitador", "L3-Desempeno", "L2-Relaciones", "L1-Crisis"]
                     for i, txt in enumerate(niv_manual):
-                        pdf.text(10, y_relojes_base + 15 + (i * 5.15), txt)
+                        pdf.text(10, y_relojes_base + 10 + (i * 5.15), txt)
                     pdf.set_text_color(0, 0, 0)
 
                     # PÁGINA 2: NINEBOX Y TEXTO IA
