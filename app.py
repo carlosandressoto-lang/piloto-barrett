@@ -235,7 +235,7 @@ if df is not None:
                     
                     # 3. Relojes Barrett (Sincronizados)
                     pdf.ln(10)
-                    pdf.set_y(y_radar + 10)
+                    pdf.set_y(y_radar + 75)
                     pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, '3. Niveles de Madurez Barrett (Relojes)', ln=True)
                     y_relojes_base = pdf.get_y()
                     img_r1 = save_pdf_chart_final(generar_fig_reloj(v_auto, False), "r1p.png", "Auto")
