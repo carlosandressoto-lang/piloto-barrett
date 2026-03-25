@@ -238,16 +238,16 @@ if df is not None:
                     pdf.set_y(y_radar + 75)
                     pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, '3. Niveles de Madurez Barrett (Relojes)', ln=True)
                     y_relojes_base = pdf.get_y()
-                    img_r1 = save_pdf_chart_final(generar_fig_reloj(v_auto, False), "r1p.png", "Auto")
-                    img_r2 = save_pdf_chart_final(generar_fig_reloj(v_ind, False), "r2p.png", "Indiv")
-                    img_r3 = save_pdf_chart_final(generar_fig_reloj(v_org, False), "r3p.png", "Org")
+                    img_r1 = save_pdf_chart_final(generar_fig_reloj(v_auto, False), "r1p.png", "Autoevaluacion")
+                    img_r2 = save_pdf_chart_final(generar_fig_reloj(v_ind, False), "r2p.png", "Evaluacion 360°")
+                    img_r3 = save_pdf_chart_final(generar_fig_reloj(v_org, False), "r3p.png", "Promedio organizacional")
                     
                     pdf.image(img_r1, x=35, y=y_relojes_base+3, w=60)
                     pdf.image(img_r2, x=88, y=y_relojes_base+3, w=60)
                     pdf.image(img_r3, x=141, y=y_relojes_base+3, w=60)
                     
                     pdf.set_font('Helvetica', '', 7); pdf.set_text_color(100, 100, 100)
-                    niv_manual = ["L7-Visionario", "L6-Mentor", "L5-Autentico", "L4-Facilitador", "L3-Desempeno", "L2-Relaciones", "L1-Crisis"]
+                    niv_manual = ["L7-Visionario", "L6-Mentor", "L5-Autentico", "L4-Facilitador", "L3-Desempeño", "L2-Relaciones", "L1-Crisis"]
                     for i, txt in enumerate(niv_manual):
                         pdf.text(10, y_relojes_base + 10 + (i * 4), txt)
                     pdf.set_text_color(0, 0, 0)
