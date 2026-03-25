@@ -18,14 +18,14 @@ st.markdown("""
 <style>
     .main { font-family: 'Helvetica Neue', sans-serif; }
     h1 { color: #BFDBFE !important; text-align: center; }
-    .titulo-col { text-align: center; font-weight: bold; margin-bottom: 10px; font-size: 1.1rem; color: #000000; background-color: #f8fafc; padding: 5px; border-radius: 5px; }
-    .metric-box { background-color: #ffffff; padding: 15px; border-radius: 10px; text-align: left; border: 2px solid #334155; color: #000000; box-shadow: 2px 2px 10px rgba(0,0,0,0.1); }
-    .leyenda-v3 { display: flex; flex-direction: column; justify-content: space-between; height: 340px; margin-top: 35px; padding-right: 10px; border-right: 2px solid #334155; }
-    .item-ley { height: 48px; display: flex; align-items: center; justify-content: flex-end; font-size: 0.85rem; font-weight: bold; color: #000000; }
+    .titulo-col { text-align: center; font-weight: bold; margin-bottom: 10px; font-size: 1.1rem; color: #BFDBFE; }
+    .metric-box { background-color: rgba(30, 41, 59, 0.5); padding: 15px; border-radius: 10px; text-align: left; border: 1px solid #334155; }
+    .leyenda-v3 { display: flex; flex-direction: column; justify-content: space-between; height: 340px; margin-top: 35px; padding-right: 10px; border-right: 1px solid #334155; }
+    .item-ley { height: 48px; display: flex; align-items: center; justify-content: flex-end; font-size: 0.85rem; font-weight: bold; color: #cbd5e1; }
 </style>
 """, unsafe_allow_html=True)
 
-# --- 2. CONEXIÓN IA ---
+# --- 2. CONEXIÓN IA SEGURA ---
 try:
     api_key_segura = st.secrets["GEMINI_API_KEY"]
     genai.configure(api_key=api_key_segura)
@@ -48,7 +48,7 @@ def load_data():
             df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
         return df
     except Exception as e:
-        st.error(f"Error crítico al conectar con Google Sheets: {e}")
+        st.error(f"Error crítico: {e}")
         return None
 
 df = load_data()
@@ -89,19 +89,18 @@ def generar_fig_barras(vals, titulo, color):
     labels = ['L7-Visionario', 'L6-Mentor', 'L5-Auténtico', 'L4-Facilitador', 'L3-Desempeño', 'L2-Relaciones', 'L1-Crisis']
     v_plot = [vals[6], vals[5], vals[4], vals[3], vals[2], vals[1], vals[0]]
     fig = go.Figure(go.Bar(x=v_plot, y=labels, orientation='h', marker_color=color, text=[f"{round(v,1)}%" for v in v_plot], textposition='inside'))
-    fig.update_layout(title=dict(text=titulo, x=0.5, font=dict(color='black')), xaxis_range=[0, 105], height=350, template="plotly_white", margin=dict(l=10, r=10, t=40, b=20), yaxis=dict(autorange="reversed"))
+    fig.update_layout(title=dict(text=titulo, x=0.5, font=dict(color='white')), xaxis_range=[0, 105], height=350, template="plotly_dark", margin=dict(l=10, r=10, t=40, b=20), yaxis=dict(autorange="reversed"))
     return fig
 
-def generar_fig_reloj(vals, incluir_leyenda=False):
+def generar_fig_reloj(vals):
     anchos_base = [6, 5, 4, 3.2, 4, 5, 6] 
     v_rev = [vals[6], vals[5], vals[4], vals[3], vals[2], vals[1], vals[0]]
     colors_barrett = ["rgb(33,115,182)"]*3 + ["rgb(140,183,42)"] + ["rgb(241,102,35)"]*3
-    labels_niveles = ["L7-Visionario", "L6-Mentor", "L5-Auténtico", "L4-Facilitador", "L3-Desempeño", "L2-Relaciones", "L1-Crisis"]
     fig = go.Figure()
-    fig.add_trace(go.Funnel(y=labels_niveles if incluir_leyenda else [1,2,3,4,5,6,7], x=anchos_base, textinfo="none", hoverinfo="none", marker={"color": colors_barrett, "line": {"width": 1, "color": "black"}}, connector={"visible": False}))
+    fig.add_trace(go.Funnel(y=[1,2,3,4,5,6,7], x=anchos_base, textinfo="none", hoverinfo="none", marker={"color": colors_barrett, "line": {"width": 1, "color": "white"}}, connector={"visible": False}))
     for i, (val, ancho) in enumerate(zip(v_rev, anchos_base)):
-        fig.add_annotation(x=0, y=i if incluir_leyenda else i+1, text=obtener_etiqueta(val), showarrow=False, font=dict(color=obtener_color_desarrollo(val), size=12, family='Arial Black'), bgcolor="white", borderpad=4, width=ancho * 22.0)
-    fig.update_layout(height=400, margin=dict(l=100 if incluir_leyenda else 10, r=20, t=10, b=10), yaxis=dict(visible=incluir_leyenda, tickfont=dict(size=10, color='black')), xaxis=dict(visible=False), plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
+        fig.add_annotation(x=0, y=i+1, text=obtener_etiqueta(val), showarrow=False, font=dict(color=obtener_color_desarrollo(val), size=12, family='Arial Black'), bgcolor="white", borderpad=4, width=ancho * 22.0)
+    fig.update_layout(height=400, margin=dict(l=10, r=10, t=10, b=10), xaxis=dict(visible=False), yaxis=dict(visible=False), plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', template="plotly_dark")
     return fig
 
 # --- 5. RENDERIZADO ---
@@ -117,22 +116,31 @@ if df is not None:
     transicion_prom = d.INDIV_L4
     gerencia_prom = (d.INDIV_L1 + d.INDIV_L2 + d.INDIV_L3) / 3
 
+    # BLOQUE 1: BARRAS
     st.subheader("📊 Frecuencia de comportamientos por niveles (%)")
     c1, c2, c3 = st.columns(3)
     with c1: st.plotly_chart(generar_fig_barras(v_auto, "Autovaloración", "#3498db"), use_container_width=True)
     with c2: st.plotly_chart(generar_fig_barras(v_ind, "Ponderado Individual", "#2ecc71"), use_container_width=True)
     with c3: st.plotly_chart(generar_fig_barras(v_org, "Ponderado Organizacional", "#e74c3c"), use_container_width=True)
 
+    # BLOQUE 2: RELOJES (Normalizado al Tema Dark del Bloque 1)
     st.divider()
     cl, cr1, cr2, cr3 = st.columns([1.2, 1, 1, 1])
     with cl:
         st.markdown('<div class="titulo-col">Nivel Barrett</div>', unsafe_allow_html=True)
-        niveles_barrett = ["L7-Visionario", "L6-Mentor", "L5-Auténtico", "L4-Facilitador", "L3-Desempeño", "L2-Relaciones", "L1-Crisis"]
-        st.markdown('<div class="leyenda-v3">' + ''.join([f'<div class="item-ley">{n}</div>' for n in niveles_barrett]) + '</div>', unsafe_allow_html=True)
-    with cr1: st.markdown('<div class="titulo-col">Autovaloración</div>', unsafe_allow_html=True); st.plotly_chart(generar_fig_reloj(v_auto), key="r1")
-    with cr2: st.markdown('<div class="titulo-col">Ponderado Individual</div>', unsafe_allow_html=True); st.plotly_chart(generar_fig_reloj(v_ind), key="r2")
-    with cr3: st.markdown('<div class="titulo-col">Ponderado Organizacional</div>', unsafe_allow_html=True); st.plotly_chart(generar_fig_reloj(v_org), key="r3")
+        niv_labels = ["L7-Visionario", "L6-Mentor", "L5-Auténtico", "L4-Facilitador", "L3-Desempeño", "L2-Relaciones", "L1-Crisis"]
+        st.markdown('<div class="leyenda-v3">' + ''.join([f'<div class="item-ley">{n}</div>' for n in niv_labels]) + '</div>', unsafe_allow_html=True)
+    with cr1: 
+        st.markdown('<div class="titulo-col">Autovaloración</div>', unsafe_allow_html=True)
+        st.plotly_chart(generar_fig_reloj(v_auto), key="r1", use_container_width=True)
+    with cr2: 
+        st.markdown('<div class="titulo-col">Ponderado Individual</div>', unsafe_allow_html=True)
+        st.plotly_chart(generar_fig_reloj(v_ind), key="r2", use_container_width=True)
+    with cr3: 
+        st.markdown('<div class="titulo-col">Ponderado Organizacional</div>', unsafe_allow_html=True)
+        st.plotly_chart(generar_fig_reloj(v_org), key="r3", use_container_width=True)
 
+    # BLOQUE 3: RADAR Y EQUILIBRIO (Normalizado al Tema Dark)
     st.divider()
     col_radar, col_dim = st.columns([1.5, 1])
     with col_radar:
@@ -141,78 +149,58 @@ if df is not None:
         cats = ['L1','L2','L3','L4','L5','L6','L7']
         for val, name, color in zip([v_auto, v_ind, v_org], ['Auto', 'Individual', 'Organizacional'], ['#3498db', '#2ecc71', '#e74c3c']):
             fig_radar.add_trace(go.Scatterpolar(r=val, theta=cats, fill='toself', name=name, line_color=color))
-        fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 100], tickfont=dict(color='black'))), height=500, template="plotly_white")
+        fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 100], gridcolor="#475569")), template="plotly_dark", height=500, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
         st.plotly_chart(fig_radar, use_container_width=True)
     with col_dim:
         st.subheader("⚖️ Índice de Equilibrio")
-        vals_dim = [liderazgo_prom, transicion_prom, gerencia_prom]
-        fig_dim = go.Figure(go.Bar(x=vals_dim, y=['Liderazgo', 'Transición', 'Gerencia'], orientation='h', marker_color=[obtener_color_desarrollo(v) for v in vals_dim], text=[f"{round(v,1)}%" for v in vals_dim], textposition='inside'))
-        fig_dim.update_layout(xaxis_range=[0, 105], height=400, template="plotly_white", yaxis=dict(autorange="reversed"))
+        v_dim = [liderazgo_prom, transicion_prom, gerencia_prom]
+        fig_dim = go.Figure(go.Bar(x=v_dim, y=['Liderazgo', 'Transición', 'Gerencia'], orientation='h', marker_color=[obtener_color_desarrollo(v) for v in v_dim], text=[f"{round(v,1)}%" for v in v_dim], textposition='inside'))
+        fig_dim.update_layout(xaxis_range=[0, 105], height=400, template="plotly_dark", yaxis=dict(autorange="reversed"), paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
         st.plotly_chart(fig_dim, use_container_width=True)
 
-    # --- NINEBOX INTEGRAL ---
+    # BLOQUE 4: NINEBOX (Normalizado al Tema Dark)
     st.divider()
     st.subheader("🟦 Mapa de Talento NineBox Confa")
     cnb1, cnb2 = st.columns([1.5, 1])
     cuadrante = obtener_cuadrante_confa(d.IND_POT, d.DES)
-    
     with cnb1:
         fig_nb = go.Figure()
-        cuadrantes = [
+        quads = [
             (0.5, 1.5, 0, 33.33, "#440154", "ICEBERG"), (1.5, 2.5, 0, 33.33, "#482878", "EFECTIVOS"), (2.5, 3.5, 0, 33.33, "#3b528b", "PROF. CONFIABLES"),
             (0.5, 1.5, 33.33, 66.66, "#31688e", "DILEMA"), (1.5, 2.5, 33.33, 66.66, "#21918c", "EMP. CLAVE"), (2.5, 3.5, 33.33, 66.66, "#5ec962", "FUT. ESTRELLAS"),
             (0.5, 1.5, 66.66, 100, "#b5de2b", "ENIGMA"), (1.5, 2.5, 66.66, 100, "#fde725", "ESTRELLA CREC."), (2.5, 3.5, 66.66, 100, "#f89441", "SUPERESTRELLAS")
         ]
-        for x0, x1, y0, y1, color, label in cuadrantes:
-            fig_nb.add_shape(type="rect", x0=x0, y0=y0, x1=x1, y1=y1, fillcolor=color, opacity=0.8, line=dict(color="white", width=1))
-            fig_nb.add_annotation(x=(x0+x1)/2, y=y1-3, text=f"<b>{label}</b>", showarrow=False, font=dict(size=10, color="white"))
-
-        fig_nb.add_trace(go.Scatter(
-            x=[d.DES], y=[escalar_visual_potencial(d.IND_POT)], mode='markers',
-            marker=dict(size=20, color='white', symbol='diamond', line=dict(width=3, color='black')), 
-            hoverinfo="text", text=f"Potencial: {round(d.IND_POT,2)}% | Desempeño: {d.DES}"
-        ))
-        fig_nb.update_layout(
-            xaxis=dict(title="Desempeño (1-3)", tickvals=[1,2,3], range=[0.4, 3.6], color="black"), 
-            yaxis=dict(title="Potencial (%)", tickvals=[0, 33.33, 66.66, 100], ticktext=["0", "60", "80", "100"], range=[-5, 105], color="black"),
-            template="plotly_white", height=500, margin=dict(l=60, r=30, t=30, b=60)
-        )
+        for x0, x1, y0, y1, color, label in quads:
+            fig_nb.add_shape(type="rect", x0=x0, y0=y0, x1=x1, y1=y1, fillcolor=color, opacity=0.4, line=dict(color="white", width=1))
+            fig_nb.add_annotation(x=(x0+x1)/2, y=y1-2.5, text=f"<b>{label}</b>", showarrow=False, font=dict(size=9, color="white"))
+        fig_nb.add_trace(go.Scatter(x=[d.DES], y=[escalar_visual_potencial(d.IND_POT)], mode='markers', marker=dict(size=18, color='white', symbol='diamond', line=dict(width=3, color='black')), hoverinfo="text", text=f"Potencial: {round(d.IND_POT,2)}% | Desempeño: {d.DES}"))
+        fig_nb.update_layout(xaxis=dict(title="Desempeño", tickvals=[1,2,3], range=[0.4, 3.6]), yaxis=dict(title="Potencial (%)", tickvals=[0, 33, 66, 100], range=[-5, 105]), template="plotly_dark", height=500, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
         st.plotly_chart(fig_nb, use_container_width=True)
-
     with cnb2:
-        st.markdown(f"""
-        <div class="metric-box">
-            <h3 style="color:#1e293b; margin:0; font-size:1.4rem;">{cuadrante}</h3>
-            <hr style="border:1px solid #e2e8f0; margin: 15px 0;">
-            <p><b>Potencial Individual:</b> {round(d.IND_POT,2)}%</p>
-            <p><b>Desempeño:</b> {d.DES}</p>
-            <p><b>Autoevaluación Potencial:</b> {round(d.AUTO_POT,2)}%</p>
-            <br>
-            <p style="font-size:0.8rem; color: #64748b;">Análisis estratégico basado en Talent Confa 2026.</p>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(f"""<div class="metric-box"><h3 style="color:#BFDBFE; margin:0;">{cuadrante}</h3><hr style="border:0.5px solid #334155; margin:15px 0;"><p><b>Potencial Individual:</b> {round(d.IND_POT,2)}%</p><p><b>Desempeño:</b> {d.DES}</p><p><b>Autoevaluación Potencial:</b> {round(d.AUTO_POT,2)}%</p></div>""", unsafe_allow_html=True)
 
-    # --- INFORME ---
+    # BLOQUE 5: INFORME
     st.divider()
     if st.button("🚀 GENERAR INFORME"):
-        prompt = f"Consultor Barrett. Genera un reporte para {lider_sel} basado en: {d.to_json()}... (Prompt original de 5 puntos)"
+        prompt = f"Actúa como consultor senior de DESARROLLO DE LIDERAZGO Barrett. Genera un reporte para {lider_sel}. DATOS: {d.to_json()}... (Sigue tu prompt maestro de 5 puntos)"
         try:
-            with st.spinner('Procesando análisis...'):
+            with st.spinner('Procesando...'):
                 res = model.generate_content(prompt)
                 st.session_state.informe_cache[lider_sel] = res.text
                 st.write(res.text)
         except Exception as e: st.error(e)
 
     if lider_sel in st.session_state.informe_cache:
-        if st.button("📄 DESCARGAR PDF HD"):
+        if st.button("📄 DESCARGAR PDF"):
             pdf = FPDF()
             pdf.add_page()
             pdf.set_font('Helvetica', 'B', 16)
             pdf.cell(0, 10, 'REPORTE ESTRATEGICO INTEGRAL', ln=True, align='C')
             with tempfile.TemporaryDirectory() as tmp_dir:
-                nb_path = os.path.join(tmp_dir, "nb.png")
-                fig_nb.write_image(nb_path, engine="kaleido", scale=4)
-                pdf.image(nb_path, x=15, w=180)
+                fig_nb.update_layout(template="plotly", paper_bgcolor='white', plot_bgcolor='white', font=dict(color='black'))
+                path = os.path.join(tmp_dir, "nb.png")
+                fig_nb.write_image(path, engine="kaleido", scale=3)
+                pdf.image(path, x=15, w=180)
                 pdf.add_page()
                 pdf.set_font('Helvetica', '', 10)
                 limpio = st.session_state.informe_cache[lider_sel].replace("**", "").encode('latin-1', 'replace').decode('latin-1')
