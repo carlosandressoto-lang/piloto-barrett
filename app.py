@@ -117,10 +117,12 @@ if df is not None:
 
     # --- RENDER DASHBOARD ---
     st.divider()
-    st.markdown(f"""<div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 20px;">
+    st.markdown(f"""
+    <div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 20px;">
         <div class="metric-box"><b>Total Evaluadores:</b><br><span style="font-size: 1.5rem; color: #BFDBFE;">{int(d.CANT_EVAL)}</span></div>
         <div class="metric-box"><b>Auto:</b> {int(d.CANT_AUTO)} | <b>Jefe:</b> {int(d.CANT_JEFE)} | <b>Pares:</b> {int(d.CANT_PAR)} | <b>Colab:</b> {int(d.CANT_COL)}</div>
-    </div>""", unsafe_allow_html=True)
+    </div>
+    """, unsafe_allow_html=True)
     
     st.subheader("📊 Frecuencia de comportamientos por niveles (%)")
     c1, c2, c3 = st.columns(3)
@@ -132,8 +134,8 @@ if df is not None:
     cl, cr1, cr2, cr3 = st.columns([1, 1, 1, 1])
     with cl:
         st.markdown('<div class="titulo-col">Nivel Barrett</div>', unsafe_allow_html=True)
-        niveles_barrett = ["L7 - Visionario", "L6 - Mentor", "L5 - Auténtico", "L4 - Facilitador", "L3 - Desempeño", "L2 - Relaciones", "L1 - Crisis"]
-        st.markdown('<div class="leyenda-v3">' + ''.join([f'<div class="item-ley">{n}</div>' for n in niveles_barrett]) + '</div>', unsafe_allow_html=True)
+        niveles_lbl = ["L7 - Visionario", "L6 - Mentor", "L5 - Auténtico", "L4 - Facilitador", "L3 - Desempeño", "L2 - Relaciones", "L1 - Crisis"]
+        st.markdown('<div class="leyenda-v3">' + ''.join([f'<div class="item-ley">{n}</div>' for n in niveles_lbl]) + '</div>', unsafe_allow_html=True)
     with cr1: st.markdown('<div class="titulo-col">Autovaloración</div>', unsafe_allow_html=True); st.plotly_chart(generar_fig_reloj(v_auto), key="r1_v")
     with cr2: st.markdown('<div class="titulo-col">Individual (360)</div>', unsafe_allow_html=True); st.plotly_chart(generar_fig_reloj(v_ind), key="r2_v")
     with cr3: st.markdown('<div class="titulo-col">Organizacional</div>', unsafe_allow_html=True); st.plotly_chart(generar_fig_reloj(v_org), key="r3_v")
@@ -155,16 +157,20 @@ if df is not None:
         fig_dim.update_layout(xaxis_range=[0, 105], height=400, template="plotly_dark", yaxis=dict(autorange="reversed"))
         st.plotly_chart(fig_dim, key="dim_v")
 
-    # --- SECCIÓN NINEBOX ---
+    # --- SECCIÓN NINEBOX INTEGRAL ---
     st.divider()
     st.subheader("🟦 Mapa de Talento NineBox Confa")
     cnb1, cnb2 = st.columns([1.5, 1])
     cuadrante = obtener_cuadrante_confa(d.IND_POT, d.DES)
     
     with cnb1:
-        # Detectar el color del texto dinámicamente según el tema para las etiquetas fijas
-        theme_is_dark = st.get_option("theme.base") == "dark"
-        color_texto_cuadrantes = "white" if theme_is_dark else "black"
+        # LÓGICA DE COLOR DINÁMICO: Si el tema es oscuro usa blanco, si es claro usa negro
+        try:
+            theme_is_dark = st.get_option("theme.base") == "dark"
+        except:
+            theme_is_dark = True # Fallback seguro
+            
+        color_dinamico = "white" if theme_is_dark else "black"
         
         fig_nb = go.Figure()
         cuadrantes_specs = [
@@ -174,22 +180,24 @@ if df is not None:
         ]
         for x0, x1, y0, y1, color, label in cuadrantes_specs:
             fig_nb.add_shape(type="rect", x0=x0, y0=y0, x1=x1, y1=y1, fillcolor=color, opacity=0.4, line=dict(color="white", width=1))
-            fig_nb.add_annotation(x=(x0+x1)/2, y=y1-2, text=f"<b>{label}</b>", showarrow=False, font=dict(size=8, color=color_texto_cuadrantes))
+            fig_nb.add_annotation(x=(x0+x1)/2, y=y1-2, text=f"<b>{label}</b>", showarrow=False, font=dict(size=8, color=color_dinamico))
 
+        # Lógica de Posicionamiento para evitar solapamiento con líneas divisorias (60, 80, 100)
         val_p = d.IND_POT
         if val_p < 10: pos = "top center"
-        elif 28 <= val_p <= 38 or 62 <= val_p <= 70 or 76 <= val_p <= 84 or val_p >= 90: pos = "bottom center"
+        elif 54 <= val_p <= 62: pos = "bottom center" # Cerca de la línea 60%
+        elif 74 <= val_p <= 82: pos = "bottom center" # Cerca de la línea 80%
+        elif val_p >= 92: pos = "bottom center"       # Cerca de la línea 100%
         else: pos = "top center"
 
         nombre_wrap = lider_sel.replace(' ', '<br>', 1) if len(lider_sel) > 15 else lider_sel
         fig_nb.add_trace(go.Scatter(
             x=[d.DES], y=[escalar_visual_potencial(d.IND_POT)], mode='markers+text', opacity=1,
-            marker=dict(size=12, color='white', symbol='diamond', line=dict(width=2, color='black')), 
+            marker=dict(size=12, color='white', symbol='diamond', line=dict(width=2, color='black' if theme_is_dark else '#334155')), 
             text=[f"<b>{nombre_wrap}</b><br>({round(d.IND_POT,2)}%)"], textposition=pos,
             hoverinfo="all", 
             hovertemplate=f"Potencial Real: {round(d.IND_POT,2)}%<br>Desempeño: {d.DES}<extra></extra>",
-            # CAMBIO CRÍTICO: Blanco sólido con glow negro para que se vea en cualquier fondo/tema
-            textfont=dict(size=10, color="white")
+            textfont=dict(size=10, color=color_dinamico) # Aumentado a 10 para legibilidad
         ))
         
         fig_nb.update_layout(xaxis=dict(title="Desempeño (1-3)", tickvals=[1,2,3], range=[0.5, 3.5]), yaxis=dict(title="Potencial (Escala Confa)", tickvals=[0, 33.33, 66.66, 100], ticktext=["0%", "60%", "80%", "100%"], range=[-5, 105]), template="plotly_dark" if theme_is_dark else "plotly", height=500)
@@ -264,6 +272,7 @@ if df is not None:
                     pdf.ln(5)
                     with tempfile.TemporaryDirectory() as tmp_dir:
                         def save_chart(fig, name, w=600, h=300):
+                            # PDF usa fondo blanco, forzamos tema plotly (light) y etiquetas negras
                             fig.update_layout(template="plotly", paper_bgcolor='white', font=dict(color="black", size=12), width=w, height=h)
                             path = os.path.join(tmp_dir, name)
                             fig.write_image(path, engine="kaleido", scale=2) 
