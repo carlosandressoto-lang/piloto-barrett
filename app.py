@@ -242,7 +242,7 @@ if df is not None:
                     img_r2 = save_pdf_chart_final(generar_fig_reloj(v_ind, False), "r2p.png", "Indiv")
                     img_r3 = save_pdf_chart_final(generar_fig_reloj(v_org, False), "r3p.png", "Org")
                     
-                    pdf.image(img_r1, x=35, y=y_relojes_base+15, w=53)
+                    pdf.image(img_r1, x=35, y=y_relojes_base+30, w=53)
                     pdf.image(img_r2, x=88, y=y_relojes_base+15, w=53)
                     pdf.image(img_r3, x=141, y=y_relojes_base+15, w=53)
                     
