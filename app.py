@@ -270,7 +270,7 @@ if df is not None:
 
     # --- DESCARGA PDF INTEGRAL CON RELOJES Y LEYENDAS ---
     if lider_sel in st.session_state.informe_cache:
-        if st.button("📄 DESCARGAR INFORME COMPLETO PDF"):
+        if st.button("📄 DESCARGAR INFORME PDF"):
             try:
                 pdf = FPDF()
                 pdf.set_auto_page_break(auto=True, margin=15)
