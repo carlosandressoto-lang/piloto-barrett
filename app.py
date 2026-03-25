@@ -123,6 +123,7 @@ if df is not None:
     transicion_prom = d.INDIV_L4
     gerencia_prom = (d.INDIV_L1 + d.INDIV_L2 + d.INDIV_L3) / 3
 
+    # DASHBOARD WEB
     st.subheader("📊 Frecuencia de comportamientos por niveles (%)")
     c1, c2, c3 = st.columns(3)
     with c1: st.markdown("<div class='titulo-seccion'>Autovaloración</div>", unsafe_allow_html=True); st.plotly_chart(generar_fig_barras(v_auto, "", "#3498db"), use_container_width=True)
@@ -159,63 +160,20 @@ if df is not None:
 
     st.divider()
     cuadrante = obtener_cuadrante_confa(d.IND_POT, d.DES)
-    st.subheader("🟦 Mapa de Talento NineBox Confa")
-    cnb1, cnb2 = st.columns([1.5, 1])
-    with cnb1:
-        fig_nb = go.Figure()
-        quads = [(0.5, 1.5, 0, 33.33, "#440154", "ICEBERG"), (1.5, 2.5, 0, 33.33, "#482878", "EFECTIVOS"), (2.5, 3.5, 0, 33.33, "#3b528b", "PROF. CONFIABLES"), (0.5, 1.5, 33.33, 66.66, "#31688e", "DILEMA"), (1.5, 2.5, 33.33, 66.66, "#21918c", "EMPLEADOS CLAVE"), (2.5, 3.5, 33.33, 66.66, "#5ec962", "FUTURAS ESTRELLAS"), (0.5, 1.5, 66.66, 100, "#b5de2b", "ENIGMA"), (1.5, 2.5, 66.66, 100, "#fde725", "ESTRELLA CREC."), (2.5, 3.5, 66.66, 100, "#f89441", "SUPERESTRELLAS")]
-        for x0, x1, y0, y1, color, label in quads:
-            fig_nb.add_shape(type="rect", x0=x0, y0=y0, x1=x1, y1=y1, fillcolor=color, opacity=0.75, line=dict(color="rgba(255,255,255,0.3)", width=1))
-            fig_nb.add_annotation(x=(x0+x1)/2, y=y1-2.5, text=f"<b>{label}</b>", showarrow=False, font=dict(size=9, color="white"))
-        fig_nb.add_trace(go.Scatter(x=[d.DES], y=[d.IND_POT], mode='markers', marker=dict(size=14, color='red', symbol='diamond', line=dict(width=2, color='white'))))
-        fig_nb.update_layout(xaxis=dict(title="Desempeño", tickvals=[1,2,3], range=[0.4, 3.6]), yaxis=dict(title="Potencial (%)", range=[-5, 105]), template="plotly_dark", height=500, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
-        st.plotly_chart(fig_nb, use_container_width=True)
-    with cnb2:
-        st.markdown(f"<div class='metric-box'><h3>{cuadrante}</h3><hr><p><b>Potencial Individual:</b> {round(d.IND_POT,2)}%</p><p><b>Desempeño:</b> {d.DES}</p><p><b>Autoevaluación Potencial:</b> {round(d.AUTO_POT,2)}%</p></div>", unsafe_allow_html=True)
+    fig_nb = go.Figure()
+    quads = [(0.5, 1.5, 0, 33.33, "#440154", "ICEBERG"), (1.5, 2.5, 0, 33.33, "#482878", "EFECTIVOS"), (2.5, 3.5, 0, 33.33, "#3b528b", "PROF. CONFIABLES"), (0.5, 1.5, 33.33, 66.66, "#31688e", "DILEMA"), (1.5, 2.5, 33.33, 66.66, "#21918c", "EMPLEADOS CLAVE"), (2.5, 3.5, 33.33, 66.66, "#5ec962", "FUTURAS ESTRELLAS"), (0.5, 1.5, 66.66, 100, "#b5de2b", "ENIGMA"), (1.5, 2.5, 66.66, 100, "#fde725", "ESTRELLA CREC."), (2.5, 3.5, 66.66, 100, "#f89441", "SUPERESTRELLAS")]
+    for x0, x1, y0, y1, color, label in quads:
+        fig_nb.add_shape(type="rect", x0=x0, y0=y0, x1=x1, y1=y1, fillcolor=color, opacity=0.75, line=dict(color="rgba(255,255,255,0.3)", width=1))
+        fig_nb.add_annotation(x=(x0+x1)/2, y=y1-2.5, text=f"<b>{label}</b>", showarrow=False, font=dict(size=9, color="white"))
+    fig_nb.add_trace(go.Scatter(x=[d.DES], y=[d.IND_POT], mode='markers', marker=dict(size=14, color='red', symbol='diamond', line=dict(width=2, color='white'))))
+    fig_nb.update_layout(xaxis=dict(title="Desempeño", tickvals=[1,2,3], range=[0.4, 3.6]), yaxis=dict(title="Potencial (%)", range=[-5, 105]), template="plotly_dark", height=500)
 
-    # BLOQUE 5: EL PROMPT MAESTRO
+    # BLOQUE 5: INFORME
     st.divider()
     if st.button("🚀 GENERAR INFORME"):
-        if es_gerencia:
-            contexto_ger = "ADAPTACIÓN GERENCIA: El evaluado es una GERENCIA. No hables de retroalimentación personal ni sucesiones individuales. Habla de 'Capacidad instalada del talento', 'Cultura de resultados grupal' y 'Estrategia de retención del talento del área'."
-        else:
-            contexto_ger = "Evaluado: Líder Individual."
-
-        prompt_maestro = f"""Actúa como consultor senior de DESARROLLO DE LIDERAZGO Barrett. Genera un reporte para {lider_sel}. DATOS: {d.to_json()} donde AUTO es Autoevaluación, INDI es Ponderado Individual, ORG es Ponderado organizacional (Promedio de resultados organizacionales) y CANT es cantidad de respuestas o evaluadores. Si alguien tiene todo 0 en AUTO es porque no hizo Autoevalaucion para que lo tengas presente en la comparativa. Si ves que sus resultados INDI son muy bajos, revisa que al menos CANT_JEFE y CANT_PAR sean mínimo 1, si no ahí esta el error y dejaremos en el reporte ese hallazgo de forma obligatoria pues seria un sesgo matemático. Si no encontramos esas inconsistencias no mencionaremos por nada del mundo esta información en el resto del informe, si y solo si se cumplen una de esas restricciones.
-        {contexto_ger}
-        PROHIBIDO USAR ANGLICISMOS. REDACTA TODO EN ESPAÑOL PURO.
-        CONTEXTO BARRETT:
-        - L1: Gestor de Crisis. Foco en estabilidad y viabilidad operativa. (Supervivencia)
-        - L2: Constructor de Relaciones. Foco en armonía y respeto mutuo. (Relaciones)
-        - L3: Gestor Organizador. Foco en eficiencia y resultados de calidad. (Autoestima)
-        - L4: Facilitador Influyente. Foco en innovación y adaptabilidad. (Transformación)
-        - L5: Integrador Inspirador. Foco en integridad y valores. (Cohesión Interna)
-        - L6: Mentor Socio. Foco en colaboración y mentoría. (Hacer la Diferencia)
-        - L7: Visionario Sabio. Foco en propósito y visión de largo plazo. (Servicio)
-        CONTEXTO NINEBOX CONFA
-        Usa las 9 definiciones de CONFA 2018 para el análisis:
-        -ENIGMA: Líder con alto potencial pero desempeño bajo.
-        -ESTRELLA CRECIENTE: Alto potencial, desempeño esperado.
-        -SUPERESTRELLA: Mejor opción para sucesión.
-        -DILEMA: Potencial medio, desempeño bajo.
-        -EMPLEADO CLAVE: Prometedor.
-        -FUTURA ESTRELLA: Alto desempeño, potencial medio.
-        -ICEBERG: Bajo potencial y desempeño.
-        -EFECTIVO: Desempeño medio, bajo potencial.
-        -PROFESIONAL CONFIABLE: Desempeño excepcional, bajo potencial liderazgo.
-
-        REGLAS DE ORO: 
-        - INICIA DIRECTAMENTE. PROHIBIDO SALUDOS O INTRODUCCIONES.
-        - FEEDBACK TOTALMENTE APRECIATIVO. USA: "desarrollo", "alineación", "influencia", "oportunidad de expansión".
-        - RÚBRICA: Bajo (<65), Medio (65-75), Alto (75-85), Superior (>85).
-        
-        ESTRUCTURA OBLIGATORIA:
-        1. DESCRIPCIÓN POR NIVELES: Lista de L1 a L7 clasificada por Rúbrica y definición Barrett.
-        2. ANÁLISIS DE AUTOVALORACIÓN: Párrafo sobre alineación percepción interna vs colectiva.
-        3. MATRIZ DE MADUREZ: Párrafo de sintonía con promedio organizacional.
-        4. PERFIL DE LIDERAZGO: Estilo predominante y 3 recomendaciones de expansión.
-        5. POSICIONAMIENTO ESTRATÉGICO: Análisis técnico NineBox y brecha de potencial ({cuadrante}).
-        """
+        prompt_maestro = f"""Actúa como consultor senior de DESARROLLO DE LIDERAZGO Barrett. Genera un reporte para {lider_sel}. DATOS: {d.to_json()} 
+        PROHIBIDO USAR ANGLICISMOS. RÚBRICA: Bajo (<65), Medio (65-75), Alto (75-85), Superior (>85).
+        ESTRUCTURA: 1. DESCRIPCIÓN NIVELES. 2. AUTOVALORACIÓN. 3. MATRIZ MADUREZ. 4. PERFIL LIDERAZGO. 5. POSICIONAMIENTO ESTRATÉGICO ({cuadrante})."""
         try:
             with st.spinner('Analizando...'):
                 res = model.generate_content(prompt_maestro)
@@ -223,7 +181,7 @@ if df is not None:
                 st.write(res.text)
         except Exception as e: st.error(e)
 
-    # --- REPORTE PDF (UNIFICADO, SIN HUECOS Y RELOJES GEMELOS) ---
+    # --- REPORTE PDF (PÁGINA 1 RE-ORGANIZADA SIN SOLAPAMIENTO) ---
     if lider_sel in st.session_state.informe_cache:
         if st.button("📄 DESCARGAR PDF"):
             try:
@@ -236,58 +194,51 @@ if df is not None:
                         fig.write_image(path, engine="kaleido", scale=2)
                         return path
 
-                    # PÁGINA 1: DASHBOARD COMPACTO
                     pdf.add_page()
                     pdf.set_font('Helvetica', 'B', 16); pdf.cell(0, 10, 'REPORTE ESTRATÉGICO INTEGRAL', ln=True, align='C')
                     pdf.set_font('Helvetica', '', 12); pdf.cell(0, 8, f'Evaluado: {lider_sel}', ln=True, align='C')
-                    
-                    pdf.set_font('Helvetica', 'B', 10)
-                    eval_txt = f'Total Evaluadores: {int(d.CANT_EVAL)} | Auto: {int(d.CANT_AUTO)} | Jefe: {int(d.CANT_JEFE)} | Pares: {int(d.CANT_PAR)} | Colab: {int(d.CANT_COL)}'
+                    pdf.set_font('Helvetica', 'B', 10); eval_txt = f'Total Evaluadores: {int(d.CANT_EVAL)} | Auto: {int(d.CANT_AUTO)} | Jefe: {int(d.CANT_JEFE)} | Pares: {int(d.CANT_PAR)} | Colab: {int(d.CANT_COL)}'
                     pdf.cell(0, 8, eval_txt, ln=True, align='C')
                     
-                    # 1. Frecuencia
+                    # 1. Frecuencia (Punto Y inicial)
                     pdf.ln(2); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, '1. Frecuencia de comportamientos por niveles (%)', ln=True)
-                    img_b1 = save_pdf_chart_final(generar_fig_barras(v_auto, "", "#3498db"), "b1.png", title="Autovaloración")
-                    img_b2 = save_pdf_chart_final(generar_fig_barras(v_ind, "", "#2ecc71"), "b2.png", title="Individual")
-                    img_b3 = save_pdf_chart_final(generar_fig_barras(v_org, "", "#e74c3c"), "b3.png", title="Org")
-                    y_frec = pdf.get_y(); pdf.image(img_b1, x=10, y=y_frec, w=60); pdf.image(img_b2, x=75, y=y_frec, w=60); pdf.image(img_b3, x=140, y=y_frec, w=60)
+                    y_frec = pdf.get_y()
+                    pdf.image(save_pdf_chart_final(generar_fig_barras(v_auto, "", "#3498db"), "b1.png", "Auto"), x=10, y=y_frec, w=60)
+                    pdf.image(save_pdf_chart_final(generar_fig_barras(v_ind, "", "#2ecc71"), "b2.png", "Indiv"), x=75, y=y_frec, w=60)
+                    pdf.image(save_pdf_chart_final(generar_fig_barras(v_org, "", "#e74c3c"), "b3.png", "Org"), x=140, y=y_frec, w=60)
                     
-                    # 2. Radar y Equilibrio
-                    pdf.set_y(y_frec + 43); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, '2. Alineación de Consciencia e Índice de Equilibrio', ln=True)
-                    img_radar = save_pdf_chart_final(fig_radar, "radar.png"); img_dim = save_pdf_chart_final(fig_dim, "dim.png")
-                    y_radar = pdf.get_y(); pdf.image(img_radar, x=10, y=y_radar, w=95); pdf.image(img_dim, x=110, y=y_radar + 5, w=90)
+                    # 2. Radar y Equilibrio (Control de salto vertical estricto)
+                    # Forzamos set_y para que empiece DEBAJO de las barras anteriores
+                    pdf.set_y(y_frec + 43) 
+                    pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, '2. Alineación de Consciencia e Índice de Equilibrio', ln=True)
+                    y_radar = pdf.get_y()
+                    pdf.image(save_pdf_chart_final(fig_radar, "radar.png", ""), x=10, y=y_radar, w=95)
+                    pdf.image(save_pdf_chart_final(fig_dim, "dim.png", ""), x=110, y=y_radar + 5, w=90)
                     
-                    # --- 3. RELOJES (SIMETRÍA TOTAL w=53) ---
-                    pdf.ln(10) # ESPACIO ADICIONAL PARA QUE EL TÍTULO NO ESTÉ PEGADO
-                    pdf.set_font('Helvetica', 'B', 11)
-                    pdf.cell(0, 10, '3. Niveles de Madurez Barrett (Relojes)', ln=True)
+                    # 3. Relojes Barrett (Control de salto vertical estricto para evitar solapamiento)
+                    # Aquí es donde falló la imagen anterior; bajamos el cursor 65 puntos más
+                    pdf.set_y(y_radar + 63)
+                    pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, '3. Niveles de Madurez Barrett (Relojes)', ln=True)
+                    y_relojes_base = pdf.get_y()
                     
-                    # Capturamos la posición Y exacta después del título para alinear todo
-                    y_base_seccion = pdf.get_y()
+                    # Generamos y pegamos los 3 relojes alineados
+                    img_r1 = save_pdf_chart_final(generar_fig_reloj(v_auto, False), "r1p.png", "Auto")
+                    img_r2 = save_pdf_chart_final(generar_fig_reloj(v_ind, False), "r2p.png", "Indiv")
+                    img_r3 = save_pdf_chart_final(generar_fig_reloj(v_org, False), "r3p.png", "Org")
                     
-                    img_r1 = save_pdf_chart_final(generar_fig_reloj(v_auto, incluir_leyenda=False), "r1p.png", title="Auto")
-                    img_r2 = save_pdf_chart_final(generar_fig_reloj(v_ind, incluir_leyenda=False), "r2p.png", title="Indiv")
-                    img_r3 = save_pdf_chart_final(generar_fig_reloj(v_org, incluir_leyenda=False), "r3p.png", title="Org")
+                    pdf.image(img_r1, x=35, y=y_relojes_base, w=53)
+                    pdf.image(img_r2, x=88, y=y_relojes_base, w=53)
+                    pdf.image(img_r3, x=141, y=y_relojes_base, w=53)
                     
-                    # Renderizamos las imágenes partiendo de y_base_seccion
-                    # x=35 deja el hueco exacto para la leyenda manual
-                    pdf.image(img_r1, x=35, y=y_base_seccion, w=53)
-                    pdf.image(img_r2, x=88, y=y_base_seccion, w=53)
-                    pdf.image(img_r3, x=141, y=y_base_seccion, w=53)
-                    
-                    # LEYENDA MANUAL COORDINADA
-                    pdf.set_font('Helvetica', '', 8)
-                    pdf.set_text_color(100, 100, 100)
-                    niv_manual = ["L7-Visionario", "L6-Mentor", "L5-Autentico", "L4-Facilitador", "L3-Desempeno", "L2-Relaciones", "L1-Crisis"]
-                    
-                    # AJUSTE CRÍTICO: 
-                    # Cambiamos +16 por +22 (ajuste vertical) y mantenemos el paso de 5.15
-                    for i, txt in enumerate(niv_manual):
-                        pdf.text(10, y_base_seccion + 22 + (i * 5.15), txt)
-                    
+                    # Leyenda manual milimétrica
+                    pdf.set_font('Helvetica', '', 8); pdf.set_text_color(100, 100, 100)
+                    niv_m = ["L7-Visionario", "L6-Mentor", "L5-Autentico", "L4-Facilitador", "L3-Desempeno", "L2-Relaciones", "L1-Crisis"]
+                    # Ajuste +22 para que la primera línea de texto caiga frente a la primera barra azul del reloj
+                    for i, txt in enumerate(niv_m):
+                        pdf.text(10, y_relojes_base + 22 + (i * 5.15), txt)
                     pdf.set_text_color(0, 0, 0)
-                    pdf.set_y(y_base_seccion + 45) # Movemos el cursor al final de las gráficas para lo que sigue
-                    # PÁGINA 2: ESTRATEGIA Y TEXTO IA
+
+                    # PÁGINA 2: ESTRATEGIA Y TEXTO
                     pdf.add_page(); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, '4. Posicionamiento Estratégico NineBox Confa', ln=True)
                     fig_nb.update_layout(template="plotly", paper_bgcolor='white', plot_bgcolor='white', font=dict(color='black'))
                     img_nb = os.path.join(tmp_dir, "nb.png"); fig_nb.write_image(img_nb, engine="kaleido", scale=4); pdf.image(img_nb, x=25, w=160)
@@ -296,5 +247,5 @@ if df is not None:
                     limpio = st.session_state.informe_cache[lider_sel].replace("**", "").encode('latin-1', 'replace').decode('latin-1')
                     pdf.multi_cell(0, 6, limpio)
 
-                st.download_button("📥 Guardar Informe Final", data=bytes(pdf.output()), file_name=f"Reporte_{lider_sel}.pdf", mime="application/pdf")
+                st.download_button("📥 Guardar PDF Final Unificado", data=bytes(pdf.output()), file_name=f"Reporte_{lider_sel}.pdf", mime="application/pdf")
             except Exception as e: st.error(f"Error PDF: {e}")
