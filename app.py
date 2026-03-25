@@ -296,11 +296,21 @@ if df is not None:
                     # 3. Relojes (SOLUCIÓN ESPECÍFICA DE HOMOGENEIDAD)
                     pdf.ln(10)
                     pdf.cell(0, 10, '3. Niveles de Madurez Barrett (Relojes)', ln=True)
-                    img_r1 = save_pdf_chart(generar_fig_reloj(v_auto, incluir_leyenda=True), "r1p.png", title="Auto")
-                    img_r2 = save_pdf_chart(generar_fig_reloj(v_ind), "r2p.png", title="Indiv")
-                    img_r3 = save_pdf_chart(generar_fig_reloj(v_org), "r3p.png", title="Org")
-                    pdf.image(img_r1, x=10, w=70); pdf.image(img_r2, x=85, y=pdf.get_y()-40, w=55); pdf.image(img_r3, x=145, y=pdf.get_y()-40, w=55)
-
+                    
+                    # Reloj 1: Con leyenda (Es más ancho para que quepa el texto L1-L7)
+                    img_r1 = save_pdf_chart(generar_fig_reloj(v_auto, incluir_leyenda=True), "r1p.png", title="Autoevaluación")
+                    
+                    # Reloj 2: Sin leyenda (Limpio para que la barra se vea del mismo tamaño que el anterior)
+                    img_r2 = save_pdf_chart(generar_fig_reloj(v_ind, incluir_leyenda=False), "r2p.png", title="Ponderado Individual")
+                    
+                    # Reloj 3: Sin leyenda (Limpio)
+                    img_r3 = save_pdf_chart(generar_fig_reloj(v_org, incluir_leyenda=False), "r3p.png", title="Ponderado Organizacional")
+                    
+                    # Coordenadas exactas para que queden en línea recta:
+                    # El primero es x=10, w=70. Los otros dos compensan el espacio con y-40 y w=55
+                    pdf.image(img_r1, x=10, w=70) 
+                    pdf.image(img_r2, x=85, y=pdf.get_y()-40, w=55) 
+                    pdf.image(img_r3, x=145, y=pdf.get_y()-40, w=55)
                     # PÁGINA 2
                     pdf.add_page()
                     pdf.set_font('Helvetica', 'B', 11)
