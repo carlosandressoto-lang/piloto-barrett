@@ -40,6 +40,7 @@ def load_data():
         df['Nombre_Lider'] = df['Nombre_Lider'].astype(str).str.strip()
         df = df[~df['Nombre_Lider'].isin(['0.0', 'nan', ''])]
         df = df.dropna(subset=['Nombre_Lider'])
+        
         cols_to_fix = [c for c in df.columns if ('L' in c and any(x in c for x in ['AUTO', 'INDIV', 'ORG'])) or 'CANT_' in c or 'POT' in c or 'DES' == c]
         for col in cols_to_fix:
             df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
@@ -55,13 +56,21 @@ def obtener_cuadrante_confa(pot, des):
     if pot < 60: p_label = "BAJO"
     elif pot < 80: p_label = "MEDIO"
     else: p_label = "ALTO"
+    
     if des <= 1: d_label = "BAJO"
     elif des <= 2: d_label = "MEDIO"
     else: d_label = "ALTO"
+    
     mapping = {
-        ("ALTO", "BAJO"): "ENIGMA DIAMANTE EN BRUTO", ("ALTO", "MEDIO"): "FUTURA ESTRELLA EN CRECIMIENTO", ("ALTO", "ALTO"): "FUTUROS LIDERES SUPERESTRELLAS",
-        ("MEDIO", "BAJO"): "DILEMA", ("MEDIO", "MEDIO"): "EMPLEADOS CLAVES", ("MEDIO", "ALTO"): "FUTURAS ESTRELLAS",
-        ("BAJO", "BAJO"): "ICEBERG", ("BAJO", "MEDIO"): "EFECTIVOS", ("BAJO", "ALTO"): "PROFESIONALES CONFIABLES"
+        ("ALTO", "BAJO"): "ENIGMA DIAMANTE EN BRUTO",
+        ("ALTO", "MEDIO"): "FUTURA ESTRELLA EN CRECIMIENTO",
+        ("ALTO", "ALTO"): "FUTUROS LIDERES SUPERESTRELLAS",
+        ("MEDIO", "BAJO"): "DILEMA",
+        ("MEDIO", "MEDIO"): "EMPLEADOS CLAVES",
+        ("MEDIO", "ALTO"): "FUTURAS ESTRELLAS",
+        ("BAJO", "BAJO"): "ICEBERG",
+        ("BAJO", "MEDIO"): "EFECTIVOS",
+        ("BAJO", "ALTO"): "PROFESIONALES CONFIABLES"
     }
     return mapping.get((p_label, d_label), "No clasificado")
 
@@ -76,14 +85,21 @@ if df is not None:
     d = df[df['Nombre_Lider'] == lider_sel].iloc[0]
     es_gerencia = lider_sel.startswith("GER_")
 
+    st.markdown(f"""
+    <div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 20px;">
+        <div class="metric-box"><b>Total Evaluadores:</b><br><span style="font-size: 1.5rem; color: #BFDBFE;">{int(d.CANT_EVAL)}</span></div>
+        <div class="metric-box"><b>Auto:</b> {int(d.CANT_AUTO)} | <b>Jefe:</b> {int(d.CANT_JEFE)} | <b>Pares:</b> {int(d.CANT_PAR)} | <b>Colab:</b> {int(d.CANT_COL)}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
     v_auto = [d.AUTO_L1, d.AUTO_L2, d.AUTO_L3, d.AUTO_L4, d.AUTO_L5, d.AUTO_L6, d.AUTO_L7]
     v_ind = [d.INDIV_L1, d.INDIV_L2, d.INDIV_L3, d.INDIV_L4, d.INDIV_L5, d.INDIV_L6, d.INDIV_L7]
     v_org = [d.ORG_L1, d.ORG_L2, d.ORG_L3, d.ORG_L4, d.ORG_L5, d.ORG_L6, d.ORG_L7]
+
     liderazgo_prom = (d.INDIV_L5 + d.INDIV_L6 + d.INDIV_L7) / 3
     transicion_prom = d.INDIV_L4
     gerencia_prom = (d.INDIV_L1 + d.INDIV_L2 + d.INDIV_L3) / 3
 
-    # Funciones de color Barrett
     def obtener_color_desarrollo(v):
         if v < 65: return "#ff4b4b" 
         if v < 75: return "#f1c40f" 
@@ -118,13 +134,6 @@ if df is not None:
 
     # --- RENDER DASHBOARD ---
     st.divider()
-    st.markdown(f"""
-    <div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 20px;">
-        <div class="metric-box"><b>Total Evaluadores:</b><br><span style="font-size: 1.5rem; color: #BFDBFE;">{int(d.CANT_EVAL)}</span></div>
-        <div class="metric-box"><b>Auto:</b> {int(d.CANT_AUTO)} | <b>Jefe:</b> {int(d.CANT_JEFE)} | <b>Pares:</b> {int(d.CANT_PAR)} | <b>Colab:</b> {int(d.CANT_COL)}</div>
-    </div>
-    """, unsafe_allow_html=True)
-    
     st.subheader("📊 Frecuencia de comportamientos por niveles (%)")
     c1, c2, c3 = st.columns(3)
     with c1: st.plotly_chart(generar_fig_barras(v_auto, "Autovaloración", "#3498db"), key="b1_v")
@@ -132,6 +141,7 @@ if df is not None:
     with c3: st.plotly_chart(generar_fig_barras(v_org, "Promedio Organizacional", "#e74c3c"), key="b3_v")
 
     st.divider()
+    st.subheader("⏳ Resultados Evaluación 360°")
     cl, cr1, cr2, cr3 = st.columns([1, 1, 1, 1])
     with cl:
         st.markdown('<div class="titulo-col">Nivel Barrett</div>', unsafe_allow_html=True)
@@ -158,17 +168,22 @@ if df is not None:
         fig_dim.update_layout(xaxis_range=[0, 105], height=400, template="plotly_dark", yaxis=dict(autorange="reversed"))
         st.plotly_chart(fig_dim, key="dim_v")
 
-    # --- SECCIÓN NINEBOX DINÁMICA ---
+    # --- SECCIÓN NINEBOX INTEGRAL ---
     st.divider()
     st.subheader("🟦 Mapa de Talento NineBox Confa")
     cnb1, cnb2 = st.columns([1.5, 1])
     cuadrante = obtener_cuadrante_confa(d.IND_POT, d.DES)
     
     with cnb1:
-        # LÓGICA DE COLOR DINÁMICO SEGÚN EL TEMA
-        theme_is_dark = st.get_option("theme.base") == "dark"
-        color_dinamico = "white" if theme_is_dark else "black"
-        
+        # Lógica para color de texto que siempre contraste
+        # En el PDF (static image) forzamos negro si el fondo es claro
+        # En la web detectamos el tema
+        color_dinamico = "black" # Valor por defecto para asegurar visibilidad en PDF y modo claro
+        try:
+            if st.get_option("theme.base") == "dark":
+                color_dinamico = "white"
+        except: pass
+
         fig_nb = go.Figure()
         cuadrantes_specs = [
             (0.5, 1.5, 0, 33.33, "#440154", "ICEBERG"), (1.5, 2.5, 0, 33.33, "#482878", "EFECTIVOS"), (2.5, 3.5, 0, 33.33, "#3b528b", "PROF. CONFIABLES"),
@@ -184,16 +199,15 @@ if df is not None:
         elif 28 <= val_p <= 38 or 62 <= val_p <= 70 or 76 <= val_p <= 84 or val_p >= 90: pos = "bottom center"
         else: pos = "top center"
 
-        # WRAP DE NOMBRE RECALIBRADO
         nombre_wrap = lider_sel.replace(' ', '<br>', 1) if len(lider_sel) > 15 else lider_sel
         fig_nb.add_trace(go.Scatter(
             x=[d.DES], y=[escalar_visual_potencial(d.IND_POT)], mode='markers+text', 
             marker=dict(size=12, color='white', symbol='diamond', line=dict(width=2, color='#BFDBFE')), 
             text=[f"<b>{nombre_wrap}</b><br>({round(d.IND_POT,2)}%)"], textposition=pos,
-            hovertemplate=f"Potencial: {round(d.IND_POT,2)}%<br>Desempeño: {d.DES}<extra></extra>",
+            hoverinfo="all", # Restauramos hover
             textfont=dict(size=9, color=color_dinamico)
         ))
-        fig_nb.update_layout(xaxis=dict(title="Desempeño (1-3)", tickvals=[1,2,3], range=[0.5, 3.5]), yaxis=dict(title="Potencial (Escala Confa)", tickvals=[0, 33.33, 66.66, 100], ticktext=["0%", "60%", "80%", "100%"], range=[-5, 105]), template="plotly_dark" if theme_is_dark else "plotly", height=500)
+        fig_nb.update_layout(xaxis=dict(title="Desempeño (1-3)", tickvals=[1,2,3], range=[0.5, 3.5]), yaxis=dict(title="Potencial (Escala Confa)", tickvals=[0, 33.33, 66.66, 100], ticktext=["0%", "60%", "80%", "100%"], range=[-5, 105]), template="plotly_dark" if color_dinamico=="white" else "plotly", height=500)
         st.plotly_chart(fig_nb, key="nb_v", use_container_width=True)
 
     with cnb2:
@@ -211,7 +225,7 @@ if df is not None:
 
     st.divider()
     if st.button("🚀 GENERAR INFORME"):
-        tipo_sujeto = "GERENCIA" if es_gerencia else "LÍDER"
+        # Mantenemos el prompt original sin cambios
         prompt_maestro = f"""
         Actúa como consultor senior de DESARROLLO DE LIDERAZGO Barrett. Genera un reporte para {lider_sel}. DATOS: {d.to_json()} donde AUTO es Autoevaluación, INDI es Ponderado Individual, ORG es Ponderado organizacional (Promedio de resultados organizacionales) y CANT es cantidad de respuestas o evaluadores. Si alguien tiene todo 0 en AUTO es porque no hizo Autoevalaucion para que lo tengas presente en la comparativa. Si ves que sus resultados INDI son muy bajos, revisa que al menos CANT_JEFE y CANT_PAR sean mínimo 1, si no ahí esta el error y dejaremos en el reporte ese hallazgo de forma obligatoria pues seria un sesgo matemático. Si no encontramos esas inconsistencias no mencionaremos por nada del mundo esta información en el resto del informe, si y solo si se cumplen una de esas restricciones.
         PROHIBIDO USAR ANGLICISMOS. REDACTA TODO EN ESPAÑOL PURO.
@@ -224,7 +238,7 @@ if df is not None:
         - L6: Mentor Socio. Foco en colaboración y mentoría. (Hacer la Diferencia)
         - L7: Visionario Sabio. Foco en propósito y visión de largo plazo. (Servicio)
         CONTEXTO NINEBOX CONFA
-        Usa las 9 definiciones de CONFA para el análisis:
+        Usa las 9 definiciones de CONFA 2018 para el análisis:
         -ENIGMA: Líder con alto potencial pero desempeño bajo (ubicarlo bien o revisar jefe).
         -ESTRELLA CRECIENTE: Alto potencial, desempeño esperado (sacar de zona de confort).
         -SUPERESTRELLA: Mejor opción para sucesión (reconocer y premiar).
@@ -275,7 +289,8 @@ if df is not None:
                     pdf.ln(5)
                     with tempfile.TemporaryDirectory() as tmp_dir:
                         def save_chart(fig, name, w=600, h=300):
-                            fig.update_layout(template="plotly_dark" if theme_is_dark else "plotly", paper_bgcolor='white', font=dict(color="black", size=12), width=w, height=h)
+                            # En el PDF usamos tema light siempre
+                            fig.update_layout(template="plotly", paper_bgcolor='white', font=dict(color="black", size=12), width=w, height=h)
                             path = os.path.join(tmp_dir, name)
                             fig.write_image(path, engine="kaleido", scale=2) 
                             return path
@@ -292,6 +307,7 @@ if df is not None:
                         r1_pdf = generar_fig_reloj(v_auto, incluir_leyenda=True); r2_pdf = generar_fig_reloj(v_ind, incluir_leyenda=False, forzar_pdf=True); r3_pdf = generar_fig_reloj(v_org, incluir_leyenda=False, forzar_pdf=True)
                         pdf.image(save_chart(r1_pdf, "r1.png", 500, 400), x=15, y=187, w=60); pdf.image(save_chart(r2_pdf, "r2.png", 500, 400), x=75, y=187, w=60); pdf.image(save_chart(r3_pdf, "r3.png", 500, 400), x=135, y=187, w=60)
                         pdf.add_page(); pdf.set_font('Helvetica', 'B', 12); pdf.cell(0, 10, '5. Posicionamiento Estratégico NineBox Confa', ln=True)
+                        # Usar el fig_nb actualizado con colores dinámicos
                         pdf.image(save_chart(fig_nb, "ninebox_pdf.png", 600, 400), x=35, y=25, w=140); pdf.set_y(105); pdf.set_font('Helvetica', 'B', 12); pdf.cell(0, 10, 'Análisis Ejecutivo Integral', ln=True); pdf.ln(2); pdf.set_font('Helvetica', '', 10)
                         limpio = st.session_state.informe_cache[lider_sel].replace("**", "").replace("###", "").replace("- ", "• ").encode('latin-1', 'replace').decode('latin-1')
                         pdf.multi_cell(0, 6, limpio)
