@@ -14,15 +14,15 @@ st.set_page_config(page_title="LDR Barrett - Confa", layout="wide")
 if "informe_cache" not in st.session_state:
     st.session_state.informe_cache = {}
 
-# CSS Homogéneo: Color #1E293B para visibilidad total en Light y Dark
+# CSS NORMALIZADO: Usamos exactamente el gris de las etiquetas del Bloque 1 (#a2a2a2)
 st.markdown("""
 <style>
     .main { font-family: 'Helvetica Neue', sans-serif; }
-    h1 { color: #1E293B !important; text-align: center; }
-    .titulo-col { text-align: center; font-weight: bold; margin-bottom: 10px; font-size: 1.1rem; color: #1E293B !important; }
-    .metric-box { background-color: rgba(30, 41, 59, 0.05); padding: 15px; border-radius: 10px; text-align: left; border: 1px solid #1E293B; color: #1E293B; }
-    .leyenda-v3 { display: flex; flex-direction: column; justify-content: space-between; height: 340px; margin-top: 35px; padding-right: 10px; border-right: 2px solid #1E293B; }
-    .item-ley { height: 48px; display: flex; align-items: center; justify-content: flex-end; font-size: 0.85rem; font-weight: bold; color: #1E293B !important; }
+    h1 { color: #BFDBFE !important; text-align: center; }
+    .titulo-col { text-align: center; font-weight: bold; margin-bottom: 10px; font-size: 1.1rem; color: #a2a2a2 !important; }
+    .metric-box { background-color: rgba(30, 41, 59, 0.5); padding: 15px; border-radius: 10px; text-align: left; border: 1px solid #334155; color: #a2a2a2; }
+    .leyenda-v3 { display: flex; flex-direction: column; justify-content: space-between; height: 340px; margin-top: 35px; padding-right: 10px; border-right: 1px solid #334155; }
+    .item-ley { height: 48px; display: flex; align-items: center; justify-content: flex-end; font-size: 0.85rem; font-weight: bold; color: #a2a2a2 !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -54,7 +54,7 @@ def load_data():
 
 df = load_data()
 
-# --- 4. LÓGICAS VISUALES (NORMALIZADAS AL BLOQUE 1) ---
+# --- 4. LÓGICAS VISUALES (NORMALIZADAS AL GRIS #a2a2a2) ---
 def obtener_cuadrante_confa(pot, des):
     if pot < 60: p_label = "BAJO"
     elif pot < 80: p_label = "MEDIO"
@@ -90,7 +90,7 @@ def generar_fig_barras(vals, titulo, color):
     labels = ['L7-Visionario', 'L6-Mentor', 'L5-Auténtico', 'L4-Facilitador', 'L3-Desempeño', 'L2-Relaciones', 'L1-Crisis']
     v_plot = [vals[6], vals[5], vals[4], vals[3], vals[2], vals[1], vals[0]]
     fig = go.Figure(go.Bar(x=v_plot, y=labels, orientation='h', marker_color=color, text=[f"{round(v,1)}%" for v in v_plot], textposition='inside'))
-    fig.update_layout(title=dict(text=titulo, x=0.5, font=dict(color='white')), xaxis_range=[0, 105], template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(l=10, r=10, t=40, b=20), height=350, yaxis=dict(autorange="reversed"))
+    fig.update_layout(title=dict(text=titulo, x=0.5, font=dict(color='white')), xaxis_range=[0, 105], template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(l=10, r=10, t=40, b=20), height=350, yaxis=dict(autorange="reversed", tickfont=dict(color='#a2a2a2')))
     return fig
 
 def generar_fig_reloj(vals):
@@ -111,7 +111,13 @@ if df is not None:
     d = df[df['Nombre_Lider'] == lider_sel].iloc[0]
     es_gerencia = lider_sel.startswith("GER_")
 
-    # Cálculos Barrett
+    st.markdown(f"""
+    <div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 20px;">
+        <div class="metric-box"><b>Total Evaluadores:</b><br><span style="font-size: 1.5rem; color: #BFDBFE;">{int(d.CANT_EVAL)}</span></div>
+        <div class="metric-box"><b>Auto:</b> {int(d.CANT_AUTO)} | <b>Jefe:</b> {int(d.CANT_JEFE)} | <b>Pares:</b> {int(d.CANT_PAR)} | <b>Colab:</b> {int(d.CANT_COL)}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
     v_auto = [d.AUTO_L1, d.AUTO_L2, d.AUTO_L3, d.AUTO_L4, d.AUTO_L5, d.AUTO_L6, d.AUTO_L7]
     v_ind = [d.INDIV_L1, d.INDIV_L2, d.INDIV_L3, d.INDIV_L4, d.INDIV_L5, d.INDIV_L6, d.INDIV_L7]
     v_org = [d.ORG_L1, d.ORG_L2, d.ORG_L3, d.ORG_L4, d.ORG_L5, d.ORG_L6, d.ORG_L7]
@@ -126,7 +132,7 @@ if df is not None:
     with c2: st.plotly_chart(generar_fig_barras(v_ind, "Ponderado Individual", "#2ecc71"), use_container_width=True)
     with c3: st.plotly_chart(generar_fig_barras(v_org, "Ponderado Organizacional", "#e74c3c"), use_container_width=True)
 
-    # BLOQUE 2: RELOJES (NIVELES BARRETT)
+    # BLOQUE 2: RELOJES (GRIS #a2a2a2)
     st.divider()
     st.subheader("⏳ Resultados Evaluación 360° (Niveles Barrett)")
     cl, cr1, cr2, cr3 = st.columns([1.2, 1, 1, 1])
@@ -147,13 +153,13 @@ if df is not None:
         cats = ['L1','L2','L3','L4','L5','L6','L7']
         for val, name, color in zip([v_auto, v_ind, v_org], ['Auto', 'Individual', 'Org'], ['#3498db', '#2ecc71', '#e74c3c']):
             fig_radar.add_trace(go.Scatterpolar(r=val, theta=cats, fill='toself', name=name, line_color=color))
-        fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 100], gridcolor="#475569")), template="plotly_dark", height=500, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+        fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 100], gridcolor="#475569", tickfont=dict(color='#a2a2a2'))), template="plotly_dark", height=500, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
         st.plotly_chart(fig_radar, use_container_width=True)
     with col_dim:
         st.subheader("⚖️ Índice de Equilibrio")
         v_dim = [liderazgo_prom, transicion_prom, gerencia_prom]
         fig_dim = go.Figure(go.Bar(x=v_dim, y=['Liderazgo', 'Transición', 'Gerencia'], orientation='h', marker_color=[obtener_color_desarrollo(v) for v in v_dim], text=[f"{round(v,1)}%" for v in v_dim], textposition='inside'))
-        fig_dim.update_layout(xaxis_range=[0, 105], height=400, template="plotly_dark", yaxis=dict(autorange="reversed"), paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+        fig_dim.update_layout(xaxis_range=[0, 105], height=400, template="plotly_dark", yaxis=dict(autorange="reversed", tickfont=dict(color='#a2a2a2')), paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
         st.plotly_chart(fig_dim, use_container_width=True)
 
     # BLOQUE 4: NINEBOX HD
@@ -172,10 +178,10 @@ if df is not None:
             fig_nb.add_shape(type="rect", x0=x0, y0=y0, x1=x1, y1=y1, fillcolor=color, opacity=0.8, line=dict(color="white", width=1))
             fig_nb.add_annotation(x=(x0+x1)/2, y=y1-2.5, text=f"<b>{label}</b>", showarrow=False, font=dict(size=9, color="white"))
         fig_nb.add_trace(go.Scatter(x=[d.DES], y=[escalar_visual_potencial(d.IND_POT)], mode='markers', marker=dict(size=18, color='white', symbol='diamond', line=dict(width=3, color='black'))))
-        fig_nb.update_layout(xaxis=dict(title="Desempeño", tickvals=[1,2,3], range=[0.4, 3.6]), yaxis=dict(title="Potencial (%)", tickvals=[0, 33.3, 66.6, 100], range=[-5, 105]), template="plotly_dark", height=500, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+        fig_nb.update_layout(xaxis=dict(title="Desempeño", tickvals=[1,2,3], range=[0.4, 3.6], tickfont=dict(color='#a2a2a2')), yaxis=dict(title="Potencial (%)", tickvals=[0, 33.3, 66.6, 100], range=[-5, 105], tickfont=dict(color='#a2a2a2')), template="plotly_dark", height=500, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
         st.plotly_chart(fig_nb, use_container_width=True)
     with cnb2:
-        st.markdown(f"""<div class="metric-box"><h3 style="color:#1E293B; margin:0;">{cuadrante}</h3><hr style="border:0.5px solid #1E293B; margin:15px 0;"><p><b>Potencial Individual:</b> {round(d.IND_POT,2)}%</p><p><b>Desempeño:</b> {d.DES}</p><p><b>Autoevaluación Potencial:</b> {round(d.AUTO_POT,2)}%</p></div>""", unsafe_allow_html=True)
+        st.markdown(f"""<div class="metric-box"><h3 style="color:#a2a2a2; margin:0;">{cuadrante}</h3><hr style="border:0.5px solid #334155; margin:15px 0;"><p><b>Potencial Individual:</b> {round(d.IND_POT,2)}%</p><p><b>Desempeño:</b> {d.DES}</p><p><b>Autoevaluación Potencial:</b> {round(d.AUTO_POT,2)}%</p></div>""", unsafe_allow_html=True)
 
     # BLOQUE 5: INFORME (PROMPT MAESTRO)
     st.divider()
@@ -226,7 +232,7 @@ if df is not None:
                 st.write(res.text)
         except Exception as e: st.error(e)
 
-    # --- DESCARGA PDF ---
+    # --- DESCARGA PDF (BYTES FIX) ---
     if lider_sel in st.session_state.informe_cache:
         if st.button("📄 DESCARGAR PDF"):
             try:
@@ -235,7 +241,6 @@ if df is not None:
                 pdf.set_font('Helvetica', 'B', 16)
                 pdf.cell(0, 10, 'REPORTE ESTRATEGICO INTEGRAL', ln=True, align='C')
                 with tempfile.TemporaryDirectory() as tmp_dir:
-                    # Fondo blanco HD solo para PDF
                     fig_nb.update_layout(template="plotly", paper_bgcolor='white', plot_bgcolor='white', font=dict(color='black'))
                     nb_p = os.path.join(tmp_dir, "nb.png")
                     fig_nb.write_image(nb_p, engine="kaleido", scale=4)
