@@ -100,7 +100,40 @@ if df is not None:
     transicion_prom = d.INDIV_L4
     gerencia_prom = (d.INDIV_L1 + d.INDIV_L2 + d.INDIV_L3) / 3
 
-    # --- RENDER DASHBOARD ---
+    # Barrett Figs (Como las entregaste)
+    def obtener_color_desarrollo(v):
+        if v < 65: return "#ff4b4b" 
+        if v < 75: return "#f1c40f" 
+        if v < 85: return "#2ecc71" 
+        return "rgb(33, 115, 182)"
+
+    def obtener_etiqueta(v):
+        if v < 65: return "Bajo"
+        if v < 75: return "Medio"
+        if v < 85: return "Alto"
+        return "Superior"
+
+    def generar_fig_barras(vals, titulo, color):
+        labels = ['L7 - Visionario', 'L6 - Mentor', 'L5 - Auténtico', 'L4 - Facilitador', 'L3 - Desempeño', 'L2 - Relaciones', 'L1 - Crisis']
+        v_plot = [vals[6], vals[5], vals[4], vals[3], vals[2], vals[1], vals[0]]
+        fig = go.Figure(go.Bar(x=v_plot, y=labels, orientation='h', marker_color=color, text=[f"{round(v,1)}%" for v in v_plot], textposition='inside'))
+        fig.update_layout(title=dict(text=titulo, x=0.5), xaxis_range=[0, 105], height=350, template="plotly_dark", margin=dict(l=0, r=10, t=40, b=20), yaxis=dict(autorange="reversed"))
+        return fig
+
+    def generar_fig_reloj(vals, incluir_leyenda=False, forzar_pdf=False):
+        anchos_base = [6, 5, 4, 3.2, 4, 5, 6] 
+        v_rev = [vals[6], vals[5], vals[4], vals[3], vals[2], vals[1], vals[0]]
+        colors_barrett = ["rgb(33,115,182)"]*3 + ["rgb(140,183,42)"] + ["rgb(241,102,35)"]*3
+        labels_niveles = ["L7-Visionario", "L6-Mentor", "L5-Auténtico", "L4-Facilitador", "L3-Desempeño", "L2-Relaciones", "L1-Crisis"]
+        fig = go.Figure()
+        fig.add_trace(go.Funnel(y=labels_niveles if incluir_leyenda else [1,2,3,4,5,6,7], x=anchos_base, textinfo="none", hoverinfo="none", marker={"color": colors_barrett, "line": {"width": 1, "color": "rgba(255,255,255,0.3)"}}, connector={"visible": False}))
+        for i, (val, ancho) in enumerate(zip(v_rev, anchos_base)):
+            fig.add_annotation(x=0, y=i if incluir_leyenda else i+1, text=obtener_etiqueta(val), showarrow=False, font=dict(color=obtener_color_desarrollo(val), size=12, family='Arial Black'), bgcolor="white", bordercolor="rgba(255,255,255,0)", borderpad=4, width=ancho * 22.0)
+        margen_l = 100 if (incluir_leyenda or forzar_pdf) else 10
+        fig.update_layout(height=400, margin=dict(l=margen_l, r=20, t=10, b=10), yaxis=dict(visible=incluir_leyenda, tickfont=dict(size=10)), xaxis=dict(visible=False), plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
+        return fig
+
+    # --- DASHBOARD RENDER ---
     st.divider()
     st.subheader("📊 Frecuencia de comportamientos por niveles (%)")
     c1, c2, c3 = st.columns(3)
@@ -136,36 +169,35 @@ if df is not None:
         fig_dim.update_layout(xaxis_range=[0, 105], height=400, template="plotly_dark", yaxis=dict(autorange="reversed"))
         st.plotly_chart(fig_dim, key="dim_v")
 
-    # --- SECCIÓN NINEBOX INTEGRAL ---
+    # --- SECCIÓN NINEBOX ---
     st.divider()
     st.subheader("🟦 Mapa de Talento NineBox Confa")
     cnb1, cnb2 = st.columns([1.5, 1])
     cuadrante = obtener_cuadrante_confa(d.IND_POT, d.DES)
     
     with cnb1:
-        # Detectar el color del texto dinámicamente según el tema
-        color_texto_leyenda = "white" if st.get_option("theme.base") == "dark" else "black"
-        
         fig_nb = go.Figure()
         cuadrantes_specs = [
             (0.5, 1.5, 0, 33.33, "#440154", "ICEBERG"),            (1.5, 2.5, 0, 33.33, "#482878", "EFECTIVOS"),         (2.5, 3.5, 0, 33.33, "#3b528b", "PROF. CONFIABLES"),
             (0.5, 1.5, 33.33, 66.66, "#31688e", "DILEMA"),        (1.5, 2.5, 33.33, 66.66, "#21918c", "EMP. CLAVE"),    (2.5, 3.5, 33.33, 66.66, "#5ec962", "FUT. ESTRELLAS"),
-            (0.5, 1.5, 66.66, 100, "#b5de2b", "ENIGMA"),          (1.5, 2.5, 66.66, 100, "#fde725", "ESTreLLA CREC."),  (2.5, 3.5, 66.66, 100, "#f89441", "SUPERESTRELLAS")
+            (0.5, 1.5, 66.66, 100, "#b5de2b", "ENIGMA"),          (1.5, 2.5, 66.66, 100, "#fde725", "ESTRELLA CREC."),  (2.5, 3.5, 66.66, 100, "#f89441", "SUPERESTRELLAS")
         ]
         for x0, x1, y0, y1, color, label in cuadrantes_specs:
             fig_nb.add_shape(type="rect", x0=x0, y0=y0, x1=x1, y1=y1, fillcolor=color, opacity=0.4, line=dict(color="white", width=1))
-            fig_nb.add_annotation(x=(x0+x1)/2, y=y1-2.5, text=f"<b>{label}</b>", showarrow=False, font=dict(size=8, color=color_texto_leyenda))
+            # COLOR OSCURO PARA LEYENDAS (Gris Grafito #1e293b)
+            fig_nb.add_annotation(x=(x0+x1)/2, y=y1-2.5, text=f"<b>{label}</b>", showarrow=False, font=dict(size=8, color="#1e293b"))
 
-        # Lógica de Posicionamiento de Leyenda según cercanía a hitos
+        # Lógica de Posicionamiento de Leyenda
         val_p = d.IND_POT
         if val_p < 10: pos = "top center"
-        elif 28 <= val_p <= 38: pos = "bottom center"
-        elif 62 <= val_p <= 70: pos = "bottom center"
-        elif 76 <= val_p <= 84: pos = "bottom center"
+        elif 55 <= val_p < 60: pos = "bottom center"
+        elif 60 <= val_p < 65: pos = "top center"
+        elif 75 <= val_p < 80: pos = "bottom center"
+        elif 80 <= val_p < 85: pos = "top center"
         elif val_p >= 90: pos = "bottom center"
         else: pos = "top center"
 
-        # Graficación del marcador (Mitad de tamaño: size=12) y Hover Restaurado
+        # Marcador (size=12) y Restauración de Hover de coordenadas
         nombre_formateado = lider_sel.replace(' ', '<br>', 1) if len(lider_sel) > 15 else lider_sel
         fig_nb.add_trace(go.Scatter(
             x=[d.DES], 
@@ -174,7 +206,7 @@ if df is not None:
             marker=dict(size=12, color='white', symbol='diamond', line=dict(width=2, color='#BFDBFE')), 
             text=[f"<b>{nombre_formateado}</b><br>({round(d.IND_POT,2)}%)"], 
             textposition=pos,
-            hoverinfo="all", # Restaurada funcionalidad de ver coordenadas al pasar mouse
+            hovertemplate=f"Potencial: {round(d.IND_POT,2)}%<br>Desempeño: {d.DES}<extra></extra>",
             textfont=dict(size=9, color="#BFDBFE")
         ))
         
