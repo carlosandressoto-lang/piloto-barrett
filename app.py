@@ -40,7 +40,6 @@ def load_data():
         df['Nombre_Lider'] = df['Nombre_Lider'].astype(str).str.strip()
         df = df[~df['Nombre_Lider'].isin(['0.0', 'nan', ''])]
         df = df.dropna(subset=['Nombre_Lider'])
-        
         cols_to_fix = [c for c in df.columns if ('L' in c and any(x in c for x in ['AUTO', 'INDIV', 'ORG'])) or 'CANT_' in c or 'POT' in c or 'DES' == c]
         for col in cols_to_fix:
             df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
@@ -56,21 +55,13 @@ def obtener_cuadrante_confa(pot, des):
     if pot < 60: p_label = "BAJO"
     elif pot < 80: p_label = "MEDIO"
     else: p_label = "ALTO"
-    
     if des <= 1: d_label = "BAJO"
     elif des <= 2: d_label = "MEDIO"
     else: d_label = "ALTO"
-    
     mapping = {
-        ("ALTO", "BAJO"): "ENIGMA DIAMANTE EN BRUTO",
-        ("ALTO", "MEDIO"): "FUTURA ESTRELLA EN CRECIMIENTO",
-        ("ALTO", "ALTO"): "FUTUROS LIDERES SUPERESTRELLAS",
-        ("MEDIO", "BAJO"): "DILEMA",
-        ("MEDIO", "MEDIO"): "EMPLEADOS CLAVES",
-        ("MEDIO", "ALTO"): "FUTURAS ESTRELLAS",
-        ("BAJO", "BAJO"): "ICEBERG",
-        ("BAJO", "MEDIO"): "EFECTIVOS",
-        ("BAJO", "ALTO"): "PROFESIONALES CONFIABLES"
+        ("ALTO", "BAJO"): "ENIGMA DIAMANTE EN BRUTO", ("ALTO", "MEDIO"): "FUTURA ESTRELLA EN CRECIMIENTO", ("ALTO", "ALTO"): "FUTUROS LIDERES SUPERESTRELLAS",
+        ("MEDIO", "BAJO"): "DILEMA", ("MEDIO", "MEDIO"): "EMPLEADOS CLAVES", ("MEDIO", "ALTO"): "FUTURAS ESTRELLAS",
+        ("BAJO", "BAJO"): "ICEBERG", ("BAJO", "MEDIO"): "EFECTIVOS", ("BAJO", "ALTO"): "PROFESIONALES CONFIABLES"
     }
     return mapping.get((p_label, d_label), "No clasificado")
 
@@ -85,22 +76,14 @@ if df is not None:
     d = df[df['Nombre_Lider'] == lider_sel].iloc[0]
     es_gerencia = lider_sel.startswith("GER_")
 
-    st.markdown(f"""
-    <div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 20px;">
-        <div class="metric-box"><b>Total Evaluadores:</b><br><span style="font-size: 1.5rem; color: #BFDBFE;">{int(d.CANT_EVAL)}</span></div>
-        <div class="metric-box"><b>Auto:</b> {int(d.CANT_AUTO)} | <b>Jefe:</b> {int(d.CANT_JEFE)} | <b>Pares:</b> {int(d.CANT_PAR)} | <b>Colab:</b> {int(d.CANT_COL)}</div>
-    </div>
-    """, unsafe_allow_html=True)
-
     v_auto = [d.AUTO_L1, d.AUTO_L2, d.AUTO_L3, d.AUTO_L4, d.AUTO_L5, d.AUTO_L6, d.AUTO_L7]
     v_ind = [d.INDIV_L1, d.INDIV_L2, d.INDIV_L3, d.INDIV_L4, d.INDIV_L5, d.INDIV_L6, d.INDIV_L7]
     v_org = [d.ORG_L1, d.ORG_L2, d.ORG_L3, d.ORG_L4, d.ORG_L5, d.ORG_L6, d.ORG_L7]
-
     liderazgo_prom = (d.INDIV_L5 + d.INDIV_L6 + d.INDIV_L7) / 3
     transicion_prom = d.INDIV_L4
     gerencia_prom = (d.INDIV_L1 + d.INDIV_L2 + d.INDIV_L3) / 3
 
-    # Barrett Figs (Como las entregaste)
+    # Funciones de color Barrett
     def obtener_color_desarrollo(v):
         if v < 65: return "#ff4b4b" 
         if v < 75: return "#f1c40f" 
@@ -133,8 +116,15 @@ if df is not None:
         fig.update_layout(height=400, margin=dict(l=margen_l, r=20, t=10, b=10), yaxis=dict(visible=incluir_leyenda, tickfont=dict(size=10)), xaxis=dict(visible=False), plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
         return fig
 
-    # --- DASHBOARD RENDER ---
+    # --- RENDER DASHBOARD ---
     st.divider()
+    st.markdown(f"""
+    <div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 20px;">
+        <div class="metric-box"><b>Total Evaluadores:</b><br><span style="font-size: 1.5rem; color: #BFDBFE;">{int(d.CANT_EVAL)}</span></div>
+        <div class="metric-box"><b>Auto:</b> {int(d.CANT_AUTO)} | <b>Jefe:</b> {int(d.CANT_JEFE)} | <b>Pares:</b> {int(d.CANT_PAR)} | <b>Colab:</b> {int(d.CANT_COL)}</div>
+    </div>
+    """, unsafe_allow_html=True)
+    
     st.subheader("📊 Frecuencia de comportamientos por niveles (%)")
     c1, c2, c3 = st.columns(3)
     with c1: st.plotly_chart(generar_fig_barras(v_auto, "Autovaloración", "#3498db"), key="b1_v")
@@ -142,12 +132,11 @@ if df is not None:
     with c3: st.plotly_chart(generar_fig_barras(v_org, "Promedio Organizacional", "#e74c3c"), key="b3_v")
 
     st.divider()
-    st.subheader("⏳ Resultados Evaluación 360°")
     cl, cr1, cr2, cr3 = st.columns([1, 1, 1, 1])
     with cl:
         st.markdown('<div class="titulo-col">Nivel Barrett</div>', unsafe_allow_html=True)
-        niveles = ["L7 - Visionario", "L6 - Mentor", "L5 - Auténtico", "L4 - Facilitador", "L3 - Desempeño", "L2 - Relaciones", "L1 - Crisis"]
-        st.markdown('<div class="leyenda-v3">' + ''.join([f'<div class="item-ley">{n}</div>' for n in niveles]) + '</div>', unsafe_allow_html=True)
+        niveles_barrett = ["L7 - Visionario", "L6 - Mentor", "L5 - Auténtico", "L4 - Facilitador", "L3 - Desempeño", "L2 - Relaciones", "L1 - Crisis"]
+        st.markdown('<div class="leyenda-v3">' + ''.join([f'<div class="item-ley">{n}</div>' for n in niveles_barrett]) + '</div>', unsafe_allow_html=True)
     with cr1: st.markdown('<div class="titulo-col">Autovaloración</div>', unsafe_allow_html=True); st.plotly_chart(generar_fig_reloj(v_auto), key="r1_v")
     with cr2: st.markdown('<div class="titulo-col">Individual (360)</div>', unsafe_allow_html=True); st.plotly_chart(generar_fig_reloj(v_ind), key="r2_v")
     with cr3: st.markdown('<div class="titulo-col">Organizacional</div>', unsafe_allow_html=True); st.plotly_chart(generar_fig_reloj(v_org), key="r3_v")
@@ -169,67 +158,56 @@ if df is not None:
         fig_dim.update_layout(xaxis_range=[0, 105], height=400, template="plotly_dark", yaxis=dict(autorange="reversed"))
         st.plotly_chart(fig_dim, key="dim_v")
 
-    # --- SECCIÓN NINEBOX ---
+    # --- SECCIÓN NINEBOX DINÁMICA ---
     st.divider()
     st.subheader("🟦 Mapa de Talento NineBox Confa")
     cnb1, cnb2 = st.columns([1.5, 1])
     cuadrante = obtener_cuadrante_confa(d.IND_POT, d.DES)
     
     with cnb1:
+        # LÓGICA DE COLOR DINÁMICO SEGÚN EL TEMA
+        theme_is_dark = st.get_option("theme.base") == "dark"
+        color_dinamico = "white" if theme_is_dark else "black"
+        
         fig_nb = go.Figure()
         cuadrantes_specs = [
-            (0.5, 1.5, 0, 33.33, "#440154", "ICEBERG"),            (1.5, 2.5, 0, 33.33, "#482878", "EFECTIVOS"),         (2.5, 3.5, 0, 33.33, "#3b528b", "PROF. CONFIABLES"),
-            (0.5, 1.5, 33.33, 66.66, "#31688e", "DILEMA"),        (1.5, 2.5, 33.33, 66.66, "#21918c", "EMP. CLAVE"),    (2.5, 3.5, 33.33, 66.66, "#5ec962", "FUT. ESTRELLAS"),
-            (0.5, 1.5, 66.66, 100, "#b5de2b", "ENIGMA"),          (1.5, 2.5, 66.66, 100, "#fde725", "ESTRELLA CREC."),  (2.5, 3.5, 66.66, 100, "#f89441", "SUPERESTRELLAS")
+            (0.5, 1.5, 0, 33.33, "#440154", "ICEBERG"), (1.5, 2.5, 0, 33.33, "#482878", "EFECTIVOS"), (2.5, 3.5, 0, 33.33, "#3b528b", "PROF. CONFIABLES"),
+            (0.5, 1.5, 33.33, 66.66, "#31688e", "DILEMA"), (1.5, 2.5, 33.33, 66.66, "#21918c", "EMP. CLAVE"), (2.5, 3.5, 33.33, 66.66, "#5ec962", "FUT. ESTRELLAS"),
+            (0.5, 1.5, 66.66, 100, "#b5de2b", "ENIGMA"), (1.5, 2.5, 66.66, 100, "#fde725", "ESTRELLA CREC."), (2.5, 3.5, 66.66, 100, "#f89441", "SUPERESTRELLAS")
         ]
         for x0, x1, y0, y1, color, label in cuadrantes_specs:
             fig_nb.add_shape(type="rect", x0=x0, y0=y0, x1=x1, y1=y1, fillcolor=color, opacity=0.4, line=dict(color="white", width=1))
-            # COLOR OSCURO PARA LEYENDAS (Gris Grafito #1e293b)
-            fig_nb.add_annotation(x=(x0+x1)/2, y=y1-2.5, text=f"<b>{label}</b>", showarrow=False, font=dict(size=8, color="#1e293b"))
+            fig_nb.add_annotation(x=(x0+x1)/2, y=y1-2, text=f"<b>{label}</b>", showarrow=False, font=dict(size=8, color=color_dinamico))
 
-        # Lógica de Posicionamiento de Leyenda
         val_p = d.IND_POT
         if val_p < 10: pos = "top center"
-        elif 55 <= val_p < 60: pos = "bottom center"
-        elif 60 <= val_p < 65: pos = "top center"
-        elif 75 <= val_p < 80: pos = "bottom center"
-        elif 80 <= val_p < 85: pos = "top center"
-        elif val_p >= 90: pos = "bottom center"
+        elif 28 <= val_p <= 38 or 62 <= val_p <= 70 or 76 <= val_p <= 84 or val_p >= 90: pos = "bottom center"
         else: pos = "top center"
 
-        # Marcador (size=12) y Restauración de Hover de coordenadas
-        nombre_formateado = lider_sel.replace(' ', '<br>', 1) if len(lider_sel) > 15 else lider_sel
+        # WRAP DE NOMBRE RECALIBRADO
+        nombre_wrap = lider_sel.replace(' ', '<br>', 1) if len(lider_sel) > 15 else lider_sel
         fig_nb.add_trace(go.Scatter(
-            x=[d.DES], 
-            y=[escalar_visual_potencial(d.IND_POT)], 
-            mode='markers+text', 
+            x=[d.DES], y=[escalar_visual_potencial(d.IND_POT)], mode='markers+text', 
             marker=dict(size=12, color='white', symbol='diamond', line=dict(width=2, color='#BFDBFE')), 
-            text=[f"<b>{nombre_formateado}</b><br>({round(d.IND_POT,2)}%)"], 
-            textposition=pos,
+            text=[f"<b>{nombre_wrap}</b><br>({round(d.IND_POT,2)}%)"], textposition=pos,
             hovertemplate=f"Potencial: {round(d.IND_POT,2)}%<br>Desempeño: {d.DES}<extra></extra>",
-            textfont=dict(size=9, color="#BFDBFE")
+            textfont=dict(size=9, color=color_dinamico)
         ))
-        
-        fig_nb.update_layout(
-            xaxis=dict(title="Desempeño (1-3)", tickvals=[1,2,3], range=[0.5, 3.5]), 
-            yaxis=dict(title="Potencial (Escala Confa)", tickvals=[0, 33.33, 66.66, 100], ticktext=["0%", "60%", "80%", "100%"], range=[-5, 105]), 
-            template="plotly_dark", height=500
-        )
+        fig_nb.update_layout(xaxis=dict(title="Desempeño (1-3)", tickvals=[1,2,3], range=[0.5, 3.5]), yaxis=dict(title="Potencial (Escala Confa)", tickvals=[0, 33.33, 66.66, 100], ticktext=["0%", "60%", "80%", "100%"], range=[-5, 105]), template="plotly_dark" if theme_is_dark else "plotly", height=500)
         st.plotly_chart(fig_nb, key="nb_v", use_container_width=True)
 
     with cnb2:
         st.markdown(f"""
         <div class="metric-box" style="text-align: left;">
             <h3 style="color:#BFDBFE; margin:0;">{cuadrante}</h3>
-            <p><b>Potencial:</b> {d.IND_POT}% | <b>Desempeño:</b> {d.DES}</p>
+            <p><b>Potencial (IND_POT):</b> {d.IND_POT}% | <b>Desempeño (DES):</b> {d.DES}</p>
             <p><b>Autoevaluación Potencial:</b> {d.AUTO_POT}%</p>
             <hr style="border:0.5px solid #334155;">
             <p style="font-size:0.85rem;">Cruce estratégico basado en el Análisis de Talento Confa 2026.</p>
         </div>
         """, unsafe_allow_html=True)
 
-    if "informe_cache" not in st.session_state:
-        st.session_state.informe_cache = {}
+    if "informe_cache" not in st.session_state: st.session_state.informe_cache = {}
 
     st.divider()
     if st.button("🚀 GENERAR INFORME"):
@@ -295,14 +273,12 @@ if df is not None:
                     pdf.set_font('Helvetica', '', 11)
                     pdf.cell(0, 10, f'Evaluado: {lider_sel}', ln=True, align='C')
                     pdf.ln(5)
-
                     with tempfile.TemporaryDirectory() as tmp_dir:
                         def save_chart(fig, name, w=600, h=300):
-                            fig.update_layout(template="plotly", paper_bgcolor='white', font=dict(color="black", size=12), width=w, height=h)
+                            fig.update_layout(template="plotly_dark" if theme_is_dark else "plotly", paper_bgcolor='white', font=dict(color="black", size=12), width=w, height=h)
                             path = os.path.join(tmp_dir, name)
                             fig.write_image(path, engine="kaleido", scale=2) 
                             return path
-                        
                         pdf.set_font('Helvetica', 'B', 10)
                         pdf.text(10, 43, "1. Frecuencia de comportamientos por niveles (%)")
                         pdf.image(save_chart(generar_fig_barras(v_auto, "Auto", "#3498db"), "b1.png"), x=10, y=45, w=60)
@@ -314,18 +290,11 @@ if df is not None:
                         pdf.image(save_chart(fig_dim, "dim.png", 500, 350), x=110, y=108, w=90)
                         pdf.text(15, 178, "4. Resultados Evaluación 360° (Niveles Barrett)")
                         r1_pdf = generar_fig_reloj(v_auto, incluir_leyenda=True); r2_pdf = generar_fig_reloj(v_ind, incluir_leyenda=False, forzar_pdf=True); r3_pdf = generar_fig_reloj(v_org, incluir_leyenda=False, forzar_pdf=True)
-                        pdf.image(save_chart(r1_pdf, "r1.png", 500, 400), x=15, y=187, w=60) 
-                        pdf.image(save_chart(r2_pdf, "r2.png", 500, 400), x=75, y=187, w=60) 
-                        pdf.image(save_chart(r3_pdf, "r3.png", 500, 400), x=135, y=187, w=60)
-
-                        pdf.add_page()
-                        pdf.set_font('Helvetica', 'B', 12)
-                        pdf.cell(0, 10, '5. Posicionamiento Estratégico NineBox Confa', ln=True)
-                        pdf.image(save_chart(fig_nb, "ninebox_pdf.png", 600, 400), x=35, y=25, w=140)
-                        pdf.set_y(105); pdf.set_font('Helvetica', 'B', 12); pdf.cell(0, 10, 'Análisis Ejecutivo Integral', ln=True); pdf.ln(2); pdf.set_font('Helvetica', '', 10)
+                        pdf.image(save_chart(r1_pdf, "r1.png", 500, 400), x=15, y=187, w=60); pdf.image(save_chart(r2_pdf, "r2.png", 500, 400), x=75, y=187, w=60); pdf.image(save_chart(r3_pdf, "r3.png", 500, 400), x=135, y=187, w=60)
+                        pdf.add_page(); pdf.set_font('Helvetica', 'B', 12); pdf.cell(0, 10, '5. Posicionamiento Estratégico NineBox Confa', ln=True)
+                        pdf.image(save_chart(fig_nb, "ninebox_pdf.png", 600, 400), x=35, y=25, w=140); pdf.set_y(105); pdf.set_font('Helvetica', 'B', 12); pdf.cell(0, 10, 'Análisis Ejecutivo Integral', ln=True); pdf.ln(2); pdf.set_font('Helvetica', '', 10)
                         limpio = st.session_state.informe_cache[lider_sel].replace("**", "").replace("###", "").replace("- ", "• ").encode('latin-1', 'replace').decode('latin-1')
                         pdf.multi_cell(0, 6, limpio)
-
                     output = pdf.output()
                     st.download_button(label="📥 Descargar Reporte Integral PDF", data=bytes(output), file_name=f"Reporte_Integral_{lider_sel}.pdf", mime="application/pdf")
                 except Exception as e: st.error(f"Error PDF: {e}")
