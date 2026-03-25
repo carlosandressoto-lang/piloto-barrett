@@ -263,19 +263,38 @@ if df is not None:
                     img_radar = save_pdf_chart_final(fig_radar, "radar.png"); img_dim = save_pdf_chart_final(fig_dim, "dim.png")
                     pdf.image(img_radar, x=10, w=95); pdf.image(img_dim, x=110, y=pdf.get_y()-65, w=90)
 
-                    # 3. Relojes Barrett (Estrategia de Gemelos con Leyenda Manual)
-                    pdf.ln(10); pdf.cell(0, 10, '3. Niveles de Madurez Barrett (Relojes)', ln=True)
+# 3. Relojes Barrett (Estrategia de Alineación Milimétrica Base Y)
+                    pdf.ln(10) 
+                    pdf.set_font('Helvetica', 'B', 11)
+                    pdf.cell(0, 10, '3. Niveles de Madurez Barrett (Relojes)', ln=True)
+
+                    # --- ESTA ES LA COORDENADA MAESTRA ---
+                    # Capturamos la posición justo después del título para que todo esté alineado
+                    y_base_seccion = pdf.get_y()
+
                     img_r1 = save_pdf_chart_final(generar_fig_reloj(v_auto, incluir_leyenda=False), "r1p.png", title="Auto")
                     img_r2 = save_pdf_chart_final(generar_fig_reloj(v_ind, incluir_leyenda=False), "r2p.png", title="Indiv")
                     img_r3 = save_pdf_chart_final(generar_fig_reloj(v_org, incluir_leyenda=False), "r3p.png", title="Org")
-                    y_pos_reloj = pdf.get_y()
-                    pdf.image(img_r1, x=35, y=y_pos_reloj, w=53); pdf.image(img_r2, x=88, y=y_pos_reloj, w=53); pdf.image(img_r3, x=141, y=y_pos_reloj, w=53)
-                    
-                    pdf.set_font('Helvetica', '', 8); pdf.set_text_color(100, 100, 100)
+
+                    # --- POSICIONAMIENTO DE RELOJES ---
+                    # Todos usan y_base_seccion para estar en la misma línea horizontal
+                    pdf.image(img_r1, x=35, y=y_base_seccion, w=53)
+                    pdf.image(img_r2, x=88, y=y_base_seccion, w=53)
+                    pdf.image(img_r3, x=141, y=y_base_seccion, w=53)
+
+                    # --- POSICIONAMIENTO DE LEYENDA ---
+                    pdf.set_font('Helvetica', '', 8)
+                    pdf.set_text_color(100, 100, 100)
                     niveles_txt = ["L7-Visionario", "L6-Mentor", "L5-Autentico", "L4-Facilitador", "L3-Desempeno", "L2-Relaciones", "L1-Crisis"]
+                    
                     for i, txt in enumerate(niveles_txt):
-                        pdf.text(10, y_pos_reloj + 16 + (i * 5.15), txt)
-                    pdf.set_text_color(0, 0, 0); pdf.ln(45)
+                        # Ajusta el +22 (desplazamiento inicial) y el 5.15 (espacio entre líneas) 
+                        # para que cada texto quede frente a su barra de color
+                        pdf.text(10, y_base_seccion + 22 + (i * 5.15), txt)
+
+                    pdf.set_text_color(0, 0, 0)
+                    # Forzamos la posición final para que el siguiente contenido no se encime
+                    pdf.set_y(y_base_seccion + 45)
 
                     # PÁGINA 2: NineBox y Texto
                     pdf.add_page(); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, '4. Posicionamiento Estrategico NineBox Confa', ln=True)
