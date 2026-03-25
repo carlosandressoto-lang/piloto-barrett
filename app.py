@@ -200,7 +200,7 @@ if df is not None:
         st.markdown(f"""
         <div class="metric-box" style="text-align: left;">
             <h3 style="color:#BFDBFE; margin:0;">{cuadrante}</h3>
-            <p><b>Potencial (IND_POT):</b> {d.IND_POT}% | <b>Desempeño (DES):</b> {d.DES}</p>
+            <p><b>Potencial:</b> {d.IND_POT}% | <b>Desempeño:</b> {d.DES}</p>
             <p><b>Autoevaluación Potencial:</b> {d.AUTO_POT}%</p>
             <hr style="border:0.5px solid #334155;">
             <p style="font-size:0.85rem;">Cruce estratégico basado en el Análisis de Talento Confa 2026.</p>
