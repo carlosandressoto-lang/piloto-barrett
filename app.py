@@ -54,7 +54,7 @@ def load_data():
 
 df = load_data()
 
-# --- 4. LÓGICA NINEBOX CONFA ---
+# --- 4. LÓGICA NINEBOX CONFA (9 CUADRANTES PDF) ---
 def obtener_cuadrante_confa(pot, des):
     if pot < 60: p_label = "BAJO"
     elif pot < 80: p_label = "MEDIO"
@@ -126,6 +126,7 @@ if df is not None:
         <div class="metric-box"><b>Auto:</b> {int(d.CANT_AUTO)} | <b>Jefe:</b> {int(d.CANT_JEFE)} | <b>Pares:</b> {int(d.CANT_PAR)} | <b>Colab:</b> {int(d.CANT_COL)}</div>
     </div>""", unsafe_allow_html=True)
     
+    st.subheader("📊 Frecuencia de comportamientos por niveles (%)")
     c1, c2, c3 = st.columns(3)
     with c1: st.plotly_chart(generar_fig_barras(v_auto, "Autovaloración", "#3498db"), key="b1_v")
     with c2: st.plotly_chart(generar_fig_barras(v_ind, "Individual (360)", "#2ecc71"), key="b2_v")
@@ -158,17 +159,13 @@ if df is not None:
         fig_dim.update_layout(xaxis_range=[0, 105], height=400, template="plotly_dark", yaxis=dict(autorange="reversed"))
         st.plotly_chart(fig_dim, key="dim_v")
 
-    # --- NINEBOX DINÁMICA ---
+    # --- NINEBOX INTEGRAL - SOLUCIÓN ESTÁTICA ---
     st.divider()
     st.subheader("🟦 Mapa de Talento NineBox Confa")
     cnb1, cnb2 = st.columns([1.5, 1])
     cuadrante = obtener_cuadrante_confa(d.IND_POT, d.DES)
     
     with cnb1:
-        # DETECCIÓN DE TEMA PARA COLORES REALES
-        theme_is_dark = st.get_option("theme.base") == "dark"
-        color_dinamico = "white" if theme_is_dark else "black"
-        
         fig_nb = go.Figure()
         cuadrantes_specs = [
             (0.5, 1.5, 0, 33.33, "#440154", "ICEBERG"), (1.5, 2.5, 0, 33.33, "#482878", "EFECTIVOS"), (2.5, 3.5, 0, 33.33, "#3b528b", "PROF. CONFIABLES"),
@@ -177,7 +174,8 @@ if df is not None:
         ]
         for x0, x1, y0, y1, color, label in cuadrantes_specs:
             fig_nb.add_shape(type="rect", x0=x0, y0=y0, x1=x1, y1=y1, fillcolor=color, opacity=0.4, line=dict(color="white", width=1))
-            fig_nb.add_annotation(x=(x0+x1)/2, y=y1-2.5, text=f"<b>{label}</b>", showarrow=False, font=dict(size=8, color=color_dinamico))
+            # Etiquetas cuadrantes: Negro estático (funciona en Light y Dark sobre los cuadros de colores)
+            fig_nb.add_annotation(x=(x0+x1)/2, y=y1-2.5, text=f"<b>{label}</b>", showarrow=False, font=dict(size=8, color="black"))
 
         # Lógica de Posicionamiento Inteligente
         val_p = d.IND_POT
@@ -192,14 +190,18 @@ if df is not None:
         nombre_wrap = lider_sel.replace(' ', '<br>', 1) if len(lider_sel) > 15 else lider_sel
         fig_nb.add_trace(go.Scatter(
             x=[d.DES], y=[escalar_visual_potencial(d.IND_POT)], mode='markers+text', opacity=1,
-            marker=dict(size=12, color='white', symbol='diamond', line=dict(width=2, color='black' if theme_is_dark else '#334155')), 
+            marker=dict(size=12, color='white', symbol='diamond', line=dict(width=2, color='black')), 
             text=[f"<b>{nombre_wrap}</b><br>({round(d.IND_POT,2)}%)"], textposition=pos,
             hoverinfo="all", 
             hovertemplate=f"Potencial Real: {round(d.IND_POT,2)}%<br>Desempeño: {d.DES}<extra></extra>",
-            textfont=dict(size=9, color=color_dinamico)
+            # COLOR ESTÁTICO NEGRO CON HALO (Máxima visibilidad en cualquier modo)
+            textfont=dict(size=10, color="black")
         ))
         
-        fig_nb.update_layout(xaxis=dict(title="Desempeño (1-3)", tickvals=[1,2,3], range=[0.5, 3.5]), yaxis=dict(title="Potencial (Escala Confa)", tickvals=[0, 33.33, 66.66, 100], ticktext=["0%", "60%", "80%", "100%"], range=[-5, 105]), template="plotly_dark" if theme_is_dark else "plotly", height=500)
+        # Inyectar el halo/glow al texto mediante CSS de Plotly para asegurar legibilidad
+        fig_nb.update_traces(textfont_outlinecolor="white", textfont_outlinewidth=2)
+        
+        fig_nb.update_layout(xaxis=dict(title="Desempeño (1-3)", tickvals=[1,2,3], range=[0.5, 3.5]), yaxis=dict(title="Potencial (Escala Confa)", tickvals=[0, 33.33, 66.66, 100], ticktext=["0%", "60%", "80%", "100%"], range=[-5, 105]), template="plotly_dark", height=500)
         st.plotly_chart(fig_nb, key="nb_v", use_container_width=True)
 
     with cnb2:
@@ -239,7 +241,6 @@ if df is not None:
         - SI CANT_JEFE es 0: Debes iniciar el informe con una ADVERTENCIA ESTRATÉGICA indicando que el ponderado individual se ve severamente afectado (sesgo a la baja) debido a la ausencia de la valoración del líder directo (40% del peso).
         - SI CANT_PAR es 0: Debes iniciar el informe con una ADVERTENCIA ESTRATÉGICA indicando que el ponderado individual se ve severamente afectado (sesgo a la baja) debido a la ausencia de la valoración del minimo 1 par (20% del peso si tiene colaboradores a cargo, 40% si no tiene colaboradores a cargo).
         - SI CANT_AUTO es 0: Indica que no existe punto de comparación interno.
-        - Si no hay estos ceros, no menciones nada de esto.
 
         ESTRUCTURA informe OBLIGATORIA:
         1. DESCRIPCIÓN POR NIVELES: Lista de L1 a L7 con el nombre de contexto Barret (Ejemplo L1: Gestor de Crisis). Clasifica cada nivel basándote en el 'Ponderado Individual' usando la rúbrica (Bajo, Medio, Alto, Superior) y las definiciones Barrett anteriores para generar una descripción según el modelo Barret y el nivel de la rubrica del líder. Siempre una lista de Nivel 1 a Nivel 7 no lo hagas en 1 solo párrafo porque confunde
@@ -252,12 +253,10 @@ if df is not None:
             with st.spinner('Consolidando informe...'):
                 response = model.generate_content(prompt_maestro)
                 st.session_state.informe_cache[lider_sel] = response.text
-        except Exception as e: st.error(f"Error IA: {e}")
+                st.write(response.text)
+        except Exception as e: st.error(f"IA Error: {e}")
 
     if lider_sel in st.session_state.informe_cache:
-        st.markdown(f"### 📋 Informe Estratégico Integral: {lider_sel}")
-        st.write(st.session_state.informe_cache[lider_sel])
-
         if st.button("📄 GENERAR REPORTE PDF"):
             with st.spinner('Procesando PDF...'):
                 try:
