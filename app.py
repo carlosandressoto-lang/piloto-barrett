@@ -262,8 +262,7 @@ if df is not None:
                     pdf.ln(10); pdf.cell(0, 10, '2. Alineacion de Consciencia e Indice de Equilibrio', ln=True)
                     img_radar = save_pdf_chart_final(fig_radar, "radar.png"); img_dim = save_pdf_chart_final(fig_dim, "dim.png")
                     pdf.image(img_radar, x=10, w=95); pdf.image(img_dim, x=110, y=pdf.get_y()-65, w=90)
-
-# --- REEMPLAZA ESTE BLOQUE EN LA GENERACIÓN DEL PDF ---
+                    # --- REEMPLAZA ESTE BLOQUE EN LA GENERACIÓN DEL PDF ---
 
 # 1. Frecuencia de comportamientos (BARRAS SUPERIORES)
 pdf.set_font('Helvetica', 'B', 11)
@@ -319,7 +318,6 @@ pdf.set_text_color(100, 100, 100)
 niveles_txt = ["L7-Visionario", "L6-Mentor", "L5-Autentico", "L4-Facilitador", "L3-Desempeno", "L2-Relaciones", "L1-Crisis"]
 for i, txt in enumerate(niveles_txt):
     pdf.text(10, y_relojes + 16 + (i * 5.15), txt)
-
                     # PÁGINA 2: NineBox y Texto
                     pdf.add_page(); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, '4. Posicionamiento Estrategico NineBox Confa', ln=True)
                     fig_nb.update_layout(template="plotly", paper_bgcolor='white', plot_bgcolor='white', font=dict(color='black'))
