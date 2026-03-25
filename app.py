@@ -185,28 +185,13 @@ if df is not None:
         else: pos = "top center"
 
         # WRAP DE NOMBRE RECALIBRADO
-# Graficación del marcador y etiqueta con contraste forzado
         nombre_wrap = lider_sel.replace(' ', '<br>', 1) if len(lider_sel) > 15 else lider_sel
-        
         fig_nb.add_trace(go.Scatter(
-            x=[d.DES], 
-            y=[escalar_visual_potencial(d.IND_POT)], 
-            mode='markers+text', 
-            opacity=1, # Asegura que no haya transparencia heredada
-            marker=dict(
-                size=12, 
-                color='white', 
-                symbol='diamond', 
-                line=dict(width=2, color='black') # Borde negro para que resalte el diamante
-            ), 
-            text=[f"<b>{nombre_wrap}</b><br>({round(d.IND_POT,2)}%)"], 
-            textposition=pos,
-            hoverinfo="all", 
-            hovertemplate=f"Potencial Real: {round(d.IND_POT,2)}%<br>Desempeño: {d.DES}<extra></extra>",
-            textfont=dict(
-                size=10, 
-                color="white" # <--- CAMBIO CLAVE: Usa "white" fijo, el "color_dinamico" te está poniendo negro en modo Light y se daña el PDF
-            )
+            x=[d.DES], y=[d.IND_POT], mode='markers+text', opacity=1, 
+            marker=dict(size=12, color='white', symbol='diamond', line=dict(width=2, color='#BFDBFE')), 
+            text=[f"<b>{nombre_wrap}</b><br>({round(d.IND_POT,2)}%)"], textposition=pos,
+            hovertemplate=f"Potencial: {round(d.IND_POT,2)}%<br>Desempeño: {d.DES}<extra></extra>",
+            textfont=dict(size=9, color=color_dinamico)
         ))
         fig_nb.update_layout(xaxis=dict(title="Desempeño (1-3)", tickvals=[1,2,3], range=[0.5, 3.5]), yaxis=dict(title="Potencial (Escala Confa)", tickvals=[0, 33.33, 66.66, 100], ticktext=["0%", "60%", "80%", "100%"], range=[-5, 105]), template="plotly_dark" if theme_is_dark else "plotly", height=500)
         st.plotly_chart(fig_nb, key="nb_v", use_container_width=True)
