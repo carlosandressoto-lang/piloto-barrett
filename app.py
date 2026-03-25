@@ -168,7 +168,7 @@ if df is not None:
         fig_dim.update_layout(xaxis_range=[0, 105], height=400, template="plotly_dark", yaxis=dict(autorange="reversed"))
         st.plotly_chart(fig_dim, key="dim_v")
 
-    # --- SECCIÓN NINEBOX INTEGRAL: GRÁFICO REAL CON FONDO ESCALADO ---
+    # --- SECCIÓN NINEBOX INTEGRAL CON ESCALA HOMOGÉNEA Y VALORES REALES ---
     st.divider()
     st.subheader("🟦 Mapa de Talento NineBox Confa")
     cnb1, cnb2 = st.columns([1.5, 1])
@@ -176,17 +176,17 @@ if df is not None:
     
     with cnb1:
         fig_nb = go.Figure()
-        # 9 Cuadrantes con colores diferenciados - USAMOS VALORES REALES PARA EL DIBUJO DE FONDO
+        # 9 Cuadrantes delimitados por color usando hitos visuales de la función escalar
         cuadrantes_specs = [
-            (0.5, 1.5, 0, 60, "#440154", "ICEBERG"),             (1.5, 2.5, 0, 60, "#482878", "EFECTIVOS"),          (2.5, 3.5, 0, 60, "#3b528b", "PROF. CONFIABLES"),
-            (0.5, 1.5, 60, 80, "#31688e", "DILEMA"),            (1.5, 2.5, 60, 80, "#21918c", "EMP. CLAVE"),        (2.5, 3.5, 60, 80, "#5ec962", "FUT. ESTRELLAS"),
-            (0.5, 1.5, 80, 100, "#b5de2b", "ENIGMA"),           (1.5, 2.5, 80, 100, "#fde725", "ESTRELLA CREC."),   (2.5, 3.5, 80, 100, "#f89441", "SUPERESTRELLAS")
+            (0.5, 1.5, 0, 33.33, "#440154", "ICEBERG"),            (1.5, 2.5, 0, 33.33, "#482878", "EFECTIVOS"),         (2.5, 3.5, 0, 33.33, "#3b528b", "PROF. CONFIABLES"),
+            (0.5, 1.5, 33.33, 66.66, "#31688e", "DILEMA"),        (1.5, 2.5, 33.33, 66.66, "#21918c", "EMP. CLAVE"),    (2.5, 3.5, 33.33, 66.66, "#5ec962", "FUT. ESTRELLAS"),
+            (0.5, 1.5, 66.66, 100, "#b5de2b", "ENIGMA"),          (1.5, 2.5, 66.66, 100, "#fde725", "ESTRELLA CREC."),  (2.5, 3.5, 66.66, 100, "#f89441", "SUPERESTRELLAS")
         ]
         for x0, x1, y0, y1, color, label in cuadrantes_specs:
             fig_nb.add_shape(type="rect", x0=x0, y0=y0, x1=x1, y1=y1, fillcolor=color, opacity=0.4, line=dict(color="white", width=1))
-            fig_nb.add_annotation(x=(x0+x1)/2, y=y1-2, text=label, showarrow=False, font=dict(size=8, color="rgba(255,255,255,0.7)"))
+            fig_nb.add_annotation(x=(x0+x1)/2, y=y1-2, text=label, showarrow=False, font=dict(size=8, color="rgba(255,255,255,0.5)"))
 
-        # GRAFICACIÓN DEL PUNTO CON VALORES REALES SIN CONVERSIÓN
+        # SIMPLE Y REAL: GRAFICACIÓN DEL PUNTO USANDO IND_POT DIRECTO
         fig_nb.add_trace(go.Scatter(
             x=[d.DES], 
             y=[d.IND_POT], 
@@ -199,7 +199,7 @@ if df is not None:
         
         fig_nb.update_layout(
             xaxis=dict(title="Desempeño (1-3)", tickvals=[1,2,3], range=[0.5, 3.5]), 
-            yaxis=dict(title="Potencial Real (%)", tickvals=[0, 60, 80, 100], range=[-5, 105]), 
+            yaxis=dict(title="Potencial (Escala Confa)", tickvals=[0, 33.33, 66.66, 100], ticktext=["0%", "60%", "80%", "100%"], range=[-5, 105]), 
             template="plotly_dark", height=500
         )
         st.plotly_chart(fig_nb, key="nb_v", use_container_width=True)
@@ -232,17 +232,17 @@ if df is not None:
         - L5: Integrador Inspirador. Foco en integridad y valores. (Cohesión Interna)
         - L6: Mentor Socio. Foco en colaboración y mentoría. (Hacer la Diferencia)
         - L7: Visionario Sabio. Foco en propósito y visión de largo plazo. (Servicio)
-	CONTEXTO NINEBOX CONFA
-	Usa las 9 definiciones de CONFA 2018 para el análisis:
-	-ENIGMA: Líder con alto potencial pero desempeño bajo (ubicarlo bien o revisar jefe).
-	-ESTRELLA CRECIENTE: Alto potencial, desempeño esperado (sacar de zona de confort).
-	-SUPERESTRELLA: Mejor opción para sucesión (reconocer y premiar).
-	-DILEMA: Potencial medio, desempeño bajo (trabajar motivación).
-	-EMPLEADO CLAVE: Prometedor (retar y motivar).
-	-FUTURA ESTRELLA: Alto desempeño, potencial medio (puestos clave).
-	-ICEBERG: Bajo potencial y desempeño (observar o decidir desvinculación).
-	-EFECTIVO: Desempeño medio, bajo potencial (incitar a aprender cosas nuevas).
-	-PROFESIONAL CONFIABLE: Desempeño excepcional, bajo potencial liderazgo (reconocer esfuerzo y desarrollar liderazgo).
+        CONTEXTO NINEBOX CONFA
+        Usa las 9 definiciones de CONFA 2018 para el análisis:
+        -ENIGMA: Líder con alto potencial pero desempeño bajo (ubicarlo bien o revisar jefe).
+        -ESTRELLA CRECIENTE: Alto potencial, desempeño esperado (sacar de zona de confort).
+        -SUPERESTRELLA: Mejor opción para sucesión (reconocer y premiar).
+        -DILEMA: Potencial medio, desempeño bajo (trabajar motivación).
+        -EMPLEADO CLAVE: Prometedor (retar y motivar).
+        -FUTURA ESTRELLA: Alto desempeño, potencial medio (puestos clave).
+        -ICEBERG: Bajo potencial y desempeño (observar o decidir desvinculación).
+        -EFECTIVO: Desempeño medio, bajo potencial (incitar a aprender cosas nuevas).
+        -PROFESIONAL CONFIABLE: Desempeño excepcional, bajo potencial liderazgo (reconocer esfuerzo y desarrollar liderazgo).
 
         REGLAS DE ORO: 
         - INICIA DIRECTAMENTE. PROHIBIDO SALUDOS O INTRODUCCIONES o RESMENES O APRECIACIONES.
