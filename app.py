@@ -122,6 +122,7 @@ if df is not None:
     lideres = sorted(df['Nombre_Lider'].unique())
     lider_sel = st.selectbox("Seleccione el líder:", lideres)
     d = df[df['Nombre_Lider'] == lider_sel].iloc[0]
+    es_gerencia = lider_sel.startswith("GER_")
     
     st.subheader("👥 Información de la Evaluación")
     c_ev1, c_ev2 = st.columns([1, 2])
@@ -135,12 +136,14 @@ if df is not None:
     transicion_prom = d.INDIV_L4
     gerencia_prom = (d.INDIV_L1 + d.INDIV_L2 + d.INDIV_L3) / 3
 
+    # BLOQUE 1: BARRAS
     st.subheader("📊 Frecuencia de comportamientos por niveles (%)")
     c1, c2, c3 = st.columns(3)
     with c1: st.markdown("<div class='titulo-seccion'>Autovaloración</div>", unsafe_allow_html=True); st.plotly_chart(generar_fig_barras(v_auto, "", "#3498db"), use_container_width=True)
     with c2: st.markdown("<div class='titulo-seccion'>Ponderado Individual</div>", unsafe_allow_html=True); st.plotly_chart(generar_fig_barras(v_ind, "", "#2ecc71"), use_container_width=True)
     with c3: st.markdown("<div class='titulo-seccion'>Ponderado Organizacional</div>", unsafe_allow_html=True); st.plotly_chart(generar_fig_barras(v_org, "", "#e74c3c"), use_container_width=True)
 
+    # BLOQUE 2: RELOJES
     st.divider()
     st.subheader("⏳ Resultados Evaluación 360° (Niveles Barrett)")
     cl, cr1, cr2, cr3 = st.columns([1.2, 1, 1, 1])
@@ -152,6 +155,7 @@ if df is not None:
     with cr2: st.markdown("<div class='titulo-seccion'>Individual</div>", unsafe_allow_html=True); st.plotly_chart(generar_fig_reloj(v_ind), key="r2", use_container_width=True)
     with cr3: st.markdown("<div class='titulo-seccion'>Organizacional</div>", unsafe_allow_html=True); st.plotly_chart(generar_fig_reloj(v_org), key="r3", use_container_width=True)
 
+    # BLOQUE 3: RADAR Y EQUILIBRIO
     st.divider()
     col_radar, col_dim = st.columns([1.5, 1])
     with col_radar:
@@ -169,12 +173,11 @@ if df is not None:
         fig_dim.update_layout(xaxis_range=[0, 105], height=400, template="plotly_dark", yaxis=dict(autorange="reversed"), paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
         st.plotly_chart(fig_dim, use_container_width=True)
 
-    # --- BLOQUE 4: NINEBOX CON ETIQUETAS BLANCAS (REVERTIDO) ---
+    # BLOQUE 4: NINEBOX
     st.divider()
     st.subheader("🟦 Mapa de Talento NineBox Confa")
     cnb1, cnb2 = st.columns([1.5, 1])
     cuadrante = obtener_cuadrante_confa(d.IND_POT, d.DES)
-    
     with cnb1:
         fig_nb = go.Figure()
         quads = [
@@ -184,25 +187,23 @@ if df is not None:
         ]
         for x0, x1, y0, y1, color, label in quads:
             fig_nb.add_shape(type="rect", x0=x0, y0=y0, x1=x1, y1=y1, fillcolor=color, opacity=0.75, line=dict(color="rgba(255,255,255,0.3)", width=1))
-            # REVERTIDO A BLANCO FIJO: Para mejor visibilidad sobre los bloques de color
             fig_nb.add_annotation(x=(x0+x1)/2, y=y1-2.5, text=f"<b>{label}</b>", showarrow=False, font=dict(size=9, color="white"))
-        
-        # Puntero de Diamante Rojo
         fig_nb.add_trace(go.Scatter(x=[d.DES], y=[d.IND_POT], mode='markers', marker=dict(size=14, color='red', symbol='diamond', line=dict(width=2, color='white'))))
-        
-        fig_nb.update_layout(
-            xaxis=dict(title="Desempeño", tickvals=[1,2,3], range=[0.4, 3.6]), 
-            yaxis=dict(title="Potencial (%)", tickvals=[0, 33.3, 66.6, 100], ticktext=["0", "60", "80", "100"], range=[-5, 105]), 
-            template="plotly_dark", height=500, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)'
-        )
+        fig_nb.update_layout(xaxis=dict(title="Desempeño", tickvals=[1,2,3], range=[0.4, 3.6]), yaxis=dict(title="Potencial (%)", tickvals=[0, 33.3, 66.6, 100], range=[-5, 105]), template="plotly_dark", height=500, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
         st.plotly_chart(fig_nb, use_container_width=True)
     with cnb2:
         st.markdown(f"<div class='metric-box'><h3>{cuadrante}</h3><hr><p><b>Potencial Individual:</b> {round(d.IND_POT,2)}%</p><p><b>Desempeño:</b> {d.DES}</p><p><b>Autoevaluación Potencial:</b> {round(d.AUTO_POT,2)}%</p></div>", unsafe_allow_html=True)
 
-    # BLOQUE 5: INFORME (PROMPT MAESTRO)
+    # BLOQUE 5: INFORME (PROMPT MAESTRO COMPLETO)
     st.divider()
     if st.button("🚀 GENERAR INFORME"):
+        if es_gerencia:
+            contexto_ger = "ADAPTACIÓN GERENCIA: El evaluado es una GERENCIA. No hables de retroalimentación personal ni sucesiones individuales. Habla de 'Capacidad instalada del talento', 'Cultura de resultados grupal' y 'Estrategia de retención del talento del área'."
+        else:
+            contexto_ger = "Evaluado: Líder Individual."
+
         prompt_maestro = f"""Actúa como consultor senior de DESARROLLO DE LIDERAZGO Barrett. Genera un reporte para {lider_sel}. DATOS: {d.to_json()} donde AUTO es Autoevaluación, INDI es Ponderado Individual, ORG es Ponderado organizacional (Promedio de resultados organizacionales) y CANT es cantidad de respuestas o evaluadores. Si alguien tiene todo 0 en AUTO es porque no hizo Autoevalaucion para que lo tengas presente en la comparativa. Si ves que sus resultados INDI son muy bajos, revisa que al menos CANT_JEFE y CANT_PAR sean mínimo 1, si no ahí esta el error y dejaremos en el reporte ese hallazgo de forma obligatoria pues seria un sesgo matemático. Si no encontramos esas inconsistencias no mencionaremos por nada del mundo esta información en el resto del informe, si y solo si se cumplen una de esas restricciones.
+        {contexto_ger}
         PROHIBIDO USAR ANGLICISMOS. REDACTA TODO EN ESPAÑOL PURO.
         CONTEXTO BARRETT:
         - L1: Gestor de Crisis. Foco en estabilidad y viabilidad operativa. (Supervivencia)
@@ -248,22 +249,54 @@ if df is not None:
                 st.write(res.text)
         except Exception as e: st.error(e)
 
-    # --- DESCARGA PDF ---
+    # --- DESCARGA PDF INTEGRAL ---
     if lider_sel in st.session_state.informe_cache:
-        if st.button("📄 DESCARGAR REPORTE PDF"):
+        if st.button("📄 DESCARGAR INFORME PDF"):
             try:
                 pdf = FPDF()
-                pdf.add_page()
-                pdf.set_font('Helvetica', 'B', 16)
-                pdf.cell(0, 10, 'REPORTE ESTRATEGICO INTEGRAL', ln=True, align='C')
+                pdf.set_auto_page_break(auto=True, margin=15)
                 with tempfile.TemporaryDirectory() as tmp_dir:
-                    fig_nb.update_layout(template="plotly", paper_bgcolor='white', plot_bgcolor='white', font=dict(color='black'))
-                    nb_p = os.path.join(tmp_dir, "nb.png")
-                    fig_nb.write_image(nb_p, engine="kaleido", scale=4)
-                    pdf.image(nb_p, x=15, w=180)
+                    def save_pdf_chart(fig, name, w=500, h=350):
+                        fig.update_layout(template="plotly", paper_bgcolor='white', plot_bgcolor='white', font=dict(color='black'))
+                        path = os.path.join(tmp_dir, name)
+                        fig.write_image(path, engine="kaleido", scale=2)
+                        return path
+
+                    # PÁGINA 1
                     pdf.add_page()
+                    pdf.set_font('Helvetica', 'B', 16)
+                    pdf.cell(0, 10, 'REPORTE ESTRATEGICO INTEGRAL (BARRETT + TALENTO)', ln=True, align='C')
+                    pdf.set_font('Helvetica', '', 12)
+                    pdf.cell(0, 10, f'Evaluado: {lider_sel}', ln=True, align='C')
+                    
+                    pdf.set_font('Helvetica', 'B', 11)
+                    pdf.cell(0, 10, '1. Frecuencia de comportamientos por niveles (%)', ln=True)
+                    img_b1 = save_pdf_chart(generar_fig_barras(v_auto, "Auto", "#3498db"), "b1.png")
+                    img_b2 = save_pdf_chart(generar_fig_barras(v_ind, "Individual", "#2ecc71"), "b2.png")
+                    img_b3 = save_pdf_chart(generar_fig_barras(v_org, "Org", "#e74c3c"), "b3.png")
+                    pdf.image(img_b1, x=10, w=60); pdf.image(img_b2, x=75, y=pdf.get_y()-30, w=60); pdf.image(img_b3, x=140, y=pdf.get_y()-30, w=60)
+                    
+                    pdf.ln(10)
+                    pdf.cell(0, 10, '2. Alineacion de Consciencia e Indice de Equilibrio', ln=True)
+                    img_radar = save_pdf_chart(fig_radar, "radar.png")
+                    img_dim = save_pdf_chart(fig_dim, "dim.png")
+                    pdf.image(img_radar, x=10, w=95); pdf.image(img_dim, x=110, y=pdf.get_y()-65, w=90)
+                    
+                    # PÁGINA 2
+                    pdf.add_page()
+                    pdf.set_font('Helvetica', 'B', 11)
+                    pdf.cell(0, 10, '3. Posicionamiento Estrategico NineBox Confa', ln=True)
+                    fig_nb.update_layout(template="plotly", paper_bgcolor='white', plot_bgcolor='white', font=dict(color='black'))
+                    img_nb = os.path.join(tmp_dir, "nb.png")
+                    fig_nb.write_image(img_nb, engine="kaleido", scale=4)
+                    pdf.image(img_nb, x=25, w=160)
+                    
+                    pdf.ln(5)
+                    pdf.set_font('Helvetica', 'B', 13)
+                    pdf.cell(0, 10, '4. Analisis Ejecutivo Estrategico', ln=True)
                     pdf.set_font('Helvetica', '', 10)
                     limpio = st.session_state.informe_cache[lider_sel].replace("**", "").encode('latin-1', 'replace').decode('latin-1')
                     pdf.multi_cell(0, 6, limpio)
-                st.download_button("📥 Guardar PDF", data=bytes(pdf.output()), file_name=f"Reporte_{lider_sel}.pdf", mime="application/pdf")
+
+                st.download_button("Descargar PDF", data=bytes(pdf.output()), file_name=f"Reporte_{lider_sel}.pdf", mime="application/pdf")
             except Exception as e: st.error(f"Error PDF: {e}")
