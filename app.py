@@ -257,22 +257,36 @@ if df is not None:
                     img_radar = save_pdf_chart_final(fig_radar, "radar.png"); img_dim = save_pdf_chart_final(fig_dim, "dim.png")
                     y_radar = pdf.get_y(); pdf.image(img_radar, x=10, y=y_radar, w=95); pdf.image(img_dim, x=110, y=y_radar + 5, w=90)
                     
-                    # 3. RELOJES (SIMETRÍA TOTAL w=53)
-                    pdf.set_y(y_radar + 63); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, '3. Niveles de Madurez Barrett (Relojes)', ln=True)
+                    # --- 3. RELOJES (SIMETRÍA TOTAL w=53) ---
+                    pdf.ln(10) # ESPACIO ADICIONAL PARA QUE EL TÍTULO NO ESTÉ PEGADO
+                    pdf.set_font('Helvetica', 'B', 11)
+                    pdf.cell(0, 10, '3. Niveles de Madurez Barrett (Relojes)', ln=True)
+                    
+                    # Capturamos la posición Y exacta después del título para alinear todo
+                    y_base_seccion = pdf.get_y()
+                    
                     img_r1 = save_pdf_chart_final(generar_fig_reloj(v_auto, incluir_leyenda=False), "r1p.png", title="Auto")
                     img_r2 = save_pdf_chart_final(generar_fig_reloj(v_ind, incluir_leyenda=False), "r2p.png", title="Indiv")
                     img_r3 = save_pdf_chart_final(generar_fig_reloj(v_org, incluir_leyenda=False), "r3p.png", title="Org")
                     
-                    y_reloj_manual = pdf.get_y()
-                    pdf.image(img_r1, x=35, y=y_reloj_manual, w=53); pdf.image(img_r2, x=88, y=y_reloj_manual, w=53); pdf.image(img_r3, x=141, y=y_reloj_manual, w=53)
+                    # Renderizamos las imágenes partiendo de y_base_seccion
+                    # x=35 deja el hueco exacto para la leyenda manual
+                    pdf.image(img_r1, x=35, y=y_base_seccion, w=53)
+                    pdf.image(img_r2, x=88, y=y_base_seccion, w=53)
+                    pdf.image(img_r3, x=141, y=y_base_seccion, w=53)
                     
                     # LEYENDA MANUAL COORDINADA
-                    pdf.set_font('Helvetica', '', 8); pdf.set_text_color(100, 100, 100)
+                    pdf.set_font('Helvetica', '', 8)
+                    pdf.set_text_color(100, 100, 100)
                     niv_manual = ["L7-Visionario", "L6-Mentor", "L5-Autentico", "L4-Facilitador", "L3-Desempeno", "L2-Relaciones", "L1-Crisis"]
+                    
+                    # AJUSTE CRÍTICO: 
+                    # Cambiamos +16 por +22 (ajuste vertical) y mantenemos el paso de 5.15
                     for i, txt in enumerate(niv_manual):
-                        pdf.text(10, y_reloj_manual + 16 + (i * 5.15), txt)
+                        pdf.text(10, y_base_seccion + 22 + (i * 5.15), txt)
+                    
                     pdf.set_text_color(0, 0, 0)
-
+                    pdf.set_y(y_base_seccion + 45) # Movemos el cursor al final de las gráficas para lo que sigue
                     # PÁGINA 2: ESTRATEGIA Y TEXTO IA
                     pdf.add_page(); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, '4. Posicionamiento Estratégico NineBox Confa', ln=True)
                     fig_nb.update_layout(template="plotly", paper_bgcolor='white', plot_bgcolor='white', font=dict(color='black'))
