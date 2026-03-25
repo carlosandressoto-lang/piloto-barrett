@@ -73,11 +73,6 @@ def obtener_cuadrante_confa(pot, des):
     }
     return mapping.get((p_label, d_label), "No clasificado")
 
-def escalar_visual_potencial(val):
-    if val <= 60: return (val / 60) * 33.33
-    elif val <= 80: return 33.33 + ((val - 60) / 20) * 33.33
-    else: return 66.66 + ((val - 80) / 20) * 33.33
-
 def obtener_color_desarrollo(v):
     if v < 65: return "#ff4b4b" 
     if v < 75: return "#f1c40f" 
@@ -164,9 +159,9 @@ if df is not None:
         st.plotly_chart(fig_dim, use_container_width=True)
 
     st.divider()
+    cuadrante = obtener_cuadrante_confa(d.IND_POT, d.DES)
     st.subheader("🟦 Mapa de Talento NineBox Confa")
     cnb1, cnb2 = st.columns([1.5, 1])
-    cuadrante = obtener_cuadrante_confa(d.IND_POT, d.DES)
     with cnb1:
         fig_nb = go.Figure()
         quads = [(0.5, 1.5, 0, 33.33, "#440154", "ICEBERG"), (1.5, 2.5, 0, 33.33, "#482878", "EFECTIVOS"), (2.5, 3.5, 0, 33.33, "#3b528b", "PROF. CONFIABLES"), (0.5, 1.5, 33.33, 66.66, "#31688e", "DILEMA"), (1.5, 2.5, 33.33, 66.66, "#21918c", "EMPLEADOS CLAVE"), (2.5, 3.5, 33.33, 66.66, "#5ec962", "FUTURAS ESTRELLAS"), (0.5, 1.5, 66.66, 100, "#b5de2b", "ENIGMA"), (1.5, 2.5, 66.66, 100, "#fde725", "ESTRELLA CREC."), (2.5, 3.5, 66.66, 100, "#f89441", "SUPERESTRELLAS")]
@@ -174,7 +169,7 @@ if df is not None:
             fig_nb.add_shape(type="rect", x0=x0, y0=y0, x1=x1, y1=y1, fillcolor=color, opacity=0.75, line=dict(color="rgba(255,255,255,0.3)", width=1))
             fig_nb.add_annotation(x=(x0+x1)/2, y=y1-2.5, text=f"<b>{label}</b>", showarrow=False, font=dict(size=9, color="white"))
         fig_nb.add_trace(go.Scatter(x=[d.DES], y=[d.IND_POT], mode='markers', marker=dict(size=14, color='red', symbol='diamond', line=dict(width=2, color='white'))))
-        fig_nb.update_layout(xaxis=dict(title="Desempeño", tickvals=[1,2,3], range=[0.4, 3.6]), yaxis=dict(title="Potencial (%)", tickvals=[0, 33.3, 66.6, 100], range=[-5, 105]), template="plotly_dark", height=500, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+        fig_nb.update_layout(xaxis=dict(title="Desempeño", tickvals=[1,2,3], range=[0.4, 3.6]), yaxis=dict(title="Potencial (%)", range=[-5, 105]), template="plotly_dark", height=500)
         st.plotly_chart(fig_nb, use_container_width=True)
     with cnb2:
         st.markdown(f"<div class='metric-box'><h3>{cuadrante}</h3><hr><p><b>Potencial Individual:</b> {round(d.IND_POT,2)}%</p><p><b>Desempeño:</b> {d.DES}</p><p><b>Autoevaluación Potencial:</b> {round(d.AUTO_POT,2)}%</p></div>", unsafe_allow_html=True)
@@ -200,32 +195,23 @@ if df is not None:
         - L7: Visionario Sabio. Foco en propósito y visión de largo plazo. (Servicio)
         CONTEXTO NINEBOX CONFA
         Usa las 9 definiciones de CONFA 2018 para el análisis:
-        -ENIGMA: Líder con alto potencial pero desempeño bajo (ubicarlo bien o revisar jefe).
-        -ESTRELLA CRECIENTE: Alto potencial, desempeño esperado (sacar de zona de confort).
-        -SUPERESTRELLA: Mejor opción para sucesión (reconocer y premiar).
-        -DILEMA: Potencial medio, desempeño bajo (trabajar motivación).
-        -EMPLEADO CLAVE: Prometedor (retar y motivar).
-        -FUTURA ESTRELLA: Alto desempeño, potencial medio (puestos clave).
-        -ICEBERG: Bajo potencial y desempeño (observar o decidir desvinculación).
-        -EFECTIVO: Desempeño medio, bajo potencial (incitar a aprender cosas nuevas).
-        -PROFESIONAL CONFIABLE: Desempeño excepcional, bajo potencial liderazgo (reconocer esfuerzo y desarrollar liderazgo).
+        -ENIGMA: Líder con alto potencial pero desempeño bajo.
+        -ESTRELLA CRECIENTE: Alto potencial, desempeño esperado.
+        -SUPERESTRELLA: Mejor opción para sucesión.
+        -DILEMA: Potencial medio, desempeño bajo.
+        -EMPLEADO CLAVE: Prometedor.
+        -FUTURA ESTRELLA: Alto desempeño, potencial medio.
+        -ICEBERG: Bajo potencial y desempeño.
+        -EFECTIVO: Desempeño medio, bajo potencial.
+        -PROFESIONAL CONFIABLE: Desempeño excepcional, bajo potencial liderazgo.
 
         REGLAS DE ORO: 
-        - INICIA DIRECTAMENTE. PROHIBIDO SALUDOS O INTRODUCCIONES o RESMENES O APRECIACIONES.
-        - PROHIBIDO USAR: "desempeño", "brechas", "puntos ciegos" o hablar desde defectos o fallos, debe ser un feedback totalmente apreciativo.
-        - USA: "desarrollo", "alineación", "influencia", "oportunidad de expansión".
+        - INICIA DIRECTAMENTE. PROHIBIDO SALUDOS O INTRODUCCIONES.
+        - FEEDBACK APRECIATIVO. USA: "desarrollo", "alineación", "influencia", "oportunidad de expansión".
         - RÚBRICA: Bajo (<65), Medio (65-75), Alto (75-85), Superior (>85).
-        - SI CANT_JEFE es 0: Debes iniciar el informe con una ADVERTENCIA ESTRATÉGICA indicando que el ponderado individual se ve severamente afectado (sesgo a la baja) debido a la ausencia de la valoración del líder directo (40% del peso).
-        - SI CANT_PAR es 0: Debes iniciar el informe con una ADVERTENCIA ESTRATÉGICA indicando que el ponderado individual se ve severamente afectado (sesgo a la baja) debido a la ausencia de la valoración del minimo 1 par (20% del peso si tiene colaboradores a cargo, 40% si no tiene colaboradores a cargo).
-        - SI CANT_AUTO es 0: Indica que no existe punto de comparación interno.
-        - Si no hay estos ceros, no menciones nada de esto.
-
-        ESTRUCTURA informe OBLIGATORIA:
-        1. DESCRIPCIÓN POR NIVELES: Lista de L1 a L7 con el nombre de contexto Barret (Ejemplo L1: Gestor de Crisis). Clasifica cada nivel basándote en el 'Ponderado Individual' usando la rúbrica (Bajo, Medio, Alto, Superior) y las definiciones Barrett anteriores para generar una descripción según el modelo Barret y el nivel de la rubrica del líder. Siempre una lista de Nivel 1 a Nivel 7 no lo hagas en 1 solo párrafo porque confunde
-        2. ANÁLISIS DE AUTOVALORACIÓN: Un párrafo. Analiza alineación percepción interna (Autoevaluacion) vs colectiva (Ponderado individual que es la evaluación de Jefe directo, Colaboradores a cargo y Pares). Resalta donde la influencia externa es mayor a la autopercepción, o aquellos puntos donde la autoevaluacion sea mayor en rubrica a lo evaluado pues son 2 cosas diferentes a trabajar según el nivel de conciencia.
-        3. MATRIZ DE MADUREZ: Un párrafo sólido. Analiza sintonía del líder (Ponderado Individual) con el Ponderado Organizacional basándote en la Rúbrica.
-        4. PERFIL DE LIDERAZGO: Un párrafo sólido. Define el estilo predominante según el promedio más alto (Liderazgo: {round(liderazgo_prom,1)}%, Transición: {round(transicion_prom,1)}%, Gerencia: {round(gerencia_prom,1)}%) y ofrece 3 recomendaciones de expansión para llegar a un equilibrio de las 3 dimensiones (Liderazgo Transicion y Gerencia) punto seguido.
-        5. POSICIONAMIENTO ESTRATÉGICO DE TALENTO (Potencial y NineBox): Un párrafo sólido y técnico. Identifica el cuadrante asignado ({cuadrante}) y utiliza su definición estratégica de Confa 2018 para explicar la situación actual del evaluado. Analiza la brecha o alineación entre la AUTO_POT ({d.AUTO_POT}%) y el IND_POT ({d.IND_POT}%), determinando si existe una sobrevaloración o una subvaloración del propio potencial de crecimiento. Establece la 'Tendencia de Transición' evaluando qué tan cerca está de los límites de la rúbrica (Bajo <60, Medio 60-80, Alto >80) y define, basándose en el cruce con DES (Nivel {d.DES}), qué acciones de retención, motivación o movilidad interna son imperativas para maximizar su valor en la organización. Si el IND_POT es significativamente más alto que la AUTO_POT, resalta el "Talento Oculto"; si es al contrario, analiza la necesidad de un ajuste de expectativas de carrera. Termina con una frase sobre la proyección de este perfil hacia posiciones de mayor jerarquía o roles técnicos expertos según sea el caso.
+        
+        ESTRUCTURA OBLIGATORIA:
+        1. DESCRIPCIÓN POR NIVELES. 2. ANÁLISIS AUTOVALORACIÓN. 3. MATRIZ DE MADUREZ. 4. PERFIL DE LIDERAZGO. 5. POSICIONAMIENTO ESTRATÉGICO ({cuadrante}).
         """
         try:
             with st.spinner('Analizando...'):
@@ -234,7 +220,7 @@ if df is not None:
                 st.write(res.text)
         except Exception as e: st.error(e)
 
-    # --- REPORTE PDF (ESTRATEGIA DEFINITIVA) ---
+    # --- REPORTE PDF (UNIFICADO, SIN HUECOS Y COORDINACIÓN MAESTRA) ---
     if lider_sel in st.session_state.informe_cache:
         if st.button("📄 DESCARGAR PDF"):
             try:
@@ -247,23 +233,40 @@ if df is not None:
                         fig.write_image(path, engine="kaleido", scale=2)
                         return path
 
+                    # PÁGINA 1: DASHBOARD COMPACTO
                     pdf.add_page()
-                    pdf.set_font('Helvetica', 'B', 16); pdf.cell(0, 10, 'REPORTE ESTRATEGICO INTEGRAL', ln=True, align='C')
-                    pdf.set_font('Helvetica', '', 12); pdf.cell(0, 10, f'Evaluado: {lider_sel}', ln=True, align='C')
+                    pdf.set_font('Helvetica', 'B', 16); pdf.cell(0, 10, 'REPORTE ESTRATÉGICO INTEGRAL', ln=True, align='C')
+                    pdf.set_font('Helvetica', '', 12); pdf.cell(0, 8, f'Evaluado: {lider_sel}', ln=True, align='C')
+                    
+                    pdf.set_font('Helvetica', 'B', 10)
+                    eval_txt = f'Total Evaluadores: {int(d.CANT_EVAL)} | Auto: {int(d.CANT_AUTO)} | Jefe: {int(d.CANT_JEFE)} | Pares: {int(d.CANT_PAR)} | Colab: {int(d.CANT_COL)}'
+                    pdf.cell(0, 8, eval_txt, ln=True, align='C')
                     
                     # 1. Frecuencia
-                    pdf.ln(5); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, '1. Frecuencia de comportamientos por niveles (%)', ln=True)
-                    img_b1 = save_pdf_chart_final(generar_fig_barras(v_auto, "", "#3498db"), "b1.png", title="Autovaloracion")
+                    pdf.ln(2); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, '1. Frecuencia de comportamientos por niveles (%)', ln=True)
+                    img_b1 = save_pdf_chart_final(generar_fig_barras(v_auto, "", "#3498db"), "b1.png", title="Autovaloración")
                     img_b2 = save_pdf_chart_final(generar_fig_barras(v_ind, "", "#2ecc71"), "b2.png", title="Individual")
                     img_b3 = save_pdf_chart_final(generar_fig_barras(v_org, "", "#e74c3c"), "b3.png", title="Org")
-                    pdf.image(img_b1, x=10, w=60); pdf.image(img_b2, x=75, y=pdf.get_y()-30, w=60); pdf.image(img_b3, x=140, y=pdf.get_y()-30, w=60)
+                    y_frec = pdf.get_y(); pdf.image(img_b1, x=10, y=y_frec, w=60); pdf.image(img_b2, x=75, y=y_frec, w=60); pdf.image(img_b3, x=140, y=y_frec, w=60)
                     
-                    # 2. Radar
-                    pdf.ln(10); pdf.cell(0, 10, '2. Alineacion de Consciencia e Indice de Equilibrio', ln=True)
+                    # 2. Radar y Equilibrio
+                    pdf.set_y(y_frec + 43); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, '2. Alineación de Consciencia e Índice de Equilibrio', ln=True)
                     img_radar = save_pdf_chart_final(fig_radar, "radar.png"); img_dim = save_pdf_chart_final(fig_dim, "dim.png")
-                    pdf.image(img_radar, x=10, w=95); pdf.image(img_dim, x=110, y=pdf.get_y()-65, w=90)
-
-# Los 3 relojes iguales alineados horizontalmente
+                    y_radar = pdf.get_y(); pdf.image(img_radar, x=10, y=y_radar, w=95); pdf.image(img_dim, x=110, y=y_radar + 5, w=90)
+                    
+                    # 3. RELOJES BARRETT (LA SOLUCIÓN QUE SÍ PEDISTE)
+                    pdf.set_y(y_radar + 63)
+                    pdf.set_font('Helvetica', 'B', 11)
+                    pdf.cell(0, 10, '3. Niveles de Madurez Barrett (Relojes)', ln=True)
+                    
+                    # Capturamos la base Y milimétrica
+                    y_relojes_base = pdf.get_y()
+                    
+                    img_r1 = save_pdf_chart_final(generar_fig_reloj(v_auto, False), "r1.png", "Auto")
+                    img_r2 = save_pdf_chart_final(generar_fig_reloj(v_ind, False), "r2.png", "Indiv")
+                    img_r3 = save_pdf_chart_final(generar_fig_reloj(v_org, False), "r3.png", "Org")
+                    
+                    # Los 3 relojes iguales alineados horizontalmente
                     pdf.image(img_r1, x=35, y=y_relojes_base, w=53)
                     pdf.image(img_r2, x=88, y=y_relojes_base, w=53)
                     pdf.image(img_r3, x=141, y=y_relojes_base, w=53)
@@ -276,11 +279,12 @@ if df is not None:
                         pdf.text(10, y_relojes_base + 27 + (i * 5.15), txt)
                     pdf.set_text_color(0, 0, 0)
 
-                    # PÁGINA 2: NineBox y Texto
-                    pdf.add_page(); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, '4. Posicionamiento Estrategico NineBox Confa', ln=True)
+                    # PÁGINA 2: ESTRATEGIA Y TEXTO IA
+                    pdf.add_page(); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, '4. Posicionamiento Estratégico NineBox Confa', ln=True)
                     fig_nb.update_layout(template="plotly", paper_bgcolor='white', plot_bgcolor='white', font=dict(color='black'))
-                    img_nb_path = os.path.join(tmp_dir, "nb.png"); fig_nb.write_image(img_nb_path, engine="kaleido", scale=4); pdf.image(img_nb_path, x=25, w=160)
-                    pdf.ln(5); pdf.set_font('Helvetica', 'B', 13); pdf.cell(0, 10, '5. Analisis Ejecutivo Estrategico', ln=True); pdf.set_font('Helvetica', '', 10)
+                    img_nb = os.path.join(tmp_dir, "nb.png"); fig_nb.write_image(img_nb, engine="kaleido", scale=4); pdf.image(img_nb, x=25, w=160)
+                    
+                    pdf.ln(5); pdf.set_font('Helvetica', 'B', 13); pdf.cell(0, 10, '5. Análisis Ejecutivo Estratégico', ln=True); pdf.set_font('Helvetica', '', 10)
                     limpio = st.session_state.informe_cache[lider_sel].replace("**", "").encode('latin-1', 'replace').decode('latin-1')
                     pdf.multi_cell(0, 6, limpio)
 
