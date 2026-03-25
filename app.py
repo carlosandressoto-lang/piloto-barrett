@@ -14,11 +14,10 @@ st.set_page_config(page_title="LDR Barrett - Confa", layout="wide")
 if "informe_cache" not in st.session_state:
     st.session_state.informe_cache = {}
 
-# CSS DINÁMICO: Quitamos colores fijos para que el sistema use sus grises nativos
+# CSS DINÁMICO
 st.markdown("""
 <style>
     .main { font-family: 'Helvetica Neue', sans-serif; }
-    /* Estilo para las cajas de métricas sin forzar color de letra */
     .metric-box { 
         background-color: rgba(30, 41, 59, 0.05); 
         padding: 15px; 
@@ -32,7 +31,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- 2. CONEXIÓN IA ---
+# --- 2. CONEXIÓN IA SEGURA ---
 try:
     api_key_segura = st.secrets["GEMINI_API_KEY"]
     genai.configure(api_key=api_key_segura)
@@ -49,6 +48,7 @@ def load_data():
         df.columns = df.columns.str.strip()
         df['Nombre_Lider'] = df['Nombre_Lider'].astype(str).str.strip()
         df = df[~df['Nombre_Lider'].isin(['0.0', 'nan', ''])]
+        df = df.dropna(subset=['Nombre_Lider'])
         cols_to_fix = [c for c in df.columns if ('L' in c and any(x in c for x in ['AUTO', 'INDIV', 'ORG'])) or 'CANT_' in c or 'POT' in c or 'DES' == c]
         for col in cols_to_fix:
             df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
@@ -91,13 +91,28 @@ def obtener_etiqueta(v):
     if v < 85: return "Alto"
     return "Superior"
 
-# NORMALIZACIÓN DE GRÁFICOS (Mismo gris que el título nativo)
 def generar_fig_barras(vals, titulo, color):
     labels = ['L7-Visionario', 'L6-Mentor', 'L5-Auténtico', 'L4-Facilitador', 'L3-Desempeño', 'L2-Relaciones', 'L1-Crisis']
     v_plot = [vals[6], vals[5], vals[4], vals[3], vals[2], vals[1], vals[0]]
-    fig = go.Figure(go.Bar(x=v_plot, y=labels, orientation='h', marker_color=color, text=[f"{round(v,1)}%" for v in v_plot], textposition='inside'))
-    # No forzamos color blanco, dejamos que el template maneje el contraste
-    fig.update_layout(title=dict(text=titulo, x=0.5), xaxis_range=[0, 105], template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(l=10, r=10, t=40, b=20), height=350, yaxis=dict(autorange="reversed"))
+    fig = go.Figure(go.Bar(
+        x=v_plot, 
+        y=labels, 
+        orientation='h', 
+        marker_color=color, 
+        text=[f"{round(v,1)}%" for v in v_plot], 
+        textposition='inside',
+        insidetextfont=dict(color='white') # Forzamos color de fuente para homogeneidad
+    ))
+    fig.update_layout(
+        title=dict(text=titulo, x=0.5), 
+        xaxis_range=[0, 105], 
+        template="plotly_dark", 
+        paper_bgcolor='rgba(0,0,0,0)', 
+        plot_bgcolor='rgba(0,0,0,0)', 
+        margin=dict(l=10, r=10, t=40, b=20), 
+        height=350, 
+        yaxis=dict(autorange="reversed")
+    )
     return fig
 
 def generar_fig_reloj(vals):
@@ -117,7 +132,6 @@ if df is not None:
     lider_sel = st.selectbox("Seleccione el líder:", lideres)
     d = df[df['Nombre_Lider'] == lider_sel].iloc[0]
     
-    # CUADRO DE EVALUADORES DINÁMICO (Sin HTML forzado para color)
     c_ev1, c_ev2 = st.columns([1, 2])
     with c_ev1:
         st.metric("Total Evaluadores", int(d.CANT_EVAL))
@@ -131,14 +145,12 @@ if df is not None:
     transicion_prom = d.INDIV_L4
     gerencia_prom = (d.INDIV_L1 + d.INDIV_L2 + d.INDIV_L3) / 3
 
-    # BLOQUE 1: BARRAS CON SUBTÍTULOS NATIVOS
     st.subheader("📊 Frecuencia de comportamientos por niveles (%)")
     c1, c2, c3 = st.columns(3)
     with c1: st.markdown("<div class='titulo-seccion'>Autovaloración</div>", unsafe_allow_html=True); st.plotly_chart(generar_fig_barras(v_auto, "", "#3498db"), use_container_width=True)
     with c2: st.markdown("<div class='titulo-seccion'>Ponderado Individual</div>", unsafe_allow_html=True); st.plotly_chart(generar_fig_barras(v_ind, "", "#2ecc71"), use_container_width=True)
     with c3: st.markdown("<div class='titulo-seccion'>Ponderado Organizacional</div>", unsafe_allow_html=True); st.plotly_chart(generar_fig_barras(v_org, "", "#e74c3c"), use_container_width=True)
 
-    # BLOQUE 2: RELOJES
     st.divider()
     st.subheader("⏳ Resultados Evaluación 360° (Niveles Barrett)")
     cl, cr1, cr2, cr3 = st.columns([1.2, 1, 1, 1])
@@ -150,14 +162,12 @@ if df is not None:
     with cr2: st.markdown("<div class='titulo-seccion'>Individual</div>", unsafe_allow_html=True); st.plotly_chart(generar_fig_reloj(v_ind), key="r2", use_container_width=True)
     with cr3: st.markdown("<div class='titulo-seccion'>Organizacional</div>", unsafe_allow_html=True); st.plotly_chart(generar_fig_reloj(v_org), key="r3", use_container_width=True)
 
-    # BLOQUE 3: RADAR Y EQUILIBRIO
     st.divider()
     col_radar, col_dim = st.columns([1.5, 1])
     with col_radar:
         st.subheader("🎯 Alineación de Consciencia")
         fig_radar = go.Figure()
         cats = ['L1','L2','L3','L4','L5','L6','L7']
-        # Corregido: 'Individual' y 'Organizacional' con sus colores originales
         for val, name, color in zip([v_auto, v_ind, v_org], ['Auto', 'Individual', 'Org'], ['#3498db', '#2ecc71', '#e74c3c']):
             fig_radar.add_trace(go.Scatterpolar(r=val, theta=cats, fill='toself', name=name, line_color=color))
         fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 100])), template="plotly_dark", height=500, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
@@ -169,7 +179,6 @@ if df is not None:
         fig_dim.update_layout(xaxis_range=[0, 105], height=400, template="plotly_dark", yaxis=dict(autorange="reversed"), paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
         st.plotly_chart(fig_dim, use_container_width=True)
 
-    # BLOQUE 4: NINEBOX HD
     st.divider()
     st.subheader("🟦 Mapa de Talento NineBox Confa")
     cnb1, cnb2 = st.columns([1.5, 1])
@@ -188,14 +197,12 @@ if df is not None:
         fig_nb.update_layout(xaxis=dict(title="Desempeño", tickvals=[1,2,3], range=[0.4, 3.6]), yaxis=dict(title="Potencial (%)", tickvals=[0, 33.3, 66.6, 100], range=[-5, 105]), template="plotly_dark", height=500, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
         st.plotly_chart(fig_nb, use_container_width=True)
     with cnb2:
-        # LEYENDA DINÁMICA: Sin color forzado
         st.markdown(f"<div class='metric-box'><h3>{cuadrante}</h3><hr><p><b>Potencial Individual:</b> {round(d.IND_POT,2)}%</p><p><b>Desempeño:</b> {d.DES}</p><p><b>Autoevaluación Potencial:</b> {round(d.AUTO_POT,2)}%</p></div>", unsafe_allow_html=True)
 
-    # BLOQUE 5: INFORME (PROMPT MAESTRO)
+    # BLOQUE 5: INFORME
     st.divider()
     if st.button("🚀 GENERAR INFORME"):
-        # (Aquí va tu prompt de 5 puntos tal cual lo pediste)
+        # (Lógica del prompt maestro de 5 puntos)
         pass
 
-    # --- DESCARGA PDF ---
-    # (Mantenemos tu lógica de bytes funcional)
+    # DESCARGA PDF (Lógica de bytes funcional)
