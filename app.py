@@ -14,7 +14,7 @@ st.set_page_config(page_title="LDR Barrett - Confa", layout="wide")
 if "informe_cache" not in st.session_state:
     st.session_state.informe_cache = {}
 
-# CSS DINÁMICO: Quitamos colores fijos para que el sistema use contraste nativo
+# CSS DINÁMICO: Sin colores fijos para permitir el pivot nativo del sistema
 st.markdown("""
 <style>
     .main { font-family: 'Helvetica Neue', sans-serif; }
@@ -187,8 +187,10 @@ if df is not None:
         ]
         for x0, x1, y0, y1, color, label in quads:
             fig_nb.add_shape(type="rect", x0=x0, y0=y0, x1=x1, y1=y1, fillcolor=color, opacity=0.8, line=dict(color="white", width=0.5))
-            fig_nb.add_annotation(x=(x0+x1)/2, y=y1-2.5, text=f"<b>{label}</b>", showarrow=False, font=dict(size=9, color="rgba(255,255,255,0.9)"))
-        fig_nb.add_trace(go.Scatter(x=[d.DES], y=[d.IND_POT], mode='markers', marker=dict(size=18, color='white', symbol='diamond', line=dict(width=3, color='black'))))
+            # CAMBIO CLAVE: Quitamos color="white" fijo para que sea dinámico
+            fig_nb.add_annotation(x=(x0+x1)/2, y=y1-2.5, text=f"<b>{label}</b>", showarrow=False, font=dict(size=9))
+        
+        fig_nb.add_trace(go.Scatter(x=[d.DES], y=[escalar_visual_potencial(d.IND_POT)], mode='markers', marker=dict(size=18, color='white', symbol='diamond', line=dict(width=3, color='black'))))
         fig_nb.update_layout(xaxis=dict(title="Desempeño", tickvals=[1,2,3], range=[0.4, 3.6]), yaxis=dict(title="Potencial (%)", tickvals=[0, 33.3, 66.6, 100], range=[-5, 105]), template="plotly_dark", height=500, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
         st.plotly_chart(fig_nb, use_container_width=True)
     with cnb2:
