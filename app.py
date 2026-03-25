@@ -74,6 +74,7 @@ def obtener_cuadrante_confa(pot, des):
     }
     return mapping.get((p_label, d_label), "No clasificado")
 
+# Función para re-escalar el eje Y visualmente manteniendo el 0, 60, 80 y 100 como hitos visuales
 def escalar_visual_potencial(val):
     if val <= 60: return (val / 60) * 33.33
     elif val <= 80: return 33.33 + ((val - 60) / 20) * 33.33
@@ -167,7 +168,7 @@ if df is not None:
         fig_dim.update_layout(xaxis_range=[0, 105], height=400, template="plotly_dark", yaxis=dict(autorange="reversed"))
         st.plotly_chart(fig_dim, key="dim_v")
 
-    # --- SECCIÓN NINEBOX INTEGRAL: GRÁFICO REAL CON FONDO ESCALADO ---
+    # --- SECCIÓN NINEBOX INTEGRAL CON ESCALA HOMOGÉNEA Y VALORES REALES ---
     st.divider()
     st.subheader("🟦 Mapa de Talento NineBox Confa")
     cnb1, cnb2 = st.columns([1.5, 1])
@@ -175,32 +176,30 @@ if df is not None:
     
     with cnb1:
         fig_nb = go.Figure()
+        # 9 Cuadrantes delimitados por color usando hitos visuales de la función escalar
         cuadrantes_specs = [
-            (0.5, 1.5, 0, 60, "#440154", "ICEBERG"),             (1.5, 2.5, 0, 60, "#482878", "EFECTIVOS"),          (2.5, 3.5, 0, 60, "#3b528b", "PROF. CONFIABLES"),
-            (0.5, 1.5, 60, 80, "#31688e", "DILEMA"),            (1.5, 2.5, 60, 80, "#21918c", "EMP. CLAVE"),        (2.5, 3.5, 60, 80, "#5ec962", "FUT. ESTRELLAS"),
-            (0.5, 1.5, 80, 100, "#b5de2b", "ENIGMA"),           (1.5, 2.5, 80, 100, "#fde725", "ESTRELLA CREC."),   (2.5, 3.5, 80, 100, "#f89441", "SUPERESTRELLAS")
+            (0.5, 1.5, 0, 33.33, "#440154", "ICEBERG"),            (1.5, 2.5, 0, 33.33, "#482878", "EFECTIVOS"),         (2.5, 3.5, 0, 33.33, "#3b528b", "PROF. CONFIABLES"),
+            (0.5, 1.5, 33.33, 66.66, "#31688e", "DILEMA"),        (1.5, 2.5, 33.33, 66.66, "#21918c", "EMP. CLAVE"),    (2.5, 3.5, 33.33, 66.66, "#5ec962", "FUT. ESTRELLAS"),
+            (0.5, 1.5, 66.66, 100, "#b5de2b", "ENIGMA"),          (1.5, 2.5, 66.66, 100, "#fde725", "ESTRELLA CREC."),  (2.5, 3.5, 66.66, 100, "#f89441", "SUPERESTRELLAS")
         ]
         for x0, x1, y0, y1, color, label in cuadrantes_specs:
             fig_nb.add_shape(type="rect", x0=x0, y0=y0, x1=x1, y1=y1, fillcolor=color, opacity=0.4, line=dict(color="white", width=1))
-            # AJUSTE: Color de fuente blanco sólido para visibilidad en cualquier tema
-            fig_nb.add_annotation(x=(x0+x1)/2, y=y1-3, text=label, showarrow=False, font=dict(size=8, color="white", weight="bold"))
+            fig_nb.add_annotation(x=(x0+x1)/2, y=y1-2, text=label, showarrow=False, font=dict(size=8, color="rgba(255,255,255,0.5)"))
 
-        # AJUSTE: Manejo de nombres largos con saltos de línea (wrap)
-        nombre_formateado = lider_sel.replace(' ', '<br>', 2) if len(lider_sel) > 20 else lider_sel
-        
+        # SIMPLE Y REAL: GRAFICACIÓN DEL PUNTO USANDO IND_POT DIRECTO
         fig_nb.add_trace(go.Scatter(
             x=[d.DES], 
             y=[d.IND_POT], 
             mode='markers+text', 
             marker=dict(size=25, color='white', symbol='diamond', line=dict(width=3, color='#BFDBFE')), 
-            text=[f"<b>{nombre_formateado}</b><br>({round(d.IND_POT,2)}%)"], 
+            text=[f"{lider_sel} ({round(d.IND_POT,2)}%)"], 
             textposition="top center",
-            hoverinfo="skip"
+            hovertext=f"Potencial Real: {d.IND_POT}%<br>Desempeño: {d.DES}"
         ))
         
         fig_nb.update_layout(
             xaxis=dict(title="Desempeño (1-3)", tickvals=[1,2,3], range=[0.5, 3.5]), 
-            yaxis=dict(title="Potencial Real (%)", tickvals=[0, 60, 80, 100], range=[-5, 115]), 
+            yaxis=dict(title="Potencial (Escala Confa)", tickvals=[0, 33.33, 66.66, 100], ticktext=["0%", "60%", "80%", "100%"], range=[-5, 105]), 
             template="plotly_dark", height=500
         )
         st.plotly_chart(fig_nb, key="nb_v", use_container_width=True)
@@ -209,10 +208,10 @@ if df is not None:
         st.markdown(f"""
         <div class="metric-box" style="text-align: left;">
             <h3 style="color:#BFDBFE; margin:0;">{cuadrante}</h3>
-            <p><b>Potencial (IND_POT):</b> {d.IND_POT}% | <b>Desempeño:</b> {d.DES}</p>
+            <p><b>Potencial:</b> {d.IND_POT}% | <b>Desempeño:</b> {d.DES}</p>
             <p><b>Autoevaluación Potencial:</b> {d.AUTO_POT}%</p>
             <hr style="border:0.5px solid #334155;">
-            <p style="font-size:0.85rem;">Análisis de Talento basado en el modelo Confa 2018.</p>
+            <p style="font-size:0.85rem;">Cruce estratégico basado en el Análisis de Talento Confa 2026.</p>
         </div>
         """, unsafe_allow_html=True)
 
