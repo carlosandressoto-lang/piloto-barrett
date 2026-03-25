@@ -14,7 +14,7 @@ st.set_page_config(page_title="LDR Barrett - Confa", layout="wide")
 if "informe_cache" not in st.session_state:
     st.session_state.informe_cache = {}
 
-# CSS DINÁMICO: Sin colores fijos para permitir el pivot nativo del sistema
+# CSS DINÁMICO
 st.markdown("""
 <style>
     .main { font-family: 'Helvetica Neue', sans-serif; }
@@ -123,7 +123,6 @@ if df is not None:
     lider_sel = st.selectbox("Seleccione el líder:", lideres)
     d = df[df['Nombre_Lider'] == lider_sel].iloc[0]
     
-    # Cuadro de evaluadores nativo
     st.subheader("👥 Información de la Evaluación")
     c_ev1, c_ev2 = st.columns([1, 2])
     with c_ev1: st.metric("Total Evaluadores", int(d.CANT_EVAL))
@@ -136,14 +135,12 @@ if df is not None:
     transicion_prom = d.INDIV_L4
     gerencia_prom = (d.INDIV_L1 + d.INDIV_L2 + d.INDIV_L3) / 3
 
-    # BLOQUE 1: BARRAS
     st.subheader("📊 Frecuencia de comportamientos por niveles (%)")
     c1, c2, c3 = st.columns(3)
     with c1: st.markdown("<div class='titulo-seccion'>Autovaloración</div>", unsafe_allow_html=True); st.plotly_chart(generar_fig_barras(v_auto, "", "#3498db"), use_container_width=True)
     with c2: st.markdown("<div class='titulo-seccion'>Ponderado Individual</div>", unsafe_allow_html=True); st.plotly_chart(generar_fig_barras(v_ind, "", "#2ecc71"), use_container_width=True)
     with c3: st.markdown("<div class='titulo-seccion'>Ponderado Organizacional</div>", unsafe_allow_html=True); st.plotly_chart(generar_fig_barras(v_org, "", "#e74c3c"), use_container_width=True)
 
-    # BLOQUE 2: RELOJES
     st.divider()
     st.subheader("⏳ Resultados Evaluación 360° (Niveles Barrett)")
     cl, cr1, cr2, cr3 = st.columns([1.2, 1, 1, 1])
@@ -155,7 +152,6 @@ if df is not None:
     with cr2: st.markdown("<div class='titulo-seccion'>Individual</div>", unsafe_allow_html=True); st.plotly_chart(generar_fig_reloj(v_ind), key="r2", use_container_width=True)
     with cr3: st.markdown("<div class='titulo-seccion'>Organizacional</div>", unsafe_allow_html=True); st.plotly_chart(generar_fig_reloj(v_org), key="r3", use_container_width=True)
 
-    # BLOQUE 3: RADAR Y EQUILIBRIO
     st.divider()
     col_radar, col_dim = st.columns([1.5, 1])
     with col_radar:
@@ -173,11 +169,12 @@ if df is not None:
         fig_dim.update_layout(xaxis_range=[0, 105], height=400, template="plotly_dark", yaxis=dict(autorange="reversed"), paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
         st.plotly_chart(fig_dim, use_container_width=True)
 
-    # BLOQUE 4: NINEBOX DINÁMICA
+    # --- BLOQUE 4: NINEBOX CON ETIQUETAS PIVOTANTES ---
     st.divider()
     st.subheader("🟦 Mapa de Talento NineBox Confa")
     cnb1, cnb2 = st.columns([1.5, 1])
     cuadrante = obtener_cuadrante_confa(d.IND_POT, d.DES)
+    
     with cnb1:
         fig_nb = go.Figure()
         quads = [
@@ -186,21 +183,27 @@ if df is not None:
             (0.5, 1.5, 66.66, 100, "#b5de2b", "ENIGMA"), (1.5, 2.5, 66.66, 100, "#fde725", "ESTRELLA CREC."), (2.5, 3.5, 66.66, 100, "#f89441", "SUPERESTRELLAS")
         ]
         for x0, x1, y0, y1, color, label in quads:
-            fig_nb.add_shape(type="rect", x0=x0, y0=y0, x1=x1, y1=y1, fillcolor=color, opacity=0.70, line=dict(color="white", width=0.5))
-            # CAMBIO CLAVE: Quitamos color="white" fijo para que sea dinámico
+            fig_nb.add_shape(type="rect", x0=x0, y0=y0, x1=x1, y1=y1, fillcolor=color, opacity=0.75, line=dict(color="rgba(255,255,255,0.3)", width=1))
+            # CAMBIO CLAVE: Quitamos el color fijo "white" para que sea automático basado en el tema
             fig_nb.add_annotation(x=(x0+x1)/2, y=y1-2.5, text=f"<b>{label}</b>", showarrow=False, font=dict(size=9))
         
-        fig_nb.add_trace(go.Scatter(x=[d.DES], y=[d.IND_POT], mode='markers', marker=dict(size=12, color='red', symbol='diamond', line=dict(width=1, color='red'))))
-        fig_nb.update_layout(xaxis=dict(title="Desempeño", tickvals=[1,2,3], range=[0.4, 3.6]), yaxis=dict(title="Potencial (%)", tickvals=[0, 33.3, 66.6, 100], range=[-5, 105]), template="plotly_dark", height=500, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+        # Puntero mejorado (Diamante Rojo)
+        fig_nb.add_trace(go.Scatter(x=[d.DES], y=[escalar_visual_potencial(d.IND_POT)], mode='markers', marker=dict(size=14, color='red', symbol='diamond', line=dict(width=2, color='white'))))
+        
+        fig_nb.update_layout(
+            xaxis=dict(title="Desempeño", tickvals=[1,2,3], range=[0.4, 3.6]), 
+            yaxis=dict(title="Potencial (%)", tickvals=[0, 33.3, 66.6, 100], ticktext=["0", "60", "80", "100"], range=[-5, 105]), 
+            template="plotly_dark", height=500, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)'
+        )
         st.plotly_chart(fig_nb, use_container_width=True)
     with cnb2:
         st.markdown(f"<div class='metric-box'><h3>{cuadrante}</h3><hr><p><b>Potencial Individual:</b> {round(d.IND_POT,2)}%</p><p><b>Desempeño:</b> {d.DES}</p><p><b>Autoevaluación Potencial:</b> {round(d.AUTO_POT,2)}%</p></div>", unsafe_allow_html=True)
 
-    # BLOQUE 5: INFORME (PROMPT MAESTRO COMPLETO)
+    # BLOQUE 5: INFORME
     st.divider()
     if st.button("🚀 GENERAR INFORME"):
         prompt_maestro = f"""
-        Actúa como consultor senior de DESARROLLO DE LIDERAZGO Barrett. Genera un reporte para {lider_sel}. DATOS: {d.to_json()} donde AUTO es Autoevaluación, INDI es Ponderado Individual, ORG es Ponderado organizacional (Promedio de resultados organizacionales) y CANT es cantidad de respuestas o evaluadores. Si alguien tiene todo 0 en AUTO es porque no hizo Autoevalaucion para que lo tengas presente en la comparativa. Si ves que sus resultados INDI son muy bajos, revisa que al menos CANT_JEFE y CANT_PAR sean mínimo 1, si no ahí esta el error y dejaremos en el reporte ese hallazgo de forma obligatoria pues seria un sesgo matemático. Si no encontramos esas inconsistencias no mencionaremos por nada del mundo esta información en el resto del informe, si y solo si se cumplen una de esas restricciones.
+                Actúa como consultor senior de DESARROLLO DE LIDERAZGO Barrett. Genera un reporte para {lider_sel}. DATOS: {d.to_json()} donde AUTO es Autoevaluación, INDI es Ponderado Individual, ORG es Ponderado organizacional (Promedio de resultados organizacionales) y CANT es cantidad de respuestas o evaluadores. Si alguien tiene todo 0 en AUTO es porque no hizo Autoevalaucion para que lo tengas presente en la comparativa. Si ves que sus resultados INDI son muy bajos, revisa que al menos CANT_JEFE y CANT_PAR sean mínimo 1, si no ahí esta el error y dejaremos en el reporte ese hallazgo de forma obligatoria pues seria un sesgo matemático. Si no encontramos esas inconsistencias no mencionaremos por nada del mundo esta información en el resto del informe, si y solo si se cumplen una de esas restricciones.
         PROHIBIDO USAR ANGLICISMOS. REDACTA TODO EN ESPAÑOL PURO.
         CONTEXTO BARRETT:
         - L1: Gestor de Crisis. Foco en estabilidad y viabilidad operativa. (Supervivencia)
@@ -240,21 +243,22 @@ if df is not None:
         5. POSICIONAMIENTO ESTRATÉGICO DE TALENTO (Potencial y NineBox): Un párrafo sólido y técnico. Identifica el cuadrante asignado ({cuadrante}) y utiliza su definición estratégica de Confa 2018 para explicar la situación actual del evaluado. Analiza la brecha o alineación entre la AUTO_POT ({d.AUTO_POT}%) y el IND_POT ({d.IND_POT}%), determinando si existe una sobrevaloración o una subvaloración del propio potencial de crecimiento. Establece la 'Tendencia de Transición' evaluando qué tan cerca está de los límites de la rúbrica (Bajo <60, Medio 60-80, Alto >80) y define, basándose en el cruce con DES (Nivel {d.DES}), qué acciones de retención, motivación o movilidad interna son imperativas para maximizar su valor en la organización. Si el IND_POT es significativamente más alto que la AUTO_POT, resalta el "Talento Oculto"; si es al contrario, analiza la necesidad de un ajuste de expectativas de carrera. Termina con una frase sobre la proyección de este perfil hacia posiciones de mayor jerarquía o roles técnicos expertos según sea el caso.
         """
         try:
-            with st.spinner('Generando análisis estratégico...'):
+            with st.spinner('Analizando...'):
                 res = model.generate_content(prompt_maestro)
                 st.session_state.informe_cache[lider_sel] = res.text
                 st.write(res.text)
         except Exception as e: st.error(e)
 
-    # DESCARGA PDF
+    # --- DESCARGA PDF ---
     if lider_sel in st.session_state.informe_cache:
-        if st.button("📄 DESCARGAR REPORTE PDF"):	
+        if st.button("📄 DESCARGAR REPORTE PDF"):
             try:
                 pdf = FPDF()
                 pdf.add_page()
                 pdf.set_font('Helvetica', 'B', 16)
                 pdf.cell(0, 10, 'REPORTE ESTRATEGICO INTEGRAL', ln=True, align='C')
                 with tempfile.TemporaryDirectory() as tmp_dir:
+                    # Forzamos Blanco/Negro para la imagen del PDF
                     fig_nb.update_layout(template="plotly", paper_bgcolor='white', plot_bgcolor='white', font=dict(color='black'))
                     nb_p = os.path.join(tmp_dir, "nb.png")
                     fig_nb.write_image(nb_p, engine="kaleido", scale=4)
@@ -263,5 +267,5 @@ if df is not None:
                     pdf.set_font('Helvetica', '', 10)
                     limpio = st.session_state.informe_cache[lider_sel].replace("**", "").encode('latin-1', 'replace').decode('latin-1')
                     pdf.multi_cell(0, 6, limpio)
-                st.download_button("📥 Descargar Archivo", data=bytes(pdf.output()), file_name=f"Reporte_{lider_sel}.pdf", mime="application/pdf")
+                st.download_button("📥 Guardar PDF", data=bytes(pdf.output()), file_name=f"Reporte_{lider_sel}.pdf", mime="application/pdf")
             except Exception as e: st.error(f"Error PDF: {e}")
