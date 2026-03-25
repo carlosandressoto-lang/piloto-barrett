@@ -263,41 +263,62 @@ if df is not None:
                     img_radar = save_pdf_chart_final(fig_radar, "radar.png"); img_dim = save_pdf_chart_final(fig_dim, "dim.png")
                     pdf.image(img_radar, x=10, w=95); pdf.image(img_dim, x=110, y=pdf.get_y()-65, w=90)
 
-                    # 3. Relojes Barrett (Estrategia de Gemelos con Leyenda Manual)
-# 3. Niveles de Madurez Barrett (Relojes) - RESTAURACIÓN DE SOLUCIÓN VALIDADA
-                    pdf.ln(10)
-                    pdf.set_font('Helvetica', 'B', 11)
-                    pdf.cell(0, 10, '3. Niveles de Madurez Barrett (Relojes)', ln=True)
+# --- REEMPLAZA ESTE BLOQUE EN LA GENERACIÓN DEL PDF ---
 
-                    # Función con márgenes estandarizados para evitar que la leyenda mueva la gráfica
-                    def save_pdf_chart_final(fig, name, title="", l_marg=10):
-                        fig.update_layout(
-                            template="plotly", paper_bgcolor='white', plot_bgcolor='white', 
-                            font=dict(color='black'),
-                            title=dict(text=title, x=0.5, font=dict(size=14), y=0.95),
-                            margin=dict(t=60, b=20, l=l_marg, r=10) # El margen l=80 es la clave
-                        )
-                        path = os.path.join(tmp_dir, name)
-                        fig.write_image(path, engine="kaleido", scale=2)
-                        return path
+# 1. Frecuencia de comportamientos (BARRAS SUPERIORES)
+pdf.set_font('Helvetica', 'B', 11)
+pdf.cell(0, 10, '1. Frecuencia de comportamientos por niveles (%)', ln=True)
 
-                    # RELOJ 1: CON LEYENDA NATIVA (Se alinea sola con las barras)
-                    img_r1 = save_pdf_chart_final(generar_fig_reloj(v_auto, incluir_leyenda=True), "r1p.png", title="Auto", l_marg=80)
-                    
-                    # RELOJ 2 Y 3: SIN LEYENDA
-                    img_r2 = save_pdf_chart_final(generar_fig_reloj(v_ind, incluir_leyenda=False), "r2p.png", title="Individual", l_marg=10)
-                    img_r3 = save_pdf_chart_final(generar_fig_reloj(v_org, incluir_leyenda=False), "r3p.png", title="Org", l_marg=10)
-                    
-                    y_pos_reloj = pdf.get_y()
-                    
-                    # COORDINACIÓN DE ANCHOS (Para que las pirámides sean gemelas)
-                    # El primero es 68 porque incluye el texto, los otros son 50. 
-                    # Visualmente la parte de color queda igual.
-                    pdf.image(img_r1, x=10, y=y_pos_reloj, w=68)
-                    pdf.image(img_r2, x=82, y=y_pos_reloj, w=50)
-                    pdf.image(img_r3, x=137, y=y_pos_reloj, w=50)
-                    
-                    pdf.ln(50)
+# Función de exportación REFORZADA para simetría total
+def save_pdf_clones(fig, name, title=""):
+    fig.update_layout(
+        template="plotly", paper_bgcolor='white', plot_bgcolor='white', 
+        font=dict(color='black'),
+        title=dict(text=title, x=0.5, font=dict(size=14), y=0.95),
+        # Forzamos márgenes idénticos para que el área de dibujo no varíe
+        margin=dict(t=60, b=40, l=60, r=20),
+        # Desactivamos el autoescalado de Plotly
+        autosize=False, width=500, height=350 
+    )
+    path = os.path.join(tmp_dir, name)
+    fig.write_image(path, engine="kaleido", scale=2)
+    return path
+
+# Generamos las 3 con la nueva función estricta
+img_b1 = save_pdf_clones(generar_fig_barras(v_auto, "", "#3498db"), "b1.png", title="Autovaloración")
+img_b2 = save_pdf_clones(generar_fig_barras(v_ind, "", "#2ecc71"), "b2.png", title="Individual")
+img_b3 = save_pdf_clones(generar_fig_barras(v_org, "", "#e74c3c"), "b3.png", title="Organizacional")
+
+# Posicionamiento con coordenadas fijas para evitar el "escalonamiento"
+y_barras = pdf.get_y()
+pdf.image(img_b1, x=10, y=y_barras, w=60)
+pdf.image(img_b2, x=75, y=y_barras, w=60)
+pdf.image(img_b3, x=140, y=y_barras, w=60)
+
+# --- REPETIMOS LA LÓGICA PARA LOS RELOJES DE ABAJO ---
+
+pdf.ln(45) # Espacio para bajar a los relojes
+pdf.set_font('Helvetica', 'B', 11)
+pdf.cell(0, 10, '3. Niveles de Madurez Barrett (Relojes)', ln=True)
+
+# Generamos los relojes con la misma función save_pdf_clones
+# Usamos incluir_leyenda=False en los TRES para que la zona de color sea idéntica
+img_r1 = save_pdf_clones(generar_fig_reloj(v_auto, incluir_leyenda=False), "r1p.png", title="Auto")
+img_r2 = save_pdf_clones(generar_fig_reloj(v_ind, incluir_leyenda=False), "r2p.png", title="Indiv")
+img_r3 = save_pdf_clones(generar_fig_reloj(v_org, incluir_leyenda=False), "r3p.png", title="Org")
+
+y_relojes = pdf.get_y()
+# Mismo ancho w=53 para los tres
+pdf.image(img_r1, x=35, y=y_relojes, w=53) 
+pdf.image(img_r2, x=88, y=y_relojes, w=53) 
+pdf.image(img_r3, x=141, y=y_relojes, w=53)
+
+# Leyenda manual a la izquierda (esta no falla porque es texto fijo del PDF)
+pdf.set_font('Helvetica', '', 8)
+pdf.set_text_color(100, 100, 100)
+niveles_txt = ["L7-Visionario", "L6-Mentor", "L5-Autentico", "L4-Facilitador", "L3-Desempeno", "L2-Relaciones", "L1-Crisis"]
+for i, txt in enumerate(niveles_txt):
+    pdf.text(10, y_relojes + 16 + (i * 5.15), txt)
 
                     # PÁGINA 2: NineBox y Texto
                     pdf.add_page(); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, '4. Posicionamiento Estrategico NineBox Confa', ln=True)
