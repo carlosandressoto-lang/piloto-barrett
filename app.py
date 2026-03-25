@@ -11,7 +11,7 @@ import re
 # --- 1. CONFIGURACIÓN ---
 st.set_page_config(page_title="LDR Barrett - Confa", layout="wide")
 
-# FIX: Inicializar el estado al principio para evitar AttributeError
+# Inicialización de estado para evitar AttributeError
 if "informe_cache" not in st.session_state:
     st.session_state.informe_cache = {}
 
@@ -87,6 +87,7 @@ if df is not None:
     transicion_prom = d.INDIV_L4
     gerencia_prom = (d.INDIV_L1 + d.INDIV_L2 + d.INDIV_L3) / 3
 
+    # Funciones de color Barrett
     def obtener_color_desarrollo(v):
         if v < 65: return "#ff4b4b" 
         if v < 75: return "#f1c40f" 
@@ -119,7 +120,7 @@ if df is not None:
         fig.update_layout(height=400, margin=dict(l=margen_l, r=20, t=10, b=10), yaxis=dict(visible=incluir_leyenda, tickfont=dict(size=10)), xaxis=dict(visible=False), plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
         return fig
 
-    # --- RENDER BARRETT DASHBOARD ---
+    # --- RENDER BARRETT ---
     st.divider()
     st.markdown(f"""<div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 20px;">
         <div class="metric-box"><b>Total Evaluadores:</b><br><span style="font-size: 1.5rem; color: #BFDBFE;">{int(d.CANT_EVAL)}</span></div>
@@ -159,7 +160,7 @@ if df is not None:
         fig_dim.update_layout(xaxis_range=[0, 105], height=400, template="plotly_dark", yaxis=dict(autorange="reversed"))
         st.plotly_chart(fig_dim, key="dim_v")
 
-    # --- NINEBOX INTEGRAL ---
+    # --- SECCIÓN NINEBOX ---
     st.divider()
     st.subheader("🟦 Mapa de Talento NineBox Confa")
     cnb1, cnb2 = st.columns([1.5, 1])
@@ -172,28 +173,28 @@ if df is not None:
             (0.5, 1.5, 33.33, 66.66, "#31688e", "DILEMA"), (1.5, 2.5, 33.33, 66.66, "#21918c", "EMP. CLAVE"), (2.5, 3.5, 33.33, 66.66, "#5ec962", "FUT. ESTRELLAS"),
             (0.5, 1.5, 66.66, 100, "#b5de2b", "ENIGMA"), (1.5, 2.5, 66.66, 100, "#fde725", "ESTRELLA CREC."), (2.5, 3.5, 66.66, 100, "#f89441", "SUPERESTRELLAS")
         ]
+        # Dibujar rectángulos de cuadrantes
         for x0, x1, y0, y1, color, label in cuadrantes_specs:
             fig_nb.add_shape(type="rect", x0=x0, y0=y0, x1=x1, y1=y1, fillcolor=color, opacity=0.4, line=dict(color="white", width=1))
-            fig_nb.add_annotation(x=(x0+x1)/2, y=y1-2.5, text=f"<b>{label}</b>", showarrow=False, font=dict(size=8, color="black"))
+            fig_nb.add_annotation(x=(x0+x1)/2, y=y1-2, text=f"<b>{label}</b>", showarrow=False, font=dict(size=8, color="black"))
 
+        # Lógica de posición inteligente del texto
         val_p = d.IND_POT
-        if val_p < 10: pos = "top center"
-        elif 54 <= val_p <= 60: pos = "bottom center"
-        elif 60 < val_p <= 66: pos = "top center"
-        elif 74 <= val_p < 80: pos = "bottom center"
-        elif 80 <= val_p <= 86: pos = "top center"
-        elif val_p >= 90: pos = "bottom center"
-        else: pos = "top center"
-
+        pos = "bottom center" if (54 <= val_p <= 60 or 74 <= val_p <= 80 or val_p >= 88) else "top center"
+        
         nombre_wrap = lider_sel.replace(' ', '<br>', 1) if len(lider_sel) > 15 else lider_sel
+        
+        # Marcador y Texto
         fig_nb.add_trace(go.Scatter(
             x=[d.DES], y=[escalar_visual_potencial(d.IND_POT)], mode='markers+text', opacity=1,
             marker=dict(size=12, color='white', symbol='diamond', line=dict(width=2, color='black')), 
             text=[f"<b>{nombre_wrap}</b><br>({round(d.IND_POT,2)}%)"], textposition=pos,
             hoverinfo="all", 
             hovertemplate=f"Potencial Real: {round(d.IND_POT,2)}%<br>Desempeño: {d.DES}<extra></extra>",
-            textfont=dict(size=10, color="black") # NEGRO PARA CONTRASTE ESTÁTICO
+            # SOLUCIÓN DEFINITIVA: Texto negro sólido
+            textfont=dict(size=10, color="black")
         ))
+        
         fig_nb.update_layout(xaxis=dict(title="Desempeño (1-3)", tickvals=[1,2,3], range=[0.5, 3.5]), yaxis=dict(title="Potencial (Escala Confa)", tickvals=[0, 33.33, 66.66, 100], ticktext=["0%", "60%", "80%", "100%"], range=[-5, 105]), template="plotly_dark", height=500)
         st.plotly_chart(fig_nb, key="nb_v", use_container_width=True)
 
