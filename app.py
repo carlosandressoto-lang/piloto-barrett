@@ -229,7 +229,7 @@ if df is not None:
         - L6: Mentor Socio. Foco en colaboración y mentoría. (Hacer la Diferencia)
         - L7: Visionario Sabio. Foco en propósito y visión de largo plazo. (Servicio)
         CONTEXTO NINEBOX CONFA
-        Usa las 9 definiciones de CONFA 2018 para el análisis:
+        Usa las 9 definiciones de CONFA para el análisis:
         -ENIGMA: Líder con alto potencial pero desempeño bajo (ubicarlo bien o revisar jefe).
         -ESTRELLA CRECIENTE: Alto potencial, desempeño esperado (sacar de zona de confort).
         -SUPERESTRELLA: Mejor opción para sucesión (reconocer y premiar).
