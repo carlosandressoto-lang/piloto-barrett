@@ -14,10 +14,11 @@ st.set_page_config(page_title="LDR Barrett - Confa", layout="wide")
 if "informe_cache" not in st.session_state:
     st.session_state.informe_cache = {}
 
-# CSS DINÁMICO: Quitamos colores fijos para que el sistema use contraste nativo
+# CSS DINÁMICO: Sin colores forzados para permitir el pivot nativo del sistema
 st.markdown("""
 <style>
     .main { font-family: 'Helvetica Neue', sans-serif; }
+    h1, h2, h3 { color: #BFDBFE !important; text-align: center; }
     .titulo-seccion { font-weight: bold; margin-bottom: 10px; font-size: 1.1rem; text-align: center; }
     .metric-box { 
         background-color: rgba(30, 41, 59, 0.05); 
@@ -123,7 +124,6 @@ if df is not None:
     lider_sel = st.selectbox("Seleccione el líder:", lideres)
     d = df[df['Nombre_Lider'] == lider_sel].iloc[0]
     
-    # Cuadro de evaluadores nativo
     st.subheader("👥 Información de la Evaluación")
     c_ev1, c_ev2 = st.columns([1, 2])
     with c_ev1: st.metric("Total Evaluadores", int(d.CANT_EVAL))
@@ -173,7 +173,7 @@ if df is not None:
         fig_dim.update_layout(xaxis_range=[0, 105], height=400, template="plotly_dark", yaxis=dict(autorange="reversed"), paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
         st.plotly_chart(fig_dim, use_container_width=True)
 
-    # BLOQUE 4: NINEBOX DINÁMICA
+    # BLOQUE 4: NINEBOX DINÁMICA (Sin colores forzados para pivot nativo)
     st.divider()
     st.subheader("🟦 Mapa de Talento NineBox Confa")
     cnb1, cnb2 = st.columns([1.5, 1])
@@ -186,10 +186,15 @@ if df is not None:
             (0.5, 1.5, 66.66, 100, "#b5de2b", "ENIGMA"), (1.5, 2.5, 66.66, 100, "#fde725", "ESTRELLA CREC."), (2.5, 3.5, 66.66, 100, "#f89441", "SUPERESTRELLAS")
         ]
         for x0, x1, y0, y1, color, label in quads:
-            fig_nb.add_shape(type="rect", x0=x0, y0=y0, x1=x1, y1=y1, fillcolor=color, opacity=0.8, line=dict(color="white", width=0.5))
-            fig_nb.add_annotation(x=(x0+x1)/2, y=y1-2.5, text=f"<b>{label}</b>", showarrow=False, font=dict(size=9, color="rgba(255,255,255,0.9)"))
-        fig_nb.add_trace(go.Scatter(x=[d.DES], y=[d.IND_POT], mode='markers', marker=dict(size=18, color='white', symbol='diamond', line=dict(width=3, color='black'))))
-        fig_nb.update_layout(xaxis=dict(title="Desempeño", tickvals=[1,2,3], range=[0.4, 3.6]), yaxis=dict(title="Potencial (%)", tickvals=[0, 33.3, 66.6, 100], range=[-5, 105]), template="plotly_dark", height=500, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+            fig_nb.add_shape(type="rect", x0=x0, y0=y0, x1=x1, y1=y1, fillcolor=color, opacity=0.8, line=dict(color="rgba(255,255,255,0.2)", width=1))
+            fig_nb.add_annotation(x=(x0+x1)/2, y=y1-2.5, text=f"<b>{label}</b>", showarrow=False, font=dict(size=9, color="white"))
+        fig_nb.add_trace(go.Scatter(x=[d.DES], y=[escalar_visual_potencial(d.IND_POT)], mode='markers', marker=dict(size=18, color='white', symbol='diamond', line=dict(width=3, color='black'))))
+        # Eliminamos tickfont manual para que cambie de color según el modo (Light/Dark)
+        fig_nb.update_layout(
+            xaxis=dict(title="Desempeño", tickvals=[1,2,3], range=[0.4, 3.6]), 
+            yaxis=dict(title="Potencial (%)", tickvals=[0, 33.3, 66.6, 100], ticktext=["0", "60", "80", "100"], range=[-5, 105]), 
+            template="plotly_dark", height=500, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)'
+        )
         st.plotly_chart(fig_nb, use_container_width=True)
     with cnb2:
         st.markdown(f"<div class='metric-box'><h3>{cuadrante}</h3><hr><p><b>Potencial Individual:</b> {round(d.IND_POT,2)}%</p><p><b>Desempeño:</b> {d.DES}</p><p><b>Autoevaluación Potencial:</b> {round(d.AUTO_POT,2)}%</p></div>", unsafe_allow_html=True)
@@ -244,7 +249,7 @@ if df is not None:
                 st.write(res.text)
         except Exception as e: st.error(e)
 
-    # DESCARGA PDF
+    # --- DESCARGA PDF ---
     if lider_sel in st.session_state.informe_cache:
         if st.button("📄 DESCARGAR REPORTE PDF"):
             try:
@@ -253,6 +258,7 @@ if df is not None:
                 pdf.set_font('Helvetica', 'B', 16)
                 pdf.cell(0, 10, 'REPORTE ESTRATEGICO INTEGRAL', ln=True, align='C')
                 with tempfile.TemporaryDirectory() as tmp_dir:
+                    # Fondo blanco HD solo para la imagen del PDF
                     fig_nb.update_layout(template="plotly", paper_bgcolor='white', plot_bgcolor='white', font=dict(color='black'))
                     nb_p = os.path.join(tmp_dir, "nb.png")
                     fig_nb.write_image(nb_p, engine="kaleido", scale=4)
