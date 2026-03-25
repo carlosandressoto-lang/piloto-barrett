@@ -70,6 +70,38 @@ def escalar_visual_potencial(val):
     elif val <= 80: return 33.33 + ((val - 60) / 20) * 33.33
     else: return 66.66 + ((val - 80) / 20) * 33.33
 
+def obtener_color_desarrollo(v):
+    if v < 65: return "#ff4b4b" 
+    if v < 75: return "#f1c40f" 
+    if v < 85: return "#2ecc71" 
+    return "rgb(33, 115, 182)"
+
+def obtener_etiqueta(v):
+    if v < 65: return "Bajo"
+    if v < 75: return "Medio"
+    if v < 85: return "Alto"
+    return "Superior"
+
+def generar_fig_barras(vals, titulo, color):
+    labels = ['L7 - Visionario', 'L6 - Mentor', 'L5 - Auténtico', 'L4 - Facilitador', 'L3 - Desempeño', 'L2 - Relaciones', 'L1 - Crisis']
+    v_plot = [vals[6], vals[5], vals[4], vals[3], vals[2], vals[1], vals[0]]
+    fig = go.Figure(go.Bar(x=v_plot, y=labels, orientation='h', marker_color=color, text=[f"{round(v,1)}%" for v in v_plot], textposition='inside'))
+    fig.update_layout(title=dict(text=titulo, x=0.5), xaxis_range=[0, 105], height=350, template="plotly_dark", margin=dict(l=0, r=10, t=40, b=20), yaxis=dict(autorange="reversed"))
+    return fig
+
+def generar_fig_reloj(vals, incluir_leyenda=False, forzar_pdf=False):
+    anchos_base = [6, 5, 4, 3.2, 4, 5, 6] 
+    v_rev = [vals[6], vals[5], vals[4], vals[3], vals[2], vals[1], vals[0]]
+    colors_barrett = ["rgb(33,115,182)"]*3 + ["rgb(140,183,42)"] + ["rgb(241,102,35)"]*3
+    labels_niveles = ["L7-Visionario", "L6-Mentor", "L5-Auténtico", "L4-Facilitador", "L3-Desempeño", "L2-Relaciones", "L1-Crisis"]
+    fig = go.Figure()
+    fig.add_trace(go.Funnel(y=labels_niveles if incluir_leyenda else [1,2,3,4,5,6,7], x=anchos_base, textinfo="none", hoverinfo="none", marker={"color": colors_barrett, "line": {"width": 1, "color": "rgba(255,255,255,0.3)"}}, connector={"visible": False}))
+    for i, (val, ancho) in enumerate(zip(v_rev, anchos_base)):
+        fig.add_annotation(x=0, y=i if incluir_leyenda else i+1, text=obtener_etiqueta(val), showarrow=False, font=dict(color=obtener_color_desarrollo(val), size=12, family='Arial Black'), bgcolor="white", bordercolor="rgba(255,255,255,0)", borderpad=4, width=ancho * 22.0)
+    margen_l = 100 if (incluir_leyenda or forzar_pdf) else 10
+    fig.update_layout(height=400, margin=dict(l=margen_l, r=20, t=10, b=10), yaxis=dict(visible=incluir_leyenda, tickfont=dict(size=10)), xaxis=dict(visible=False), plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
+    return fig
+
 if df is not None:
     lideres = sorted(df['Nombre_Lider'].unique())
     lider_sel = st.selectbox("Seleccione el líder para el análisis detallado:", lideres)
@@ -83,46 +115,12 @@ if df is not None:
     transicion_prom = d.INDIV_L4
     gerencia_prom = (d.INDIV_L1 + d.INDIV_L2 + d.INDIV_L3) / 3
 
-    def obtener_color_desarrollo(v):
-        if v < 65: return "#ff4b4b" 
-        if v < 75: return "#f1c40f" 
-        if v < 85: return "#2ecc71" 
-        return "rgb(33, 115, 182)"
-
-    def obtener_etiqueta(v):
-        if v < 65: return "Bajo"
-        if v < 75: return "Medio"
-        if v < 85: return "Alto"
-        return "Superior"
-
-    def generar_fig_barras(vals, titulo, color):
-        labels = ['L7 - Visionario', 'L6 - Mentor', 'L5 - Auténtico', 'L4 - Facilitador', 'L3 - Desempeño', 'L2 - Relaciones', 'L1 - Crisis']
-        v_plot = [vals[6], vals[5], vals[4], vals[3], vals[2], vals[1], vals[0]]
-        fig = go.Figure(go.Bar(x=v_plot, y=labels, orientation='h', marker_color=color, text=[f"{round(v,1)}%" for v in v_plot], textposition='inside'))
-        fig.update_layout(title=dict(text=titulo, x=0.5), xaxis_range=[0, 105], height=350, template="plotly_dark", margin=dict(l=0, r=10, t=40, b=20), yaxis=dict(autorange="reversed"))
-        return fig
-
-    def generar_fig_reloj(vals, incluir_leyenda=False, forzar_pdf=False):
-        anchos_base = [6, 5, 4, 3.2, 4, 5, 6] 
-        v_rev = [vals[6], vals[5], vals[4], vals[3], vals[2], vals[1], vals[0]]
-        colors_barrett = ["rgb(33,115,182)"]*3 + ["rgb(140,183,42)"] + ["rgb(241,102,35)"]*3
-        labels_niveles = ["L7-Visionario", "L6-Mentor", "L5-Auténtico", "L4-Facilitador", "L3-Desempeño", "L2-Relaciones", "L1-Crisis"]
-        fig = go.Figure()
-        fig.add_trace(go.Funnel(y=labels_niveles if incluir_leyenda else [1,2,3,4,5,6,7], x=anchos_base, textinfo="none", hoverinfo="none", marker={"color": colors_barrett, "line": {"width": 1, "color": "rgba(255,255,255,0.3)"}}, connector={"visible": False}))
-        for i, (val, ancho) in enumerate(zip(v_rev, anchos_base)):
-            fig.add_annotation(x=0, y=i if incluir_leyenda else i+1, text=obtener_etiqueta(val), showarrow=False, font=dict(color=obtener_color_desarrollo(val), size=12, family='Arial Black'), bgcolor="white", bordercolor="rgba(255,255,255,0)", borderpad=4, width=ancho * 22.0)
-        margen_l = 100 if (incluir_leyenda or forzar_pdf) else 10
-        fig.update_layout(height=400, margin=dict(l=margen_l, r=20, t=10, b=10), yaxis=dict(visible=incluir_leyenda, tickfont=dict(size=10)), xaxis=dict(visible=False), plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
-        return fig
-
-    # --- RENDER DASHBOARD ---
+    # --- RENDER BARRETT ---
     st.divider()
-    st.markdown(f"""
-    <div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 20px;">
+    st.markdown(f"""<div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 20px;">
         <div class="metric-box"><b>Total Evaluadores:</b><br><span style="font-size: 1.5rem; color: #BFDBFE;">{int(d.CANT_EVAL)}</span></div>
         <div class="metric-box"><b>Auto:</b> {int(d.CANT_AUTO)} | <b>Jefe:</b> {int(d.CANT_JEFE)} | <b>Pares:</b> {int(d.CANT_PAR)} | <b>Colab:</b> {int(d.CANT_COL)}</div>
-    </div>
-    """, unsafe_allow_html=True)
+    </div>""", unsafe_allow_html=True)
     
     st.subheader("📊 Frecuencia de comportamientos por niveles (%)")
     c1, c2, c3 = st.columns(3)
@@ -134,8 +132,8 @@ if df is not None:
     cl, cr1, cr2, cr3 = st.columns([1, 1, 1, 1])
     with cl:
         st.markdown('<div class="titulo-col">Nivel Barrett</div>', unsafe_allow_html=True)
-        niveles_barrett = ["L7 - Visionario", "L6 - Mentor", "L5 - Auténtico", "L4 - Facilitador", "L3 - Desempeño", "L2 - Relaciones", "L1 - Crisis"]
-        st.markdown('<div class="leyenda-v3">' + ''.join([f'<div class="item-ley">{n}</div>' for n in niveles_barrett]) + '</div>', unsafe_allow_html=True)
+        niveles_lbl = ["L7 - Visionario", "L6 - Mentor", "L5 - Auténtico", "L4 - Facilitador", "L3 - Desempeño", "L2 - Relaciones", "L1 - Crisis"]
+        st.markdown('<div class="leyenda-v3">' + ''.join([f'<div class="item-ley">{n}</div>' for n in niveles_lbl]) + '</div>', unsafe_allow_html=True)
     with cr1: st.markdown('<div class="titulo-col">Autovaloración</div>', unsafe_allow_html=True); st.plotly_chart(generar_fig_reloj(v_auto), key="r1_v")
     with cr2: st.markdown('<div class="titulo-col">Individual (360)</div>', unsafe_allow_html=True); st.plotly_chart(generar_fig_reloj(v_ind), key="r2_v")
     with cr3: st.markdown('<div class="titulo-col">Organizacional</div>', unsafe_allow_html=True); st.plotly_chart(generar_fig_reloj(v_org), key="r3_v")
@@ -157,17 +155,13 @@ if df is not None:
         fig_dim.update_layout(xaxis_range=[0, 105], height=400, template="plotly_dark", yaxis=dict(autorange="reversed"))
         st.plotly_chart(fig_dim, key="dim_v")
 
-    # --- SECCIÓN NINEBOX DINÁMICA ---
+    # --- NINEBOX INTEGRAL CON LÓGICA DE POSICIÓN ---
     st.divider()
     st.subheader("🟦 Mapa de Talento NineBox Confa")
     cnb1, cnb2 = st.columns([1.5, 1])
     cuadrante = obtener_cuadrante_confa(d.IND_POT, d.DES)
     
     with cnb1:
-        # LÓGICA DE COLOR DINÁMICO
-        theme_is_dark = st.get_option("theme.base") == "dark"
-        color_dinamico = "white" if theme_is_dark else "black"
-        
         fig_nb = go.Figure()
         cuadrantes_specs = [
             (0.5, 1.5, 0, 33.33, "#440154", "ICEBERG"), (1.5, 2.5, 0, 33.33, "#482878", "EFECTIVOS"), (2.5, 3.5, 0, 33.33, "#3b528b", "PROF. CONFIABLES"),
@@ -176,41 +170,39 @@ if df is not None:
         ]
         for x0, x1, y0, y1, color, label in cuadrantes_specs:
             fig_nb.add_shape(type="rect", x0=x0, y0=y0, x1=x1, y1=y1, fillcolor=color, opacity=0.4, line=dict(color="white", width=1))
-            fig_nb.add_annotation(x=(x0+x1)/2, y=y1-2, text=f"<b>{label}</b>", showarrow=False, font=dict(size=8, color=color_dinamico))
+            # Etiquetas de cuadrantes en negro sólido para visibilidad total
+            fig_nb.add_annotation(x=(x0+x1)/2, y=y1-2.5, text=f"<b>{label}</b>", showarrow=False, font=dict(size=8, color="#1a1a1a"))
 
+        # Lógica de Posicionamiento de Leyenda solicitada
         val_p = d.IND_POT
         if val_p < 10: pos = "top center"
-        elif 28 <= val_p <= 38 or 62 <= val_p <= 70 or 76 <= val_p <= 84 or val_p >= 90: pos = "bottom center"
+        elif 54 <= val_p <= 60: pos = "bottom center"
+        elif 60 < val_p <= 66: pos = "top center"
+        elif 74 <= val_p < 80: pos = "bottom center"
+        elif 80 <= val_p <= 86: pos = "top center"
+        elif val_p >= 90: pos = "bottom center"
         else: pos = "top center"
 
         nombre_wrap = lider_sel.replace(' ', '<br>', 1) if len(lider_sel) > 15 else lider_sel
         fig_nb.add_trace(go.Scatter(
-            x=[d.DES], y=[escalar_visual_potencial(d.IND_POT)], mode='markers+text', opacity=1, 
-            marker=dict(size=12, color='white', symbol='diamond', line=dict(width=2, color='#BFDBFE')), 
+            x=[d.DES], y=[escalar_visual_potencial(d.IND_POT)], mode='markers+text', opacity=1,
+            marker=dict(size=12, color='white', symbol='diamond', line=dict(width=2, color='black')), 
             text=[f"<b>{nombre_wrap}</b><br>({round(d.IND_POT,2)}%)"], textposition=pos,
             hoverinfo="all", 
-            hovertemplate=f"Potencial: {round(d.IND_POT,2)}%<br>Desempeño: {d.DES}<extra></extra>",
-            textfont=dict(size=9, color=color_dinamico)
+            hovertemplate=f"Potencial Real: {round(d.IND_POT,2)}%<br>Desempeño: {d.DES}<extra></extra>",
+            textfont=dict(size=10, color="white") # Forzamos blanco sólido para el nombre del líder
         ))
-        fig_nb.update_layout(xaxis=dict(title="Desempeño (1-3)", tickvals=[1,2,3], range=[0.5, 3.5]), yaxis=dict(title="Potencial (Escala Confa)", tickvals=[0, 33.33, 66.66, 100], ticktext=["0%", "60%", "80%", "100%"], range=[-5, 105]), template="plotly_dark" if theme_is_dark else "plotly", height=500)
+        
+        fig_nb.update_layout(xaxis=dict(title="Desempeño (1-3)", tickvals=[1,2,3], range=[0.5, 3.5]), yaxis=dict(title="Potencial (Escala Confa)", tickvals=[0, 33.33, 66.66, 100], ticktext=["0%", "60%", "80%", "100%"], range=[-5, 105]), template="plotly_dark", height=500)
         st.plotly_chart(fig_nb, key="nb_v", use_container_width=True)
 
     with cnb2:
-        st.markdown(f"""
-        <div class="metric-box" style="text-align: left;">
-            <h3 style="color:#BFDBFE; margin:0;">{cuadrante}</h3>
-            <p><b>Potencial:</b> {d.IND_POT}% | <b>Desempeño:</b> {d.DES}</p>
-            <p><b>Autoevaluación Potencial:</b> {d.AUTO_POT}%</p>
-            <hr style="border:0.5px solid #334155;">
-            <p style="font-size:0.85rem;">Cruce estratégico basado en el Análisis de Talento Confa 2026.</p>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(f"""<div class="metric-box" style="text-align: left;"><h3 style="color:#BFDBFE; margin:0;">{cuadrante}</h3><p><b>Potencial:</b> {d.IND_POT}% | <b>Desempeño:</b> {d.DES}</p><p><b>Autoevaluación Potencial:</b> {d.AUTO_POT}%</p><hr style="border:0.5px solid #334155;"><p style="font-size:0.85rem;">Cruce estratégico basado en el Análisis de Talento Confa 2026.</p></div>""", unsafe_allow_html=True)
 
     if "informe_cache" not in st.session_state: st.session_state.informe_cache = {}
 
     st.divider()
     if st.button("🚀 GENERAR INFORME"):
-        tipo_sujeto = "GERENCIA" if es_gerencia else "LÍDER"
         prompt_maestro = f"""
         Actúa como consultor senior de DESARROLLO DE LIDERAZGO Barrett. Genera un reporte para {lider_sel}. DATOS: {d.to_json()} donde AUTO es Autoevaluación, INDI es Ponderado Individual, ORG es Ponderado organizacional (Promedio de resultados organizacionales) y CANT es cantidad de respuestas o evaluadores. Si alguien tiene todo 0 en AUTO es porque no hizo Autoevalaucion para que lo tengas presente en la comparativa. Si ves que sus resultados INDI son muy bajos, revisa que al menos CANT_JEFE y CANT_PAR sean mínimo 1, si no ahí esta el error y dejaremos en el reporte ese hallazgo de forma obligatoria pues seria un sesgo matemático. Si no encontramos esas inconsistencias no mencionaremos por nada del mundo esta información en el resto del informe, si y solo si se cumplen una de esas restricciones.
         PROHIBIDO USAR ANGLICISMOS. REDACTA TODO EN ESPAÑOL PURO.
@@ -223,7 +215,7 @@ if df is not None:
         - L6: Mentor Socio. Foco en colaboración y mentoría. (Hacer la Diferencia)
         - L7: Visionario Sabio. Foco en propósito y visión de largo plazo. (Servicio)
         CONTEXTO NINEBOX CONFA
-        Usa las 9 definiciones de CONFA para el análisis:
+        Usa las 9 definiciones de CONFA 2018 para el análisis:
         -ENIGMA: Líder con alto potencial pero desempeño bajo (ubicarlo bien o revisar jefe).
         -ESTRELLA CRECIENTE: Alto potencial, desempeño esperado (sacar de zona de confort).
         -SUPERESTRELLA: Mejor opción para sucesión (reconocer y premiar).
@@ -242,7 +234,6 @@ if df is not None:
         - SI CANT_JEFE es 0: Debes iniciar el informe con una ADVERTENCIA ESTRATÉGICA indicando que el ponderado individual se ve severamente afectado (sesgo a la baja) debido a la ausencia de la valoración del líder directo (40% del peso).
         - SI CANT_PAR es 0: Debes iniciar el informe con una ADVERTENCIA ESTRATÉGICA indicando que el ponderado individual se ve severamente afectado (sesgo a la baja) debido a la ausencia de la valoración del minimo 1 par (20% del peso si tiene colaboradores a cargo, 40% si no tiene colaboradores a cargo).
         - SI CANT_AUTO es 0: Indica que no existe punto de comparación interno.
-        - Si no hay estos ceros, no menciones nada de esto.
 
         ESTRUCTURA informe OBLIGATORIA:
         1. DESCRIPCIÓN POR NIVELES: Lista de L1 a L7 con el nombre de contexto Barret (Ejemplo L1: Gestor de Crisis). Clasifica cada nivel basándote en el 'Ponderado Individual' usando la rúbrica (Bajo, Medio, Alto, Superior) y las definiciones Barrett anteriores para generar una descripción según el modelo Barret y el nivel de la rubrica del líder. Siempre una lista de Nivel 1 a Nivel 7 no lo hagas en 1 solo párrafo porque confunde
@@ -274,7 +265,7 @@ if df is not None:
                     pdf.ln(5)
                     with tempfile.TemporaryDirectory() as tmp_dir:
                         def save_chart(fig, name, w=600, h=300):
-                            fig.update_layout(template="plotly_dark" if theme_is_dark else "plotly", paper_bgcolor='white', font=dict(color="black", size=12), width=w, height=h)
+                            fig.update_layout(template="plotly", paper_bgcolor='white', font=dict(color="black", size=12), width=w, height=h)
                             path = os.path.join(tmp_dir, name)
                             fig.write_image(path, engine="kaleido", scale=2) 
                             return path
