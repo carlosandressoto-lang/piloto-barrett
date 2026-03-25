@@ -166,7 +166,7 @@ if df is not None:
 
     with cr1: 
         st.markdown("<div class='titulo-seccion'>Autovaloración</div>", unsafe_allow_html=True)
-        f1 = generar_fig_reloj(v_auto)
+        f1 = generar_fig_reloj(v_auto*0.95)
         f1.update_layout(**fig_config_fix)
         st.plotly_chart(f1, key="r1_dash", use_container_width=True, config={'displayModeBar': False})
 
