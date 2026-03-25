@@ -142,7 +142,7 @@ if df is not None:
     with cr3: st.plotly_chart(generar_fig_reloj(v_org), key="r3", use_container_width=True)
 
     st.divider()
-    col_radar, col_dim = st.columns([1.5, 1])
+    col_radar, col_dim = st.columns([1, 1])
     with col_radar:
         st.subheader("🎯 Alineación de Consciencia")
         fig_radar = go.Figure()
