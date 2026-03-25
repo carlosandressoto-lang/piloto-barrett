@@ -135,7 +135,7 @@ if df is not None:
     cl, cr1, cr2, cr3 = st.columns([0.5, 1, 1, 1])
     with cl:
         st.markdown("<div class='titulo-seccion'>Nivel Barrett</div>", unsafe_allow_html=True)
-        niv_labels = ["","L7-Visionario", "L6-Mentor", "L5-Auténtico", "L4-Facilitador", "L3-Desempeño", "L2-Relaciones", "L1-Crisis"]
+        niv_labels = ["L7-Visionario", "L6-Mentor", "L5-Auténtico", "L4-Facilitador", "L3-Desempeño", "L2-Relaciones", "L1-Crisis", ""]
         st.markdown('<div class="leyenda-v3">' + ''.join([f'<div class="item-ley">{n}</div>' for n in niv_labels]) + '</div>', unsafe_allow_html=True)
     with cr1: st.plotly_chart(generar_fig_reloj(v_auto), key="r1", use_container_width=True)
     with cr2: st.plotly_chart(generar_fig_reloj(v_ind), key="r2", use_container_width=True)
