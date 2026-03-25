@@ -187,7 +187,7 @@ if df is not None:
         # WRAP DE NOMBRE RECALIBRADO
         nombre_wrap = lider_sel.replace(' ', '<br>', 1) if len(lider_sel) > 15 else lider_sel
         fig_nb.add_trace(go.Scatter(
-            x=[d.DES], y=[d.IND_POT], mode='markers+text', 
+            x=[d.DES], y=[d.IND_POT], mode='markers+text', opacity=1, 
             marker=dict(size=12, color='white', symbol='diamond', line=dict(width=2, color='#BFDBFE')), 
             text=[f"<b>{nombre_wrap}</b><br>({round(d.IND_POT,2)}%)"], textposition=pos,
             hovertemplate=f"Potencial: {round(d.IND_POT,2)}%<br>Desempeño: {d.DES}<extra></extra>",
