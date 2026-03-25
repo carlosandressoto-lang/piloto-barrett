@@ -123,13 +123,14 @@ if df is not None:
     transicion_prom = d.INDIV_L4
     gerencia_prom = (d.INDIV_L1 + d.INDIV_L2 + d.INDIV_L3) / 3
 
-    # DASHBOARD WEB
+    st.subheader("📊 Frecuencia de comportamientos por niveles (%)")
     c1, c2, c3 = st.columns(3)
     with c1: st.markdown("<div class='titulo-seccion'>Autovaloración</div>", unsafe_allow_html=True); st.plotly_chart(generar_fig_barras(v_auto, "", "#3498db"), use_container_width=True)
     with c2: st.markdown("<div class='titulo-seccion'>Ponderado Individual</div>", unsafe_allow_html=True); st.plotly_chart(generar_fig_barras(v_ind, "", "#2ecc71"), use_container_width=True)
     with c3: st.markdown("<div class='titulo-seccion'>Ponderado Organizacional</div>", unsafe_allow_html=True); st.plotly_chart(generar_fig_barras(v_org, "", "#e74c3c"), use_container_width=True)
 
     st.divider()
+    st.subheader("⏳ Resultados Evaluación 360° (Niveles Barrett)")
     cl, cr1, cr2, cr3 = st.columns([1.2, 1, 1, 1])
     with cl:
         st.markdown("<div class='titulo-seccion'>Nivel Barrett</div>", unsafe_allow_html=True)
@@ -167,12 +168,12 @@ if df is not None:
             fig_nb.add_shape(type="rect", x0=x0, y0=y0, x1=x1, y1=y1, fillcolor=color, opacity=0.75, line=dict(color="rgba(255,255,255,0.3)", width=1))
             fig_nb.add_annotation(x=(x0+x1)/2, y=y1-2.5, text=f"<b>{label}</b>", showarrow=False, font=dict(size=9, color="white"))
         fig_nb.add_trace(go.Scatter(x=[d.DES], y=[d.IND_POT], mode='markers', marker=dict(size=14, color='red', symbol='diamond', line=dict(width=2, color='white'))))
-        fig_nb.update_layout(xaxis=dict(title="Desempeño", tickvals=[1,2,3], range=[0.4, 3.6]), yaxis=dict(title="Potencial (%)", range=[-5, 105]), template="plotly_dark", height=500, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+        fig_nb.update_layout(xaxis=dict(title="Desempeño", tickvals=[1,2,3], range=[0.4, 3.6]), yaxis=dict(title="Potencial (%)", range=[-5, 105]), template="plotly_dark", height=500)
         st.plotly_chart(fig_nb, use_container_width=True)
     with cnb2:
-        st.markdown(f"<div class='metric-box'><h3>{cuadrante}</h3><hr><p><b>Potencial Individual:</b> {round(d.IND_POT,2)}%</p><p><b>Desempeño:</b> {d.DES}</p></div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='metric-box'><h3>{cuadrante}</h3><hr><p><b>Potencial Individual:</b> {round(d.IND_POT,2)}%</p><p><b>Desempeño:</b> {d.DES}</p><p><b>Autoevaluación Potencial:</b> {round(d.AUTO_POT,2)}%</p></div>", unsafe_allow_html=True)
 
-    # BLOQUE 5: INFORME
+    # BLOQUE 5: EL PROMPT MAESTRO
     st.divider()
     if st.button("🚀 GENERAR INFORME"):
         if es_gerencia:
@@ -227,7 +228,7 @@ if df is not None:
                 st.write(res.text)
         except Exception as e: st.error(e)
 
-    # --- REPORTE PDF (PÁGINA 1 COMPACTA Y SIN HUECOS) ---
+    # --- REPORTE PDF UNIFICADO (PÁGINA 1 DASHBOARD COMPACTO) ---
     if lider_sel in st.session_state.informe_cache:
         if st.button("📄 DESCARGAR PDF"):
             try:
@@ -240,12 +241,11 @@ if df is not None:
                         fig.write_image(path, engine="kaleido", scale=2)
                         return path
 
-                    # PÁGINA 1: DASHBOARD COMPLETO
+                    # PÁGINA 1: DASHBOARD COMPLETO SIN HUECOS
                     pdf.add_page()
                     pdf.set_font('Helvetica', 'B', 16); pdf.cell(0, 10, 'REPORTE ESTRATÉGICO INTEGRAL', ln=True, align='C')
                     pdf.set_font('Helvetica', '', 12); pdf.cell(0, 8, f'Evaluado: {lider_sel}', ln=True, align='C')
                     
-                    # MÉTRICAS DE EVALUADORES
                     pdf.set_font('Helvetica', 'B', 10)
                     eval_txt = f'Total Evaluadores: {int(d.CANT_EVAL)} | Auto: {int(d.CANT_AUTO)} | Jefe: {int(d.CANT_JEFE)} | Pares: {int(d.CANT_PAR)} | Colab: {int(d.CANT_COL)}'
                     pdf.cell(0, 8, eval_txt, ln=True, align='C')
@@ -262,39 +262,26 @@ if df is not None:
                     img_radar = save_pdf_chart_final(fig_radar, "radar.png"); img_dim = save_pdf_chart_final(fig_dim, "dim.png")
                     y_radar = pdf.get_y(); pdf.image(img_radar, x=10, y=y_radar, w=95); pdf.image(img_dim, x=110, y=y_radar + 5, w=90)
                     
-# --- REEMPLAZA ESTA PARTE EN TU GENERADOR DE PDF ---
+                    # 3. RELOJES BARRETT (COORDINACIÓN MILIMÉTRICA)
+                    pdf.set_y(y_radar + 65); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, '3. Niveles de Madurez Barrett (Relojes)', ln=True)
+                    img_r1 = save_pdf_chart_final(generar_fig_reloj(v_auto, incluir_leyenda=False), "r1p.png", title="Auto")
+                    img_r2 = save_pdf_chart_final(generar_fig_reloj(v_ind, incluir_leyenda=False), "r2p.png", title="Indiv")
+                    img_r3 = save_pdf_chart_final(generar_fig_reloj(v_org, incluir_leyenda=False), "r3p.png", title="Org")
+                    
+                    y_reloj_manual = pdf.get_y()
+                    # Mismo ancho w=53 para los tres para simetría total
+                    pdf.image(img_r1, x=35, y=y_reloj_manual, w=53)
+                    pdf.image(img_r2, x=88, y=y_reloj_manual, w=53)
+                    pdf.image(img_r3, x=141, y=y_reloj_manual, w=53)
+                    
+                    # LEYENDA MANUAL QUE SÍ ENCAJA CON LAS BARRAS
+                    pdf.set_font('Helvetica', '', 8); pdf.set_text_color(100, 100, 100)
+                    niv_manual = ["L7-Visionario", "L6-Mentor", "L5-Autentico", "L4-Facilitador", "L3-Desempeno", "L2-Relaciones", "L1-Crisis"]
+                    for i, txt in enumerate(niv_manual):
+                        pdf.text(10, y_reloj_manual + 16 + (i * 5.15), txt)
+                    pdf.set_text_color(0, 0, 0)
 
-# 3. Niveles de Madurez Barrett (Relojes)
-pdf.set_y(y_radar + 65) # Fijamos el inicio para evitar huecos
-pdf.set_font('Helvetica', 'B', 11)
-pdf.cell(0, 10, '3. Niveles de Madurez Barrett (Relojes)', ln=True)
-
-# Guardamos los relojes asegurando que NO tengan leyenda interna que deforme el lienzo
-img_r1 = save_pdf_chart_final(generar_fig_reloj(v_auto, incluir_leyenda=False), "r1p.png", title="Auto")
-img_r2 = save_pdf_chart_final(generar_fig_reloj(v_ind, incluir_leyenda=False), "r2p.png", title="Indiv")
-img_r3 = save_pdf_chart_final(generar_fig_reloj(v_org, incluir_leyenda=False), "r3p.png", title="Org")
-
-y_reloj_bloque = pdf.get_y()
-
-# Insertamos las 3 imágenes con el MISMO ancho para que sean clones
-# Las movemos a la derecha (x=35) para dejar el hueco de la leyenda manual
-pdf.image(img_r1, x=35, y=y_reloj_bloque, w=53) 
-pdf.image(img_r2, x=88, y=y_reloj_bloque, w=53) 
-pdf.image(img_r3, x=141, y=y_reloj_bloque, w=53)
-
-# LEYENDA MANUAL CONTROLADA (Aquí es donde se alinea nivel por nivel)
-pdf.set_font('Helvetica', '', 8)
-pdf.set_text_color(100, 100, 100)
-niveles_manual = ["L7-Visionario", "L6-Mentor", "L5-Autentico", "L4-Facilitador", "L3-Desempeno", "L2-Relaciones", "L1-Crisis"]
-
-# El ajuste de 16 y el paso de 5.15 es lo que garantiza que el texto quede frente a la barra
-for i, txt in enumerate(niveles_manual):
-    pdf.text(10, y_reloj_bloque + 16 + (i * 5.15), txt)
-
-pdf.set_text_color(0, 0, 0)
-pdf.ln(45) # Cerramos el bloque para que no se pegue lo que sigue
-
-                    # PÁGINA 2: ESTRATEGIA Y ANÁLISIS
+                    # PÁGINA 2: ESTRATEGIA Y TEXTO IA
                     pdf.add_page(); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, '4. Posicionamiento Estratégico NineBox Confa', ln=True)
                     fig_nb.update_layout(template="plotly", paper_bgcolor='white', plot_bgcolor='white', font=dict(color='black'))
                     img_nb = os.path.join(tmp_dir, "nb.png"); fig_nb.write_image(img_nb, engine="kaleido", scale=4); pdf.image(img_nb, x=25, w=160)
@@ -303,5 +290,5 @@ pdf.ln(45) # Cerramos el bloque para que no se pegue lo que sigue
                     limpio = st.session_state.informe_cache[lider_sel].replace("**", "").encode('latin-1', 'replace').decode('latin-1')
                     pdf.multi_cell(0, 6, limpio)
 
-                st.download_button("📥 Guardar PDF Final", data=bytes(pdf.output()), file_name=f"Reporte_{lider_sel}.pdf", mime="application/pdf")
+                st.download_button("📥 Descargar PDF Final Unificado", data=bytes(pdf.output()), file_name=f"Reporte_{lider_sel}.pdf", mime="application/pdf")
             except Exception as e: st.error(f"Error PDF: {e}")
