@@ -62,9 +62,9 @@ def obtener_cuadrante_confa(pot, des):
     else: d_label = "ALTO"
     
     mapping = {
-        ("ALTO", "BAJO"): "ENIGMA: Diamante en bruto",
+        ("ALTO", "BAJO"): "ENIGMA DIAMANTE EN BRUTO",
         ("ALTO", "MEDIO"): "FUTURA ESTRELLA EN CRECIMIENTO",
-        ("ALTO", "ALTO"): "FUTUROS LIDERES: Superestrellas",
+        ("ALTO", "ALTO"): "FUTUROS LIDERES SUPERESTRELLAS",
         ("MEDIO", "BAJO"): "DILEMA",
         ("MEDIO", "MEDIO"): "EMPLEADOS CLAVES",
         ("MEDIO", "ALTO"): "FUTURAS ESTRELLAS",
@@ -73,6 +73,12 @@ def obtener_cuadrante_confa(pot, des):
         ("BAJO", "ALTO"): "PROFESIONALES CONFIABLES"
     }
     return mapping.get((p_label, d_label), "No clasificado")
+
+# Función para re-escalar el eje Y visualmente manteniendo el 0, 60, 80 y 100 como hitos visuales
+def escalar_visual_potencial(val):
+    if val <= 60: return (val / 60) * 33.33
+    elif val <= 80: return 33.33 + ((val - 60) / 20) * 33.33
+    else: return 66.66 + ((val - 80) / 20) * 33.33
 
 if df is not None:
     lideres = sorted(df['Nombre_Lider'].unique())
@@ -162,7 +168,7 @@ if df is not None:
         fig_dim.update_layout(xaxis_range=[0, 105], height=400, template="plotly_dark", yaxis=dict(autorange="reversed"))
         st.plotly_chart(fig_dim, key="dim_v")
 
-    # --- SECCIÓN NINEBOX: DATOS REALES Y 9 COLORES ---
+    # --- SECCIÓN NINEBOX INTEGRAL: GRÁFICO REAL CON FONDO ESCALADO ---
     st.divider()
     st.subheader("🟦 Mapa de Talento NineBox Confa")
     cnb1, cnb2 = st.columns([1.5, 1])
@@ -170,31 +176,30 @@ if df is not None:
     
     with cnb1:
         fig_nb = go.Figure()
-        # Definición de cuadrantes usando valores REALES (0-60, 60-80, 80-100)
-        # Los colores van de Fríos/Oscuros (abajo-izq) a Cálidos/Brillantes (arriba-der)
+        # 9 Cuadrantes con colores diferenciados - USAMOS VALORES REALES PARA EL DIBUJO DE FONDO
         cuadrantes_specs = [
-            (0.5, 1.5, 0, 60, "#440154", "ICEBERG"),             (1.5, 2.5, 0, 60, "#482878", "EFECTIVOS"),         (2.5, 3.5, 0, 60, "#3b528b", "PROF. CONFIABLES"),
-            (0.5, 1.5, 60, 80, "#31688e", "DILEMA"),            (1.5, 2.5, 60, 80, "#21918c", "EMP. CLAVE"),       (2.5, 3.5, 60, 80, "#5ec962", "FUT. ESTRELLAS"),
+            (0.5, 1.5, 0, 60, "#440154", "ICEBERG"),             (1.5, 2.5, 0, 60, "#482878", "EFECTIVOS"),          (2.5, 3.5, 0, 60, "#3b528b", "PROF. CONFIABLES"),
+            (0.5, 1.5, 60, 80, "#31688e", "DILEMA"),            (1.5, 2.5, 60, 80, "#21918c", "EMP. CLAVE"),        (2.5, 3.5, 60, 80, "#5ec962", "FUT. ESTRELLAS"),
             (0.5, 1.5, 80, 100, "#b5de2b", "ENIGMA"),           (1.5, 2.5, 80, 100, "#fde725", "ESTRELLA CREC."),   (2.5, 3.5, 80, 100, "#f89441", "SUPERESTRELLAS")
         ]
         for x0, x1, y0, y1, color, label in cuadrantes_specs:
             fig_nb.add_shape(type="rect", x0=x0, y0=y0, x1=x1, y1=y1, fillcolor=color, opacity=0.4, line=dict(color="white", width=1))
-            fig_nb.add_annotation(x=(x0+x1)/2, y=(y0+y1)/2, text=label, showarrow=False, font=dict(size=8, color="white", weight="bold"))
+            fig_nb.add_annotation(x=(x0+x1)/2, y=y1-2, text=label, showarrow=False, font=dict(size=8, color="rgba(255,255,255,0.7)"))
 
-        # Graficamos con el valor REAL d.IND_POT
+        # GRAFICACIÓN DEL PUNTO CON VALORES REALES SIN CONVERSIÓN
         fig_nb.add_trace(go.Scatter(
             x=[d.DES], 
             y=[d.IND_POT], 
             mode='markers+text', 
             marker=dict(size=25, color='white', symbol='diamond', line=dict(width=3, color='#BFDBFE')), 
-            text=[f"{lider_sel}<br>({round(d.IND_POT,2)}%)"], 
+            text=[f"{lider_sel} ({round(d.IND_POT,2)}%)"], 
             textposition="top center",
-            hoverinfo="skip"
+            hovertext=f"Potencial Real: {d.IND_POT}%<br>Desempeño: {d.DES}"
         ))
         
         fig_nb.update_layout(
-            xaxis=dict(title="Desempeño (1: Bajo, 2: Medio, 3: Alto)", tickvals=[1,2,3], range=[0.5, 3.5]), 
-            yaxis=dict(title="Potencial Individual (%)", tickvals=[0, 60, 80, 100], range=[-5, 105]), 
+            xaxis=dict(title="Desempeño (1-3)", tickvals=[1,2,3], range=[0.5, 3.5]), 
+            yaxis=dict(title="Potencial Real (%)", tickvals=[0, 60, 80, 100], range=[-5, 105]), 
             template="plotly_dark", height=500
         )
         st.plotly_chart(fig_nb, key="nb_v", use_container_width=True)
@@ -203,10 +208,10 @@ if df is not None:
         st.markdown(f"""
         <div class="metric-box" style="text-align: left;">
             <h3 style="color:#BFDBFE; margin:0;">{cuadrante}</h3>
-            <p><b>Potencial (IND_POT):</b> {d.IND_POT}% | <b>Desempeño (DES):</b> {d.DES}</p>
+            <p><b>Potencial:</b> {d.IND_POT}% | <b>Desempeño:</b> {d.DES}</p>
             <p><b>Autoevaluación Potencial:</b> {d.AUTO_POT}%</p>
             <hr style="border:0.5px solid #334155;">
-            <p style="font-size:0.85rem;">Análisis de Talento basado en el modelo Confa 2018.</p>
+            <p style="font-size:0.85rem;">Cruce estratégico basado en el Análisis de Talento Confa 2026.</p>
         </div>
         """, unsafe_allow_html=True)
 
@@ -227,6 +232,17 @@ if df is not None:
         - L5: Integrador Inspirador. Foco en integridad y valores. (Cohesión Interna)
         - L6: Mentor Socio. Foco en colaboración y mentoría. (Hacer la Diferencia)
         - L7: Visionario Sabio. Foco en propósito y visión de largo plazo. (Servicio)
+	CONTEXTO NINEBOX CONFA
+	Usa las 9 definiciones de CONFA 2018 para el análisis:
+	-ENIGMA: Líder con alto potencial pero desempeño bajo (ubicarlo bien o revisar jefe).
+	-ESTRELLA CRECIENTE: Alto potencial, desempeño esperado (sacar de zona de confort).
+	-SUPERESTRELLA: Mejor opción para sucesión (reconocer y premiar).
+	-DILEMA: Potencial medio, desempeño bajo (trabajar motivación).
+	-EMPLEADO CLAVE: Prometedor (retar y motivar).
+	-FUTURA ESTRELLA: Alto desempeño, potencial medio (puestos clave).
+	-ICEBERG: Bajo potencial y desempeño (observar o decidir desvinculación).
+	-EFECTIVO: Desempeño medio, bajo potencial (incitar a aprender cosas nuevas).
+	-PROFESIONAL CONFIABLE: Desempeño excepcional, bajo potencial liderazgo (reconocer esfuerzo y desarrollar liderazgo).
 
         REGLAS DE ORO: 
         - INICIA DIRECTAMENTE. PROHIBIDO SALUDOS O INTRODUCCIONES o RESMENES O APRECIACIONES.
@@ -240,7 +256,7 @@ if df is not None:
 
         ESTRUCTURA informe OBLIGATORIA:
         1. DESCRIPCIÓN POR NIVELES: Lista de L1 a L7 con el nombre de contexto Barret (Ejemplo L1: Gestor de Crisis). Clasifica cada nivel basándote en el 'Ponderado Individual' usando la rúbrica (Bajo, Medio, Alto, Superior) y las definiciones Barrett anteriores para generar una descripción según el modelo Barret y el nivel de la rubrica del líder. Siempre una lista de Nivel 1 a Nivel 7 no lo hagas en 1 solo párrafo porque confunde
-        2. ANÁLISIS DE AUTOVALORACIÓN: Un párrafo. Analiza alineación percepción interna (Autoevaluacion) vs colectiva (Ponderado individual que es la evaluación de Jefe directo, Colaboradores a cargo y Pares). Resalta donde la influencia externa es mayor a la autopercepción, o aquellos puntos donde la autoevaluacion sea mayor en rubrica a lo evaluado pues son 2 cosas differentes a trabajar según el nivel de conciencia.
+        2. ANÁLISIS DE AUTOVALORACIÓN: Un párrafo. Analiza alineación percepción interna (Autoevaluacion) vs colectiva (Ponderado individual que es la evaluación de Jefe directo, Colaboradores a cargo y Pares). Resalta donde la influencia externa es mayor a la autopercepción, o aquellos puntos donde la autoevaluacion sea mayor en rubrica a lo evaluado pues son 2 cosas diferentes a trabajar según el nivel de conciencia.
         3. MATRIZ DE MADUREZ: Un párrafo sólido. Analiza sintonía del líder (Ponderado Individual) con el Ponderado Organizacional basándote en la Rúbrica.
         4. PERFIL DE LIDERAZGO: Un párrafo sólido. Define el estilo predominante según el promedio más alto (Liderazgo: {round(liderazgo_prom,1)}%, Transición: {round(transicion_prom,1)}%, Gerencia: {round(gerencia_prom,1)}%) y ofrece 3 recomendaciones de expansión para llegar a un equilibrio de las 3 dimensiones (Liderazgo Transicion y Gerencia) punto seguido.
         5. POSICIONAMIENTO ESTRATÉGICO DE TALENTO (Potencial y NineBox): Un párrafo sólido y técnico. Identifica el cuadrante asignado ({cuadrante}) y utiliza su definición estratégica de Confa 2018 para explicar la situación actual del evaluado. Analiza la brecha o alineación entre la AUTO_POT ({d.AUTO_POT}%) y el IND_POT ({d.IND_POT}%), determinando si existe una sobrevaloración o una subvaloración del propio potencial de crecimiento. Establece la 'Tendencia de Transición' evaluando qué tan cerca está de los límites de la rúbrica (Bajo <60, Medio 60-80, Alto >80) y define, basándose en el cruce con DES (Nivel {d.DES}), qué acciones de retención, motivación o movilidad interna son imperativas para maximizar su valor en la organización. Si el IND_POT es significativamente más alto que la AUTO_POT, resalta el "Talento Oculto"; si es al contrario, analiza la necesidad de un ajuste de expectativas de carrera. Termina con una frase sobre la proyección de este perfil hacia posiciones de mayor jerarquía o roles técnicos expertos según sea el caso.
@@ -299,4 +315,4 @@ if df is not None:
 
                     output = pdf.output()
                     st.download_button(label="📥 Descargar Reporte Integral PDF", data=bytes(output), file_name=f"Reporte_Integral_{lider_sel}.pdf", mime="application/pdf")
-                except Exception as e: st.error(f"Error PDF: {e}")
+                except Exception as e: st.error(f"Error PDF:
