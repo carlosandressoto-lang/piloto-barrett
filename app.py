@@ -130,31 +130,57 @@ if df is not None:
     with c2: st.markdown("<div class='titulo-seccion'>Ponderado Individual</div>", unsafe_allow_html=True); st.plotly_chart(generar_fig_barras(v_ind, "", "#2ecc71"), use_container_width=True)
     with c3: st.markdown("<div class='titulo-seccion'>Ponderado Organizacional</div>", unsafe_allow_html=True); st.plotly_chart(generar_fig_barras(v_org, "", "#e74c3c"), use_container_width=True)
 
-    st.divider()
+st.divider()
     st.subheader("⏳ Resultados Evaluación 360° (Niveles Barrett)")
-    cl, cr1, cr2, cr3 = st.columns([0.6, 1, 1, 1])
+    
+    # Proporción ajustada para que la leyenda tenga espacio suficiente
+    cl, cr1, cr2, cr3 = st.columns([0.7, 1, 1, 1])
     
     with cl:
         st.markdown("<div class='titulo-seccion'>Nivel Barrett</div>", unsafe_allow_html=True)
+        
         niv_labels = ["L7-Visionario", "L6-Mentor", "L5-Auténtico", "L4-Facilitador", "L3-Desempeño", "L2-Relaciones", "L1-Crisis"]
+        
+        # AJUSTE MILIMÉTRICO:
+        # height: 350px y margin-top: 40px es la combinación que ancla el texto a las barras
         st.markdown(f"""
-            <div style="display: flex; flex-direction: column; justify-content: space-between; height: 330px; margin-top: 45px; padding-bottom: 15px; border-right: 1px solid rgba(128,128,128,0.3);">
-                {''.join([f'<div style="height: 40px; display: flex; align-items: center; justify-content: flex-end; font-size: 0.85rem; font-weight: bold; padding-right: 10px;">{n}</div>' for n in niv_labels])}
+            <div style="
+                display: flex; 
+                flex-direction: column; 
+                justify-content: space-between; 
+                height: 350px; 
+                margin-top: 40px;
+                padding-bottom: 10px;
+                border-right: 1px solid rgba(128, 128, 128, 0.3);
+            ">
+                {''.join([f'<div style="height: 45px; display: flex; align-items: center; justify-content: flex-end; font-size: 0.85rem; font-weight: bold; padding-right: 10px;">{n}</div>' for n in niv_labels])}
             </div>
         """, unsafe_allow_html=True)
 
-    fig_config = {"margin": dict(l=0, r=0, t=0, b=0), "height": 400}
+    # Bloqueamos el layout del gráfico para que no genere márgenes automáticos
+    fig_config_fix = {
+        "margin": dict(l=0, r=0, t=10, b=10), # Margen superior mínimo para que no baile
+        "height": 400,
+        "showlegend": False
+    }
 
     with cr1: 
         st.markdown("<div class='titulo-seccion'>Autovaloración</div>", unsafe_allow_html=True)
-        f1 = generar_fig_reloj(v_auto); f1.update_layout(**fig_config); st.plotly_chart(f1, key="r1", use_container_width=True)
+        f1 = generar_fig_reloj(v_auto)
+        f1.update_layout(**fig_config_fix)
+        st.plotly_chart(f1, key="r1_dash", use_container_width=True, config={'displayModeBar': False})
+
     with cr2: 
         st.markdown("<div class='titulo-seccion'>Individual</div>", unsafe_allow_html=True)
-        f2 = generar_fig_reloj(v_ind); f2.update_layout(**fig_config); st.plotly_chart(f2, key="r2", use_container_width=True)
+        f2 = generar_fig_reloj(v_ind)
+        f2.update_layout(**fig_config_fix)
+        st.plotly_chart(f2, key="r2_dash", use_container_width=True, config={'displayModeBar': False})
+
     with cr3: 
         st.markdown("<div class='titulo-seccion'>Organizacional</div>", unsafe_allow_html=True)
-        f3 = generar_fig_reloj(v_org); f3.update_layout(**fig_config); st.plotly_chart(f3, key="r3", use_container_width=True)
-
+        f3 = generar_fig_reloj(v_org)
+        f3.update_layout(**fig_config_fix)
+        st.plotly_chart(f3, key="r3_dash", use_container_width=True, config={'displayModeBar': False})
     st.divider()
     col_radar, col_dim = st.columns([1, 1])
     with col_radar:
