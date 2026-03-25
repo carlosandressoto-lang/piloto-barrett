@@ -184,7 +184,11 @@ if df is not None:
         ]
         for x0, x1, y0, y1, color, label in cuadrantes_specs:
             fig_nb.add_shape(type="rect", x0=x0, y0=y0, x1=x1, y1=y1, fillcolor=color, opacity=0.4, line=dict(color="white", width=1))
-            fig_nb.add_annotation(x=(x0+x1)/2, y=y1-2, text=label, showarrow=False, font=dict(size=8, color="rgba(255,255,255,0.5)"))
+            # AJUSTE: Color de fuente blanco sólido para visibilidad en cualquier tema
+            fig_nb.add_annotation(x=(x0+x1)/2, y=y1-2, text=label, showarrow=False, font=dict(size=8, color="white", weight="bold"))
+
+        # AJUSTE: Manejo de nombres largos con saltos de línea (wrap)
+        nombre_formateado = lider_sel.replace(' ', '<br>', 2) if len(lider_sel) > 20 else lider_sel
 
         # SIMPLE Y REAL: GRAFICACIÓN DEL PUNTO USANDO IND_POT DIRECTO
         fig_nb.add_trace(go.Scatter(
@@ -192,7 +196,7 @@ if df is not None:
             y=[d.IND_POT], 
             mode='markers+text', 
             marker=dict(size=25, color='white', symbol='diamond', line=dict(width=3, color='#BFDBFE')), 
-            text=[f"{lider_sel} ({round(d.IND_POT,2)}%)"], 
+            text=[f"<b>{nombre_formateado}</b><br>({round(d.IND_POT,2)}%)"], 
             textposition="top center",
             hovertext=f"Potencial Real: {d.IND_POT}%<br>Desempeño: {d.DES}"
         ))
