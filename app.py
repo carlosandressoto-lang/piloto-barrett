@@ -293,35 +293,40 @@ if df is not None:
                     img_dim = save_pdf_chart(fig_dim, "dim.png")
                     pdf.image(img_radar, x=10, w=95); pdf.image(img_dim, x=110, y=pdf.get_y()-65, w=90)
                     
-                    # 3. Relojes (SOLUCIÓN ESPECÍFICA DE HOMOGENEIDAD)
-# 3. Relojes (SOLUCIÓN DEFINITIVA DE SIMETRÍA)
-                    pdf.ln(10)
+# 3. Niveles de Madurez Barrett (Relojes) - SOLUCIÓN DE ALINEACIÓN FINAL
+                    pdf.ln(15) # Más espacio para que el título de sección no se pegue
                     pdf.set_font('Helvetica', 'B', 11)
                     pdf.cell(0, 10, '3. Niveles de Madurez Barrett (Relojes)', ln=True)
                     
-                    # Para que las gráficas sean IGUALES, las generamos todas SIN leyenda interna de Plotly
-                    # y manejamos el espacio del texto nosotros.
-                    img_r1 = save_pdf_chart(generar_fig_reloj(v_auto, incluir_leyenda=False), "r1p.png", title="Autoevaluacion")
-                    img_r2 = save_pdf_chart(generar_fig_reloj(v_ind, incluir_leyenda=False), "r2p.png", title="Ponderado Individual")
-                    img_r3 = save_pdf_chart(generar_fig_reloj(v_org, incluir_leyenda=False), "r3p.png", title="Ponderado Organizacional")
+                    # Función de guardado con margen extra para que el título se vea completo
+                    def save_pdf_chart_v2(fig, name, title=""):
+                        fig.update_layout(
+                            template="plotly", paper_bgcolor='white', plot_bgcolor='white', 
+                            font=dict(color='black'),
+                            title=dict(text=title, x=0.5, font=dict(size=14), y=0.95), # Título más abajo
+                            margin=dict(t=50, b=10, l=10, r=10) # Margen superior amplio
+                        )
+                        path = os.path.join(tmp_dir, name)
+                        fig.write_image(path, engine="kaleido", scale=2)
+                        return path
 
-                    # Posicionamiento manual para evitar que se pisen y asegurar títulos visibles
-                    y_inicial = pdf.get_y()
+                    # Reloj 1: CON LEYENDA (Para alinear perfectamente el texto con las barras)
+                    img_r1 = save_pdf_chart_v2(generar_fig_reloj(v_auto, incluir_leyenda=True), "r1p.png", title="Autoevaluacion")
                     
-                    # Colocamos las 3 imágenes con el mismo ancho (w=55) para que sean gemelas
-                    pdf.image(img_r1, x=25, y=y_inicial, w=55) 
-                    pdf.image(img_r2, x=80, y=y_inicial, w=55) 
-                    pdf.image(img_r3, x=135, y=y_inicial, w=55)
+                    # Reloj 2 y 3: SIN LEYENDA
+                    img_r2 = save_pdf_chart_v2(generar_fig_reloj(v_ind, incluir_leyenda=False), "r2p.png", title="Individual")
+                    img_r3 = save_pdf_chart_v2(generar_fig_reloj(v_org, incluir_leyenda=False), "r3p.png", title="Organizacional")
+
+                    y_relojes = pdf.get_y()
                     
-                    # Agregamos una columna de texto a la izquierda para los niveles (opcional para claridad)
-                    pdf.set_font('Helvetica', '', 7)
-                    pdf.set_text_color(150, 150, 150)
-                    niveles_txt = ["L7-Visionario", "L6-Mentor", "L5-Autentico", "L4-Facilitador", "L3-Desempeno", "L2-Relaciones", "L1-Crisis"]
-                    for i, txt in enumerate(niveles_txt):
-                        pdf.text(5, y_inicial + 15 + (i * 5.2), txt)
+                    # RELACIÓN MATEMÁTICA DE ANCHOS: 
+                    # El primero (con texto) es más ancho (w=75). Los otros dos son w=55.
+                    # Esto hace que la parte "de color" mida exactamente lo mismo en los tres.
+                    pdf.image(img_r1, x=5, y=y_relojes, w=75) 
+                    pdf.image(img_r2, x=82, y=y_relojes, w=55) 
+                    pdf.image(img_r3, x=139, y=y_relojes, w=55)
                     
-                    pdf.set_text_color(0, 0, 0) # Reset color
-                    pdf.ln(45) # Espacio para que el siguiente bloque no se pegue
+                    pdf.ln(50) # Salto de línea amplio para el siguiente bloque
                     # PÁGINA 2
                     pdf.add_page()
                     pdf.set_font('Helvetica', 'B', 11)
