@@ -130,20 +130,57 @@ if df is not None:
     with c2: st.markdown("<div class='titulo-seccion'>Ponderado Individual</div>", unsafe_allow_html=True); st.plotly_chart(generar_fig_barras(v_ind, "", "#2ecc71"), use_container_width=True)
     with c3: st.markdown("<div class='titulo-seccion'>Ponderado Organizacional</div>", unsafe_allow_html=True); st.plotly_chart(generar_fig_barras(v_org, "", "#e74c3c"), use_container_width=True)
 
-    st.divider()
+       st.divider()
     st.subheader("⏳ Resultados Evaluación 360° (Niveles Barrett)")
-    cl, cr1, cr2, cr3 = st.columns([0.5, 1, 1, 1])
+    
+    # Ajustamos la proporción de la primera columna (leyenda)
+    cl, cr1, cr2, cr3 = st.columns([0.6, 1, 1, 1])
+    
     with cl:
+        # Usamos el mismo estilo de título que los demás bloques para que el punto inicial Y sea igual
         st.markdown("<div class='titulo-seccion'>Nivel Barrett</div>", unsafe_allow_html=True)
-        niv_labels = ["L7-Visionario", "", "L6-Mentor", "", "L5-Auténtico", "L4-Facilitador", "L3-Desempeño", "L2-Relaciones", "L1-Crisis", ""]
-        st.markdown('<div class="leyenda-v3">' + ''.join([f'<div class="item-ley">{n}</div>' for n in niv_labels]) + '</div>', unsafe_allow_html=True)
-    with cr1: st.plotly_chart(generar_fig_reloj(v_auto), key="r1", use_container_width=True)
-    with cr2: st.plotly_chart(generar_fig_reloj(v_ind), key="r2", use_container_width=True)
-    with cr3: st.plotly_chart(generar_fig_reloj(v_org), key="r3", use_container_width=True)
+        
+        niv_labels = ["L7-Visionario", "L6-Mentor", "L5-Auténtico", "L4-Facilitador", "L3-Desempeño", "L2-Relaciones", "L1-Crisis"]
+        
+        # El secreto está en este contenedor HTML con padding-top para compensar el espacio del plot
+        st.markdown(f"""
+            <div style="
+                display: flex; 
+                flex-direction: column; 
+                justify-content: space-between; 
+                height: 330px; 
+                margin-top: 45px;
+                padding-bottom: 15px;
+                border-right: 1px solid rgba(128, 128, 128, 0.3);
+            ">
+                {''.join([f'<div style="height: 40px; display: flex; align-items: center; justify-content: flex-end; font-size: 0.85rem; font-weight: bold; padding-right: 10px;">{n}</div>' for n in niv_labels])}
+            </div>
+        """, unsafe_allow_html=True)
 
-    st.divider()
+    # Forzamos los márgenes del gráfico a 0 para que no se muevan solos
+    fig_config = {"margin": dict(l=0, r=0, t=0, b=0), "height": 400}
+
+    with cr1: 
+        st.markdown("<div class='titulo-seccion'>Autovaloración</div>", unsafe_allow_html=True)
+        fig_a = generar_fig_reloj(v_auto)
+        fig_a.update_layout(**fig_config)
+        st.plotly_chart(fig_a, key="r1", use_container_width=True)
+
+    with cr2: 
+        st.markdown("<div class='titulo-seccion'>Individual</div>", unsafe_allow_html=True)
+        fig_i = generar_fig_reloj(v_ind)
+        fig_i.update_layout(**fig_config)
+        st.plotly_chart(fig_i, key="r2", use_container_width=True)
+
+    with cr3: 
+        st.markdown("<div class='titulo-seccion'>Organizacional</div>", unsafe_allow_html=True)
+        fig_o = generar_fig_reloj(v_org)
+        fig_o.update_layout(**fig_config)
+        st.plotly_chart(fig_o, key="r3", use_container_width=True)
+        st.divider()
     col_radar, col_dim = st.columns([1, 1])
     with col_radar:
+        st.divider()
         st.subheader("🎯 Alineación de Consciencia")
         fig_radar = go.Figure()
         cats = ['L1','L2','L3','L4','L5','L6','L7']
