@@ -315,4 +315,4 @@ if df is not None:
 
                     output = pdf.output()
                     st.download_button(label="📥 Descargar Reporte Integral PDF", data=bytes(output), file_name=f"Reporte_Integral_{lider_sel}.pdf", mime="application/pdf")
-                except Exception as e: st.error(f"Error PDF:
+                except Exception as e: st.error(f"Error PDF: {e}")
