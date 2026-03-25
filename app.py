@@ -262,18 +262,37 @@ if df is not None:
                     img_radar = save_pdf_chart_final(fig_radar, "radar.png"); img_dim = save_pdf_chart_final(fig_dim, "dim.png")
                     y_radar = pdf.get_y(); pdf.image(img_radar, x=10, y=y_radar, w=95); pdf.image(img_dim, x=110, y=y_radar + 5, w=90)
                     
-                    # 3. Relojes (LEYENDA MANUAL ALIÑADA)
-                    pdf.set_y(y_radar + 63); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, '3. Niveles de Madurez Barrett (Relojes)', ln=True)
-                    img_r1 = save_pdf_chart_final(generar_fig_reloj(v_auto, incluir_leyenda=False), "r1p.png", title="Auto")
-                    img_r2 = save_pdf_chart_final(generar_fig_reloj(v_ind, incluir_leyenda=False), "r2p.png", title="Indiv")
-                    img_r3 = save_pdf_chart_final(generar_fig_reloj(v_org, incluir_leyenda=False), "r3p.png", title="Org")
-                    y_reloj = pdf.get_y()
-                    pdf.image(img_r1, x=35, y=y_reloj, w=53); pdf.image(img_r2, x=88, y=y_reloj, w=53); pdf.image(img_r3, x=141, y=y_reloj, w=53)
-                    
-                    pdf.set_font('Helvetica', '', 8); pdf.set_text_color(100, 100, 100)
-                    niv_txt = ["L7-Visionario", "L6-Mentor", "L5-Auténtico", "L4-Facilitador", "L3-Desempeño", "L2-Relaciones", "L1-Crisis"]
-                    for i, txt in enumerate(niv_txt): pdf.text(10, y_reloj + 16 + (i * 5.15), txt)
-                    pdf.set_text_color(0, 0, 0)
+# --- REEMPLAZA ESTA PARTE EN TU GENERADOR DE PDF ---
+
+# 3. Niveles de Madurez Barrett (Relojes)
+pdf.set_y(y_radar + 65) # Fijamos el inicio para evitar huecos
+pdf.set_font('Helvetica', 'B', 11)
+pdf.cell(0, 10, '3. Niveles de Madurez Barrett (Relojes)', ln=True)
+
+# Guardamos los relojes asegurando que NO tengan leyenda interna que deforme el lienzo
+img_r1 = save_pdf_chart_final(generar_fig_reloj(v_auto, incluir_leyenda=False), "r1p.png", title="Auto")
+img_r2 = save_pdf_chart_final(generar_fig_reloj(v_ind, incluir_leyenda=False), "r2p.png", title="Indiv")
+img_r3 = save_pdf_chart_final(generar_fig_reloj(v_org, incluir_leyenda=False), "r3p.png", title="Org")
+
+y_reloj_bloque = pdf.get_y()
+
+# Insertamos las 3 imágenes con el MISMO ancho para que sean clones
+# Las movemos a la derecha (x=35) para dejar el hueco de la leyenda manual
+pdf.image(img_r1, x=35, y=y_reloj_bloque, w=53) 
+pdf.image(img_r2, x=88, y=y_reloj_bloque, w=53) 
+pdf.image(img_r3, x=141, y=y_reloj_bloque, w=53)
+
+# LEYENDA MANUAL CONTROLADA (Aquí es donde se alinea nivel por nivel)
+pdf.set_font('Helvetica', '', 8)
+pdf.set_text_color(100, 100, 100)
+niveles_manual = ["L7-Visionario", "L6-Mentor", "L5-Autentico", "L4-Facilitador", "L3-Desempeno", "L2-Relaciones", "L1-Crisis"]
+
+# El ajuste de 16 y el paso de 5.15 es lo que garantiza que el texto quede frente a la barra
+for i, txt in enumerate(niveles_manual):
+    pdf.text(10, y_reloj_bloque + 16 + (i * 5.15), txt)
+
+pdf.set_text_color(0, 0, 0)
+pdf.ln(45) # Cerramos el bloque para que no se pegue lo que sigue
 
                     # PÁGINA 2: ESTRATEGIA Y ANÁLISIS
                     pdf.add_page(); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, '4. Posicionamiento Estratégico NineBox Confa', ln=True)
