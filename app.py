@@ -234,6 +234,7 @@ if df is not None:
                     pdf.image(save_pdf_chart_final(fig_dim, "dim.png", ""), x=110, y=y_radar + 5, w=90)
                     
                     # 3. Relojes Barrett (Sincronizados)
+                    pdf.ln(5)
                     pdf.set_y(y_radar + 63)
                     pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, '3. Niveles de Madurez Barrett (Relojes)', ln=True)
                     y_relojes_base = pdf.get_y()
