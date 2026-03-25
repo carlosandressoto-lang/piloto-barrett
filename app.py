@@ -294,23 +294,34 @@ if df is not None:
                     pdf.image(img_radar, x=10, w=95); pdf.image(img_dim, x=110, y=pdf.get_y()-65, w=90)
                     
                     # 3. Relojes (SOLUCIÓN ESPECÍFICA DE HOMOGENEIDAD)
+# 3. Relojes (SOLUCIÓN DEFINITIVA DE SIMETRÍA)
                     pdf.ln(10)
+                    pdf.set_font('Helvetica', 'B', 11)
                     pdf.cell(0, 10, '3. Niveles de Madurez Barrett (Relojes)', ln=True)
                     
-                    # Reloj 1: Con leyenda (Es más ancho para que quepa el texto L1-L7)
-                    img_r1 = save_pdf_chart(generar_fig_reloj(v_auto, incluir_leyenda=True), "r1p.png", title="Autoevaluación")
-                    
-                    # Reloj 2: Sin leyenda (Limpio para que la barra se vea del mismo tamaño que el anterior)
+                    # Para que las gráficas sean IGUALES, las generamos todas SIN leyenda interna de Plotly
+                    # y manejamos el espacio del texto nosotros.
+                    img_r1 = save_pdf_chart(generar_fig_reloj(v_auto, incluir_leyenda=False), "r1p.png", title="Autoevaluacion")
                     img_r2 = save_pdf_chart(generar_fig_reloj(v_ind, incluir_leyenda=False), "r2p.png", title="Ponderado Individual")
-                    
-                    # Reloj 3: Sin leyenda (Limpio)
                     img_r3 = save_pdf_chart(generar_fig_reloj(v_org, incluir_leyenda=False), "r3p.png", title="Ponderado Organizacional")
+
+                    # Posicionamiento manual para evitar que se pisen y asegurar títulos visibles
+                    y_inicial = pdf.get_y()
                     
-                    # Coordenadas exactas para que queden en línea recta:
-                    # El primero es x=10, w=70. Los otros dos compensan el espacio con y-40 y w=55
-                    pdf.image(img_r1, x=10, w=70) 
-                    pdf.image(img_r2, x=85, y=pdf.get_y()-40, w=55) 
-                    pdf.image(img_r3, x=145, y=pdf.get_y()-40, w=55)
+                    # Colocamos las 3 imágenes con el mismo ancho (w=55) para que sean gemelas
+                    pdf.image(img_r1, x=25, y=y_inicial, w=55) 
+                    pdf.image(img_r2, x=80, y=y_inicial, w=55) 
+                    pdf.image(img_r3, x=135, y=y_inicial, w=55)
+                    
+                    # Agregamos una columna de texto a la izquierda para los niveles (opcional para claridad)
+                    pdf.set_font('Helvetica', '', 7)
+                    pdf.set_text_color(150, 150, 150)
+                    niveles_txt = ["L7-Visionario", "L6-Mentor", "L5-Autentico", "L4-Facilitador", "L3-Desempeno", "L2-Relaciones", "L1-Crisis"]
+                    for i, txt in enumerate(niveles_txt):
+                        pdf.text(5, y_inicial + 15 + (i * 5.2), txt)
+                    
+                    pdf.set_text_color(0, 0, 0) # Reset color
+                    pdf.ln(45) # Espacio para que el siguiente bloque no se pegue
                     # PÁGINA 2
                     pdf.add_page()
                     pdf.set_font('Helvetica', 'B', 11)
