@@ -293,40 +293,39 @@ if df is not None:
                     img_dim = save_pdf_chart(fig_dim, "dim.png")
                     pdf.image(img_radar, x=10, w=95); pdf.image(img_dim, x=110, y=pdf.get_y()-65, w=90)
                     
-# 3. Niveles de Madurez Barrett (Relojes) - SOLUCIÓN DE ALINEACIÓN FINAL
-                    pdf.ln(15) # Más espacio para que el título de sección no se pegue
+# 3. Niveles de Madurez Barrett (Relojes) - SOLUCIÓN DE SIMETRÍA MATEMÁTICA
+                    pdf.ln(15) 
                     pdf.set_font('Helvetica', 'B', 11)
                     pdf.cell(0, 10, '3. Niveles de Madurez Barrett (Relojes)', ln=True)
                     
-                    # Función de guardado con margen extra para que el título se vea completo
-                    def save_pdf_chart_v2(fig, name, title=""):
+                    # Función con márgenes estandarizados para evitar deformaciones
+                    def save_pdf_chart_v3(fig, name, title="", tiene_leyenda=False):
                         fig.update_layout(
                             template="plotly", paper_bgcolor='white', plot_bgcolor='white', 
                             font=dict(color='black'),
-                            title=dict(text=title, x=0.5, font=dict(size=14), y=0.95), # Título más abajo
-                            margin=dict(t=50, b=10, l=10, r=10) # Margen superior amplio
+                            title=dict(text=title, x=0.5, font=dict(size=14), y=0.95),
+                            # Si tiene leyenda, le damos espacio a la izquierda, si no, lo cerramos
+                            margin=dict(t=60, b=20, l=80 if tiene_leyenda else 10, r=10)
                         )
                         path = os.path.join(tmp_dir, name)
                         fig.write_image(path, engine="kaleido", scale=2)
                         return path
 
-                    # Reloj 1: CON LEYENDA (Para alinear perfectamente el texto con las barras)
-                    img_r1 = save_pdf_chart_v2(generar_fig_reloj(v_auto, incluir_leyenda=True), "r1p.png", title="Autoevaluacion")
-                    
-                    # Reloj 2 y 3: SIN LEYENDA
-                    img_r2 = save_pdf_chart_v2(generar_fig_reloj(v_ind, incluir_leyenda=False), "r2p.png", title="Individual")
-                    img_r3 = save_pdf_chart_v2(generar_fig_reloj(v_org, incluir_leyenda=False), "r3p.png", title="Organizacional")
+                    # Generamos los 3 con la misma lógica de márgenes
+                    img_r1 = save_pdf_chart_v3(generar_fig_reloj(v_auto, incluir_leyenda=True), "r1p.png", title="Autoevaluacion", tiene_leyenda=True)
+                    img_r2 = save_pdf_chart_v3(generar_fig_reloj(v_ind, incluir_leyenda=False), "r2p.png", title="Individual", tiene_leyenda=False)
+                    img_r3 = save_pdf_chart_v3(generar_fig_reloj(v_org, incluir_leyenda=False), "r3p.png", title="Organizacional", tiene_leyenda=False)
 
                     y_relojes = pdf.get_y()
                     
-                    # RELACIÓN MATEMÁTICA DE ANCHOS: 
-                    # El primero (con texto) es más ancho (w=75). Los otros dos son w=55.
-                    # Esto hace que la parte "de color" mida exactamente lo mismo en los tres.
-                    pdf.image(img_r1, x=5, y=y_relojes, w=75) 
-                    pdf.image(img_r2, x=82, y=y_relojes, w=55) 
-                    pdf.image(img_r3, x=139, y=y_relojes, w=55)
+                    # AJUSTE DE TAMAÑOS: 
+                    # Reducimos el ancho general para que no se pisen y el escalado sea real.
+                    # Al darle w=68 al primero y w=50 a los otros, la zona de color queda igualada.
+                    pdf.image(img_r1, x=10, y=y_relojes, w=68) 
+                    pdf.image(img_r2, x=82, y=y_relojes, w=50) 
+                    pdf.image(img_r3, x=137, y=y_relojes, w=50)
                     
-                    pdf.ln(50) # Salto de línea amplio para el siguiente bloque
+                    pdf.ln(50)
                     # PÁGINA 2
                     pdf.add_page()
                     pdf.set_font('Helvetica', 'B', 11)
