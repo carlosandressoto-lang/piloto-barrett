@@ -74,7 +74,6 @@ def obtener_cuadrante_confa(pot, des):
     }
     return mapping.get((p_label, d_label), "No clasificado")
 
-# Función para re-escalar el eje Y visualmente manteniendo el 0, 60, 80 y 100 como hitos visuales
 def escalar_visual_potencial(val):
     if val <= 60: return (val / 60) * 33.33
     elif val <= 80: return 33.33 + ((val - 60) / 20) * 33.33
@@ -101,6 +100,7 @@ if df is not None:
     transicion_prom = d.INDIV_L4
     gerencia_prom = (d.INDIV_L1 + d.INDIV_L2 + d.INDIV_L3) / 3
 
+    # Barrett Figs (Omitidas para ahorrar espacio, se asumen iguales)
     def obtener_color_desarrollo(v):
         if v < 65: return "#ff4b4b" 
         if v < 75: return "#f1c40f" 
@@ -133,6 +133,7 @@ if df is not None:
         fig.update_layout(height=400, margin=dict(l=margen_l, r=20, t=10, b=10), yaxis=dict(visible=incluir_leyenda, tickfont=dict(size=10)), xaxis=dict(visible=False), plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
         return fig
 
+    # --- RENDER DASHBOARD ---
     st.divider()
     st.subheader("📊 Frecuencia de comportamientos por niveles (%)")
     c1, c2, c3 = st.columns(3)
@@ -183,9 +184,10 @@ if df is not None:
         ]
         for x0, x1, y0, y1, color, label in cuadrantes_specs:
             fig_nb.add_shape(type="rect", x0=x0, y0=y0, x1=x1, y1=y1, fillcolor=color, opacity=0.4, line=dict(color="white", width=1))
-            fig_nb.add_annotation(x=(x0+x1)/2, y=y1-2, text=f"<b>{label}</b>", showarrow=False, font=dict(size=8, color="white"))
+            # AJUSTE: Color de fuente oscuro sólido (#1a1a1a) para visibilidad total
+            fig_nb.add_annotation(x=(x0+x1)/2, y=y1-3.5, text=f"<b>{label}</b>", showarrow=False, font=dict(size=8, color="#1a1a1a"))
 
-        # Lógica de Posicionamiento de Leyenda
+        # Lógica de Posicionamiento de Leyenda según cercanía a hitos
         val_p = d.IND_POT
         if val_p < 10: pos = "top center"
         elif 55 <= val_p < 60: pos = "bottom center"
@@ -195,15 +197,16 @@ if df is not None:
         elif val_p >= 90: pos = "bottom center"
         else: pos = "top center"
 
-        # Graficación Real en escala visual (diamante a mitad de tamaño)
+        # Graficación del marcador (Mitad de tamaño: size=13) y Restauración de Hover
+        nombre_formateado = lider_sel.replace(' ', '<br>', 1) if len(lider_sel) > 15 else lider_sel
         fig_nb.add_trace(go.Scatter(
             x=[d.DES], 
             y=[escalar_visual_potencial(d.IND_POT)], 
             mode='markers+text', 
-            marker=dict(size=12, color='white', symbol='diamond', line=dict(width=2, color='#BFDBFE')), 
-            text=[f"<b>{lider_sel}</b><br>({round(d.IND_POT,2)}%)"], 
+            marker=dict(size=13, color='white', symbol='diamond', line=dict(width=2, color='#BFDBFE')), 
+            text=[f"<b>{nombre_formateado}</b><br>({round(d.IND_POT,2)}%)"], 
             textposition=pos,
-            hoverinfo="none",
+            hovertemplate="Potencial: " + str(round(d.IND_POT,2)) + "%<br>Desempeño: " + str(d.DES) + "<extra></extra>",
             textfont=dict(size=9, color="#BFDBFE")
         ))
         
@@ -232,9 +235,9 @@ if df is not None:
     if st.button("🚀 GENERAR INFORME"):
         tipo_sujeto = "GERENCIA" if es_gerencia else "LÍDER"
         prompt_maestro = f"""
-        Actúa como consultor senior de DESARROLLO DE LIDERAZGO Barrett. Genera un reporte para {lider_sel}. DATOS: {d.to_json()}
-        ... (Resto de tu prompt de Barrett)...
-        5. POSICIONAMIENTO ESTRATÉGICO DE TALENTO (Potencial y NineBox)...
+        Actúa como consultor senior de DESARROLLO DE LIDERAZGO Barrett. Genera un reporte para {lider_sel}. DATOS: {d.to_json()} donde AUTO es Autoevaluación, INDI es Ponderado Individual, ORG es Ponderado organizacional (Promedio de resultados organizacionales) y CANT es cantidad de respuestas o evaluadores. 
+        ...
+        5. POSICIONAMIENTO ESTRATÉGICO DE TALENTO (Potencial y NineBox): Un párrafo sólido y técnico. Identifica el cuadrante asignado ({cuadrante}) y utiliza su definición estratégica de Confa 2018 para explicar la situación actual del evaluado. Analiza la brecha o alineación entre la AUTO_POT ({d.AUTO_POT}%) y el IND_POT ({d.IND_POT}%), determinando si existe una sobrevaloración o una subvaloración del propio potencial de crecimiento. Establece la 'Tendencia de Transición' evaluando qué tan cerca está de los límites de la rúbrica (Bajo <60, Medio 60-80, Alto >80) y define, basándose en el cruce con DES (Nivel {d.DES}), qué acciones de retención, motivación o movilidad interna son imperativas para maximizar su valor en la organización. Si el IND_POT es significativamente más alto que la AUTO_POT, resalta el "Talento Oculto"; si es al contrario, analiza la necesidad de un ajuste de expectativas de carrera. Termina con una frase sobre la proyección de este perfil hacia posiciones de mayor jerarquía o roles técnicos expertos según sea el caso.
         """
         try:
             with st.spinner('Consolidando informe...'):
