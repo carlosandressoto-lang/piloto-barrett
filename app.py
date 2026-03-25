@@ -264,18 +264,40 @@ if df is not None:
                     pdf.image(img_radar, x=10, w=95); pdf.image(img_dim, x=110, y=pdf.get_y()-65, w=90)
 
                     # 3. Relojes Barrett (Estrategia de Gemelos con Leyenda Manual)
-                    pdf.ln(10); pdf.cell(0, 10, '3. Niveles de Madurez Barrett (Relojes)', ln=True)
-                    img_r1 = save_pdf_chart_final(generar_fig_reloj(v_auto, incluir_leyenda=False), "r1p.png", title="Auto")
-                    img_r2 = save_pdf_chart_final(generar_fig_reloj(v_ind, incluir_leyenda=False), "r2p.png", title="Indiv")
-                    img_r3 = save_pdf_chart_final(generar_fig_reloj(v_org, incluir_leyenda=False), "r3p.png", title="Org")
-                    y_pos_reloj = pdf.get_y()
-                    pdf.image(img_r1, x=35, y=y_pos_reloj, w=53); pdf.image(img_r2, x=88, y=y_pos_reloj, w=53); pdf.image(img_r3, x=141, y=y_pos_reloj, w=53)
+# 3. Niveles de Madurez Barrett (Relojes) - RESTAURACIÓN DE SOLUCIÓN VALIDADA
+                    pdf.ln(10)
+                    pdf.set_font('Helvetica', 'B', 11)
+                    pdf.cell(0, 10, '3. Niveles de Madurez Barrett (Relojes)', ln=True)
+
+                    # Función con márgenes estandarizados para evitar que la leyenda mueva la gráfica
+                    def save_pdf_chart_final(fig, name, title="", l_marg=10):
+                        fig.update_layout(
+                            template="plotly", paper_bgcolor='white', plot_bgcolor='white', 
+                            font=dict(color='black'),
+                            title=dict(text=title, x=0.5, font=dict(size=14), y=0.95),
+                            margin=dict(t=60, b=20, l=l_marg, r=10) # El margen l=80 es la clave
+                        )
+                        path = os.path.join(tmp_dir, name)
+                        fig.write_image(path, engine="kaleido", scale=2)
+                        return path
+
+                    # RELOJ 1: CON LEYENDA NATIVA (Se alinea sola con las barras)
+                    img_r1 = save_pdf_chart_final(generar_fig_reloj(v_auto, incluir_leyenda=True), "r1p.png", title="Auto", l_marg=80)
                     
-                    pdf.set_font('Helvetica', '', 8); pdf.set_text_color(100, 100, 100)
-                    niveles_txt = ["L7-Visionario", "L6-Mentor", "L5-Autentico", "L4-Facilitador", "L3-Desempeno", "L2-Relaciones", "L1-Crisis"]
-                    for i, txt in enumerate(niveles_txt):
-                        pdf.text(10, y_pos_reloj + 16 + (i * 5.15), txt)
-                    pdf.set_text_color(0, 0, 0); pdf.ln(45)
+                    # RELOJ 2 Y 3: SIN LEYENDA
+                    img_r2 = save_pdf_chart_final(generar_fig_reloj(v_ind, incluir_leyenda=False), "r2p.png", title="Individual", l_marg=10)
+                    img_r3 = save_pdf_chart_final(generar_fig_reloj(v_org, incluir_leyenda=False), "r3p.png", title="Org", l_marg=10)
+                    
+                    y_pos_reloj = pdf.get_y()
+                    
+                    # COORDINACIÓN DE ANCHOS (Para que las pirámides sean gemelas)
+                    # El primero es 68 porque incluye el texto, los otros son 50. 
+                    # Visualmente la parte de color queda igual.
+                    pdf.image(img_r1, x=10, y=y_pos_reloj, w=68)
+                    pdf.image(img_r2, x=82, y=y_pos_reloj, w=50)
+                    pdf.image(img_r3, x=137, y=y_pos_reloj, w=50)
+                    
+                    pdf.ln(50)
 
                     # PÁGINA 2: NineBox y Texto
                     pdf.add_page(); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, '4. Posicionamiento Estrategico NineBox Confa', ln=True)
