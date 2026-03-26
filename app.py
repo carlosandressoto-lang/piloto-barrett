@@ -122,7 +122,6 @@ if df is not None:
     if es_confa:
         df_grupo = df[~df['Nombre_Lider'].isin(["CONFA"]) & ~df['Nombre_Lider'].str.startswith("GER_")]
     elif es_gerencia:
-        # Buscamos por el valor de GER_LID que coincida con el nombre seleccionado
         df_grupo = df[df['GER_LID'] == lider_sel]
     else:
         df_grupo = df[df['Nombre_Lider'] == lider_sel]
@@ -194,17 +193,7 @@ if df is not None:
     
     with cnb1:
         fig_nb = go.Figure()
-        quads = [
-            (0.5, 1.5, 0, 33.33, "#440154", "ICEBERG"), 
-            (1.5, 2.5, 0, 33.33, "#482878", "EFECTIVOS"), 
-            (2.5, 3.5, 0, 33.33, "#3b528b", "PROF. CONFIABLES"), 
-            (0.5, 1.5, 33.33, 66.66, "#31688e", "DILEMA"), 
-            (1.5, 2.5, 33.33, 66.66, "#21918c", "EMPLEADOS CLAVE"), 
-            (2.5, 3.5, 33.33, 66.66, "#5ec962", "FUTURAS ESTRELLAS"), 
-            (0.5, 1.5, 66.66, 100, "#b5de2b", "ENIGMA"), 
-            (1.5, 2.5, 66.66, 100, "#fde725", "ESTRELLA CREC."), 
-            (2.5, 3.5, 66.66, 100, "#f89441", "SUPERESTRELLAS")
-        ]
+        quads = [(0.5, 1.5, 0, 33.33, "#440154", "ICEBERG"), (1.5, 2.5, 0, 33.33, "#482878", "EFECTIVOS"), (2.5, 3.5, 0, 33.33, "#3b528b", "PROF. CONFIABLES"), (0.5, 1.5, 33.33, 66.66, "#31688e", "DILEMA"), (1.5, 2.5, 33.33, 66.66, "#21918c", "EMPLEADOS CLAVE"), (2.5, 3.5, 33.33, 66.66, "#5ec962", "FUTURAS ESTRELLAS"), (0.5, 1.5, 66.66, 100, "#b5de2b", "ENIGMA"), (1.5, 2.5, 66.66, 100, "#fde725", "ESTRELLA CREC."), (2.5, 3.5, 66.66, 100, "#f89441", "SUPERESTRELLAS")]
         for x0, x1, y0, y1, color, label in quads:
             fig_nb.add_shape(type="rect", x0=x0, y0=y0, x1=x1, y1=y1, fillcolor=color, opacity=0.75, line=dict(color="rgba(255,255,255,0.3)", width=1))
             fig_nb.add_annotation(x=(x0+x1)/2, y=y1-2.5, text=f"<b>{label}</b>", showarrow=False, font=dict(size=9, color="white"))
@@ -220,46 +209,49 @@ if df is not None:
     with cnb2:
         st.markdown(f"<div class='metric-box'><h3>{cuadrante}</h3><hr><p><b>Potencial Individual:</b> {round(d.IND_POT,2)}%</p><p><b>Desempeño:</b> {d.DES}</p><p><b>Autoevaluación Potencial:</b> {round(d.AUTO_POT,2)}%</p></div>", unsafe_allow_html=True)
 
-    # --- MATRIZ VISUAL DE NOMBRES POR CUADRANTE ---
     if (es_confa or es_gerencia) and not df_grupo.empty:
         st.markdown("### 🗺️ Matriz de Ubicación de Talentos")
-        # Aseguramos que Cuadrante sea String
         df_grupo['Cuadrante'] = df_grupo.apply(lambda x: obtener_cuadrante_confa(x['IND_POT'], x['DES']), axis=1).astype(str)
         
-        c1, c2, c3 = st.columns(3)
-        with c1: 
+        c_mat1, c_mat2, c_mat3 = st.columns(3)
+        with c_mat1: 
             names = df_grupo[df_grupo['Cuadrante'].str.contains("ENIGMA", na=False)]['Nombre_Lider'].tolist()
             st.markdown(f"<div class='quadrant-box' style='background-color: #b5de2b;'><div class='quad-title'>ENIGMA</div><div class='name-list'>{'<br>'.join(names) if names else 'Sin registros'}</div></div>", unsafe_allow_html=True)
-        with c2:
+        with c_mat2:
             names = df_grupo[df_grupo['Cuadrante'].str.contains("CRECIMIENTO", na=False)]['Nombre_Lider'].tolist()
             st.markdown(f"<div class='quadrant-box' style='background-color: #fde725; color: black;'><div class='quad-title'>ESTRELLA CREC.</div><div class='name-list'>{'<br>'.join(names) if names else 'Sin registros'}</div></div>", unsafe_allow_html=True)
-        with c3:
+        with c_mat3:
             names = df_grupo[df_grupo['Cuadrante'].str.contains("SUPERESTRELLAS", na=False)]['Nombre_Lider'].tolist()
             st.markdown(f"<div class='quadrant-box' style='background-color: #f89441;'><div class='quad-title'>SUPERESTRELLAS</div><div class='name-list'>{'<br>'.join(names) if names else 'Sin registros'}</div></div>", unsafe_allow_html=True)
 
-        c4, c5, c6 = st.columns(3)
-        with c4:
+        c_mat4, c_mat5, c_mat6 = st.columns(3)
+        with c_mat4:
             names = df_grupo[df_grupo['Cuadrante'].str.contains("DILEMA", na=False)]['Nombre_Lider'].tolist()
             st.markdown(f"<div class='quadrant-box' style='background-color: #31688e;'><div class='quad-title'>DILEMA</div><div class='name-list'>{'<br>'.join(names) if names else 'Sin registros'}</div></div>", unsafe_allow_html=True)
-        with c5:
+        with c_mat5:
             names = df_grupo[df_grupo['Cuadrante'].str.contains("EMPLEADOS CLAVE", na=False)]['Nombre_Lider'].tolist()
             st.markdown(f"<div class='quadrant-box' style='background-color: #21918c;'><div class='quad-title'>EMPLEADOS CLAVE</div><div class='name-list'>{'<br>'.join(names) if names else 'Sin registros'}</div></div>", unsafe_allow_html=True)
-        with c6:
+        with c_mat6:
             names = df_grupo[df_grupo['Cuadrante'].str.contains("FUTURAS ESTRELLAS", na=False)]['Nombre_Lider'].tolist()
             st.markdown(f"<div class='quadrant-box' style='background-color: #5ec962;'><div class='quad-title'>FUTURAS ESTRELLAS</div><div class='name-list'>{'<br>'.join(names) if names else 'Sin registros'}</div></div>", unsafe_allow_html=True)
 
-        c7, c8, c9 = st.columns(3)
-        with c7:
+        c_mat7, c_mat8, c_mat9 = st.columns(3)
+        with c_mat7:
             names = df_grupo[df_grupo['Cuadrante'].str.contains("ICEBERG", na=False)]['Nombre_Lider'].tolist()
             st.markdown(f"<div class='quadrant-box' style='background-color: #440154;'><div class='quad-title'>ICEBERG</div><div class='name-list'>{'<br>'.join(names) if names else 'Sin registros'}</div></div>", unsafe_allow_html=True)
-        with c8:
+        with c_mat8:
             names = df_grupo[df_grupo['Cuadrante'].str.contains("EFECTIVOS", na=False)]['Nombre_Lider'].tolist()
             st.markdown(f"<div class='quadrant-box' style='background-color: #482878;'><div class='quad-title'>EFECTIVOS</div><div class='name-list'>{'<br>'.join(names) if names else 'Sin registros'}</div></div>", unsafe_allow_html=True)
-        with c9:
+        with c_mat9:
             names = df_grupo[df_grupo['Cuadrante'].str.contains("CONFIABLES", na=False)]['Nombre_Lider'].tolist()
             st.markdown(f"<div class='quadrant-box' style='background-color: #3b528b;'><div class='quad-title'>PROF. CONFIABLES</div><div class='name-list'>{'<br>'.join(names) if names else 'Sin registros'}</div></div>", unsafe_allow_html=True)
-    elif es_gerencia or es_confa:
-        st.warning("No se encontraron registros para la matriz de esta gerencia.")
+        
+        st.download_button(
+            label="📊 Descargar Lista de Talentos (CSV)",
+            data=df_grupo[['Nombre_Lider', 'GER_LID', 'Cuadrante', 'DES', 'IND_POT']].to_csv(index=False).encode('utf-8'),
+            file_name=f"Matriz_Talento_{lider_sel}.csv",
+            mime="text/csv",
+        )
 
     # --- BLOQUE IA: PROMPT MAESTRO INTEGRADO ---
     st.divider()
@@ -340,6 +332,7 @@ if df is not None:
                     pdf.set_font('Helvetica', '', 10)
                     pdf.multi_cell(0, 5, "El liderazgo en Confa se fundamenta en el Modelo de Barrett, un marco diseñado para liberar el potencial humano a través de la comprension de las necesidades y motivaciones que subyacen al comportamiento. Este modelo evalua siete niveles de consciencia, permitiendo a los lideres transitar desde la estabilidad operativa hasta el servicio con vision de futuro.\n\nEl enfoque de esta evaluacion no es punitivo, sino de desarrollo y aprendizaje. Busca identificar fortalezas y oportunidades de expansion para potenciar el bienestar individual y el proposito colectivo de Confa.")
                     pdf.ln(5); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Interpretacion de Niveles de Desarrollo', ln=True); pdf.ln(2)
+                    
                     pdf.set_font('Helvetica', 'B', 8); pdf.set_fill_color(240, 240, 240)
                     pdf.cell(40, 10, 'Nivel de Consciencia', 1, 0, 'C', True); pdf.cell(38, 10, 'Superior', 1, 0, 'C', True); pdf.cell(38, 10, 'Alto', 1, 0, 'C', True); pdf.cell(38, 10, 'Medio', 1, 0, 'C', True); pdf.cell(38, 10, 'Bajo', 1, 1, 'C', True)
                     pdf.set_font('Helvetica', '', 7)
@@ -352,48 +345,63 @@ if df is not None:
                 pdf.set_font('Helvetica', '', 12); pdf.cell(0, 8, f'Evaluado: {lider_sel}', ln=True, align='C')
                 pdf.set_font('Helvetica', 'B', 10); pdf.cell(0, 8, f'Total Evaluadores: {int(d.CANT_EVAL)} | Auto: {int(d.CANT_AUTO)} | Jefe: {int(d.CANT_JEFE)} | Pares: {int(d.CANT_PAR)} | Colab: {int(d.CANT_COL)}', ln=True, align='C')
                 
-                pdf.ln(2); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Frecuencia de comportamientos por niveles (%)', ln=True)
+                pdf.ln(2); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, '📊 Frecuencia de comportamientos por niveles (%)', ln=True)
                 y_frec = pdf.get_y()
                 pdf.image(save_pdf_chart(generar_fig_barras(v_auto, "", "#3498db"), "b1.png", "Autoevaluacion"), x=10, y=y_frec, w=60)
                 pdf.image(save_pdf_chart(generar_fig_barras(v_ind, "", "#2ecc71"), "b2.png", "Evaluacion 360"), x=75, y=y_frec, w=60)
                 pdf.image(save_pdf_chart(generar_fig_barras(v_org, "", "#e74c3c"), "b3.png", "Promedio Organizacional"), x=140, y=y_frec, w=60)
                 
-                pdf.set_y(y_frec + 43); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Resultados Evaluacion 360 (Niveles Barrett)', ln=True)
+                pdf.set_y(y_frec + 43); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, '⏳ Resultados Evaluación 360° (Niveles Barrett)', ln=True)
                 y_relojes_base = pdf.get_y()
                 pdf.image(save_pdf_chart(generar_fig_reloj(v_auto, False), "r1p.png", "Autoevaluacion"), x=35, y=y_relojes_base+3, w=60)
                 pdf.image(save_pdf_chart(generar_fig_reloj(v_ind, False), "r2p.png", "Evaluacion 360"), x=88, y=y_relojes_base+3, w=60)
                 pdf.image(save_pdf_chart(generar_fig_reloj(v_org, False), "r3p.png", "Promedio organizacional"), x=141, y=y_relojes_base+3, w=60)
                 
                 pdf.set_font('Helvetica', '', 7); pdf.set_text_color(100, 100, 100)
-                niv_m = ["L7-Visionario", "L6-Mentor Socio", "L5-Autentico", "L4-Facilitador Innovador", "L3-Gestor de Desempeño", "L2-Gestor de Relaciones", "L1-Gestor de Crisis"]
+                niv_m = ["L7-Visionario", "L6-Mentor", "L5-Autentico", "L4-Facilitador", "L3-Desempeño", "L2-Relaciones", "L1-Crisis"]
                 for i, txt in enumerate(niv_m): pdf.text(10, y_relojes_base + 10 + (i * 4), txt)
                 pdf.set_text_color(0, 0, 0)
                 
-                pdf.set_y(y_relojes_base + 45); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Alineacion de Consciencia e Indice de Equilibrio', ln=True)
+                pdf.set_y(y_relojes_base + 45); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, '🎯 Alineación de Consciencia e ⚖️ Índice de Equilibrio', ln=True)
                 y_radar = pdf.get_y()
                 pdf.image(save_pdf_chart(fig_radar, "radar.png", ""), x=10, y=y_radar, w=95)
                 pdf.image(save_pdf_chart(fig_dim, "dim.png", ""), x=110, y=y_radar + 5, w=90)
 
                 if tipo == "GH":
-                    pdf.add_page(); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Mapa de Talento NineBox Confa', ln=True)
+                    pdf.add_page(); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, '🟦 Mapa de Talento NineBox Confa', ln=True)
                     fig_nb.update_layout(template="plotly", paper_bgcolor='white', plot_bgcolor='white', font=dict(color='black'))
                     img_nb = os.path.join(tmp_dir, "nb.png"); fig_nb.write_image(img_nb, engine="kaleido", scale=4); pdf.image(img_nb, x=25, w=160)
+                    
+                    if es_confa or es_gerencia:
+                        pdf.add_page(); pdf.set_font('Helvetica', 'B', 14); pdf.cell(0, 10, 'Matriz de Ubicacion de Talentos (Detalle)', ln=True); pdf.ln(5)
+                        pdf.set_font('Helvetica', 'B', 9); pdf.set_fill_color(240, 240, 240)
+                        
+                        cuadrantes_pdf = [
+                            ("ENIGMA", "#b5de2b"), ("ESTRELLA CREC.", "#fde725"), ("SUPERESTRELLAS", "#f89441"),
+                            ("DILEMA", "#31688e"), ("EMPLEADOS CLAVE", "#21918c"), ("FUTURAS ESTRELLAS", "#5ec962"),
+                            ("ICEBERG", "#440154"), ("EFECTIVOS", "#482878"), ("PROF. CONFIABLES", "#3b528b")
+                        ]
+                        
+                        for label, color in cuadrantes_pdf:
+                            # Filtrar nombres para este cuadrante
+                            keyword = label.split()[0]
+                            nombres = df_grupo[df_grupo['Cuadrante'].str.contains(keyword, na=False)]['Nombre_Lider'].tolist()
+                            pdf.set_font('Helvetica', 'B', 10)
+                            pdf.cell(0, 8, f">> {label}", ln=True, fill=True)
+                            pdf.set_font('Helvetica', '', 9)
+                            if nombres:
+                                pdf.multi_cell(0, 6, ", ".join(nombres))
+                            else:
+                                pdf.cell(0, 6, "Sin registros", ln=True)
+                            pdf.ln(2)
 
                 pdf.add_page(); pdf.set_font('Helvetica', 'B', 13); pdf.cell(0, 10, 'Analisis Ejecutivo Estrategico', ln=True); pdf.ln(5)
                 pdf.set_font('Helvetica', '', 10)
                 
                 texto_ia = st.session_state.informe_cache[lider_sel]
                 if tipo == "COLABORADOR":
-                    # Esta versión es mucho más amplia:
-                    # ^\s* -> Busca al inicio de cualquier línea (con posibles espacios)
-                    # \** -> Captura si hay negritas de Markdown
-                    # 5[\.\s:]+ -> Busca el número 5 seguido de punto, espacio o dos puntos
-                    # POSICIONAMIENTO -> Palabra ancla opcional para mayor seguridad
-                    # flags=re.MULTILINE -> Permite buscar el inicio del patrón en cualquier línea del texto
-                    
                     patron_corte = r'(?m)^\s*\**5[\.\s:]+POSICIONAMIENTO.*'
                     texto_ia = re.split(patron_corte, texto_ia, flags=re.IGNORECASE | re.DOTALL)[0]
-                    texto_ia = texto_ia.strip()
                 
                 limpio = texto_ia.replace("**", "").encode('latin-1', 'replace').decode('latin-1')
                 pdf.multi_cell(0, 6, limpio)
