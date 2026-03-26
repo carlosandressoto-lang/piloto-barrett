@@ -193,7 +193,17 @@ if df is not None:
     
     with cnb1:
         fig_nb = go.Figure()
-        quads = [(0.5, 1.5, 0, 33.33, "#440154", "ICEBERG"), (1.5, 2.5, 0, 33.33, "#482878", "EFECTIVOS"), (2.5, 3.5, 0, 33.33, "#3b528b", "PROF. CONFIABLES"), (0.5, 1.5, 33.33, 66.66, "#31688e", "DILEMA"), (1.5, 2.5, 33.33, 66.66, "#21918c", "EMPLEADOS CLAVE"), (2.5, 3.5, 33.33, 66.66, "#5ec962", "FUTURAS ESTRELLAS"), (0.5, 1.5, 66.66, 100, "#b5de2b", "ENIGMA"), (1.5, 2.5, 66.66, 100, "#fde725", "ESTRELLA CREC."), (2.5, 3.5, 66.66, 100, "#f89441", "SUPERESTRELLAS")]
+        quads = [
+            (0.5, 1.5, 0, 33.33, "#440154", "ICEBERG"), 
+            (1.5, 2.5, 0, 33.33, "#482878", "EFECTIVOS"), 
+            (2.5, 3.5, 0, 33.33, "#3b528b", "PROF. CONFIABLES"), 
+            (0.5, 1.5, 33.33, 66.66, "#31688e", "DILEMA"), 
+            (1.5, 2.5, 33.33, 66.66, "#21918c", "EMPLEADOS CLAVE"), 
+            (2.5, 3.5, 33.33, 66.66, "#5ec962", "FUTURAS ESTRELLAS"), 
+            (0.5, 1.5, 66.66, 100, "#b5de2b", "ENIGMA"), 
+            (1.5, 2.5, 66.66, 100, "#fde725", "ESTRELLA CREC."), 
+            (2.5, 3.5, 66.66, 100, "#f89441", "SUPERESTRELLAS")
+        ]
         for x0, x1, y0, y1, color, label in quads:
             fig_nb.add_shape(type="rect", x0=x0, y0=y0, x1=x1, y1=y1, fillcolor=color, opacity=0.75, line=dict(color="rgba(255,255,255,0.3)", width=1))
             fig_nb.add_annotation(x=(x0+x1)/2, y=y1-2.5, text=f"<b>{label}</b>", showarrow=False, font=dict(size=9, color="white"))
@@ -245,13 +255,6 @@ if df is not None:
         with c_mat9:
             names = df_grupo[df_grupo['Cuadrante'].str.contains("CONFIABLES", na=False)]['Nombre_Lider'].tolist()
             st.markdown(f"<div class='quadrant-box' style='background-color: #3b528b;'><div class='quad-title'>PROF. CONFIABLES</div><div class='name-list'>{'<br>'.join(names) if names else 'Sin registros'}</div></div>", unsafe_allow_html=True)
-        
-        st.download_button(
-            label="📊 Descargar Lista de Talentos (CSV)",
-            data=df_grupo[['Nombre_Lider', 'GER_LID', 'Cuadrante', 'DES', 'IND_POT']].to_csv(index=False).encode('utf-8'),
-            file_name=f"Matriz_Talento_{lider_sel}.csv",
-            mime="text/csv",
-        )
 
     # --- BLOQUE IA: PROMPT MAESTRO INTEGRADO ---
     st.divider()
@@ -298,8 +301,8 @@ if df is not None:
         1. DESCRIPCIÓN POR NIVELES: Lista de L1 a L7 con el nombre de contexto Barret (Ejemplo Nivel 1: Gestor de Crisis). Clasifica cada nivel basándote en el 'Ponderado Individual' usando la rúbrica (Bajo, Medio, Alto, Superior) y las definiciones Barrett anteriores para generar una descripción según el modelo Barret y el nivel de la rubrica del líder. Siempre una lista de Nivel 1 a Nivel 7 no lo hagas en 1 solo párrafo porque confunde
         2. ANÁLISIS DE AUTOVALORACIÓN: Un párrafo. Analiza alineación percepción interna (Autoevaluacion) vs colectiva (Ponderado individual que es la evaluación de Jefe directo, Colaboradores a cargo y Pares). Resalta donde la influencia externa es mayor a la autopercepción, o aquellos puntos donde la autoevaluacion sea mayor en rubrica a lo evaluado pues son 2 cosas diferentes a trabajar según el nivel de conciencia.
         3. MATRIZ DE MADUREZ: Un párrafo sólido. Analiza sintonía del líder (Ponderado Individual) con el Ponderado Organizacional basándote en la RÚBRICA NIVELES DE BARRET.
-        4. PERFIL DE LIDERAZGO: Un párrafo sólido. Define el estilo predominante según el promedio más alto (Liderazgo: {round(liderazgo_prom,1)}%, Transición: {round(transicion_prom,1)}%, Gerencia: {round(gerencia_prom,1)}%) y ofrece 3 recomendaciones de expansión para llegar a un equilibrio de las 3 dimensiones (Liderazgo Transicion y Gerencia) punto seguido.
-        5. POSICIONAMIENTO ESTRATÉGICO DE TALENTO (Potencial y NineBox): Un párrafo sólido y técnico. Identifica el cuadrante asignado ({cuadrante}) y utiliza su definición estratégica de Confa (CONTEXTO NINEBOX CONFA) para explicar la situación actual del evaluado. Analiza la brecha o alineación entre la Autoevaluacion de potencial (AUTO_POT ({d.AUTO_POT}%)) y el Resultado de evaluacion de potencial 360° ({d.IND_POT}%), determinando si existe una sobrevaloración o una subvaloración del propio potencial de crecimiento. Establece la 'Tendencia de Transición' evaluando qué tan cerca está de los límites de la rúbrica (Bajo <60, ALto 60-80, Superior >80) y define, basándose en el cruce con Desempeño Organizacional (Nivel {d.DES}), qué acciones de retención, motivación o movilidad interna son imperativas para maximizar su valor en la organización. Si el Resultado de evaluacion de potencial 360° es significativamente más alto que la Autoevaluacion de potencial, resalta el "Talento Oculto"; si es al contrario, analiza la necesidad de un ajuste de expectativas de carrera. Termina con una frase sobre la proyección de este perfil hacia posiciones de mayor jerarquía o roles técnicos expertos según sea el caso.
+        4. PERFIL DE LIDERAZGO: Un párrafo sólido. Define el estilo predominante según el promedio más alto (Liderazgo: {round(liderazgo_prom,1)}%, Transición: {round(transicion_prom,1)}%, Gerencia: {round(gerencia_prom,1)}%) y ofrece 3 recomendaciones de expansión para llegar a un equilibrio de las 3 dimensiones (Liderazgo Transicion and Gerencia) punto seguido.
+        5. POSICIONAMIENTO ESTRATÉGICO DE TALENTO (Potencial y NineBox): Un párrafo sólido y técnico. Identifica el cuadrante asignado ({cuadrante}) y utiliza su definición estratégica de Confa (CONTEXTO NINEBOX CONFA) para explicar la situación actual del evaluado. Analiza la brecha o alineación entre la Autoevaluacion de potencial (AUTO_POT ({d.AUTO_POT}%)) and el Resultado de evaluacion de potencial 360° ({d.IND_POT}%), determinando si existe una sobrevaloración o una subvaloración del propio potencial de crecimiento. Establece la 'Tendencia de Transición' evaluando qué tan cerca está de los límites de la rúbrica (Bajo <60, ALto 60-80, Superior >80) and define, basándose en el cruce con Desempeño Organizacional (Nivel {d.DES}), qué acciones de retención, motivación o movilidad interna son imperativas para maximizar su valor en la organización. Si el Resultado de evaluacion de potencial 360° es significativamente más alto que la Autoevaluacion de potencial, resalta el "Talento Oculto"; si es al contrario, analiza la necesidad de un ajuste de expectativas de carrera. Termina con una frase sobre la proyección de este perfil hacia posiciones de mayor jerarquía o roles técnicos expertos según sea el caso.
         """
         try:
             with st.spinner('Analizando...'):
@@ -325,94 +328,86 @@ if df is not None:
                     fig.write_image(path, engine="kaleido", scale=2)
                     return path
 
+                # --- PÁGINA 1: CONTEXTO (SOLO COLABORADOR) ---
                 if tipo == "COLABORADOR":
                     pdf.add_page()
                     pdf.set_font('Helvetica', 'B', 16); pdf.cell(0, 10, 'MODELO DE LIDERAZGO CONFA', ln=True, align='C'); pdf.ln(5)
-                    pdf.set_font('Helvetica', 'B', 12); pdf.cell(0, 10, 'Introduccion al Modelo Barrett', ln=True); pdf.ln(2)
+                    pdf.set_font('Helvetica', 'B', 12); pdf.cell(0, 10, 'Introducción al Modelo Barrett', ln=True); pdf.ln(2)
                     pdf.set_font('Helvetica', '', 10)
-                    pdf.multi_cell(0, 5, "El liderazgo en Confa se fundamenta en el Modelo de Barrett, un marco diseñado para liberar el potencial humano a través de la comprension de las necesidades y motivaciones que subyacen al comportamiento. Este modelo evalua siete niveles de consciencia, permitiendo a los lideres transitar desde la estabilidad operativa hasta el servicio con vision de futuro.\n\nEl enfoque de esta evaluacion no es punitivo, sino de desarrollo y aprendizaje. Busca identificar fortalezas y oportunidades de expansion para potenciar el bienestar individual y el proposito colectivo de Confa.")
-                    pdf.ln(5); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Interpretacion de Niveles de Desarrollo', ln=True); pdf.ln(2)
+                    pdf.multi_cell(0, 5, "El liderazgo en Confa se fundamenta en el Modelo de Barrett, un marco diseñado para liberar el potencial humano a través de la comprensión de las necesidades y motivaciones que subyacen al comportamiento. Este modelo evalúa siete niveles de consciencia, permitiendo a los líderes transitar desde la estabilidad operativa hasta el servicio con visión de futuro.\n\nEl enfoque de esta evaluación no es punitivo, sino de desarrollo y aprendizaje. Busca identificar fortalezas y oportunidades de expansión para potenciar el bienestar individual y el propósito colectivo de Confa.")
+                    pdf.ln(5); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Interpretación de Niveles de Desarrollo', ln=True); pdf.ln(2)
                     
-                    pdf.set_font('Helvetica', 'B', 8); pdf.set_fill_color(240, 240, 240)
-                    pdf.cell(40, 10, 'Nivel de Consciencia', 1, 0, 'C', True); pdf.cell(38, 10, 'Superior', 1, 0, 'C', True); pdf.cell(38, 10, 'Alto', 1, 0, 'C', True); pdf.cell(38, 10, 'Medio', 1, 0, 'C', True); pdf.cell(38, 10, 'Bajo', 1, 1, 'C', True)
-                    pdf.set_font('Helvetica', '', 7)
-                    filas = [["L7: Visionario", "Referente: Inspira a otros a trascender sus límites mediante un liderazgo humilde y sabio.", "Integra el bienestar del bien común en su toma de decisiones estratégicas.", "Comparte la visión del área con su equipo de manera periódica.", "Inicia la conexión de sus tareas con el propósito institucional de Confa."],
-                                ["L6: Mentor", "Socio Estratégico: Construye redes de valor que benefician a la comunidad y al entorno.", "Actúa como un coach que potencia el talento y la realización de su equipo.", "Brinda apoyo y guía técnica a sus compañeros cuando se requiere.", "Identifica oportunidades para colaborar con otros procesos y aliados."],
-                                ["L5: Integrador", "Embajador de Cultura: Es un ejemplo vivo de integridad que genera orgullo de pertenencia.", "Logra una alta cohesión en el equipo, alineando los esfuerzos hacia metas compartidas.", "Promueve activamente los valores de Confa para mantener el buen clima.", "Actúa con transparencia y honestidad en sus interacciones diarias."],
-                                ["L4: Facilitador", "Agente de Evolución: Empodera a las personas y lidera procesos de transformación e innovación.", "Facilita la autonomía del equipo y se adapta ágilmente a los cambios de prioridades.", "Promueve el aprendizaje a partir de los errores y delega tareas con claridad.", "Se muestra abierto a recibir retroalimentación y a probar nuevas formas de trabajo."],
-                                ["L3: Organizador", "Gestor de Excelencia: Simplifica la complejidad y asegura resultados excepcionales con eficiencia.", "Optimiza los procesos de su área buscando siempre la excelencia operativa.", "Organiza el trabajo mediante metas claras y el uso de métricas de desempeño.", "Cumple con los acuerdos y realiza seguimiento a sus tareas con orden."],
-                                ["L2: Relaciones", "Constructor de Armonía: Crea vínculos de confianza y lealtad basados en una escucha empática.", "Reconoce el buen trabajo de otros y aborda conversaciones difíciles con asertividad.", "Practica una comunicación clara y directa para gestionar acuerdos de trabajo.", "Trata a todas las personas con respeto y escucha las opiniones de los demás."],
-                                ["L1: Crisis", "Pilar de Viabilidad: Transmite serenidad en la incertidumbre y garantiza la sostenibilidad futura.", "Gestiona el presupuesto y las crisis con calma, asegurando la estabilidad del área.", "Se mantiene enfocado ante los problemas y analiza los riesgos antes de actuar.", "Cuida con responsabilidad los recursos y la seguridad de su equipo."]
-                            ]
-                    for f in filas:
-                        pdf.cell(40, 8, f[0], 1); pdf.cell(38, 8, f[1], 1); pdf.cell(38, 8, f[2], 1); pdf.cell(38, 8, f[3], 1); pdf.cell(38, 8, f[4], 1, 1)
+                    filas = [
+                        ["L7: Visionario (Servicio)", "Falta de etica o humildad. No conecta el dia a dia con el proposito mayor de Confa.", "Perspectiva ocasional. Entiende la vision pero solo la comparte en momentos clave o formales.", "Liderazgo etico. Decide pensando en el bien comun y comparte una vision clara seguido.", "Sabiduria y Humildad. Inspira a ir mas alla del minimo esperado y maneja el caos con calma total."],
+                        ["L6: Mentor (Hacer la Diferencia)", "Falta de empatia. Se enfoca solo en sus tareas y no en las relaciones externas o el entorno.", "Relaciones intermitentes. Colabora con otras areas solo cuando es estrictamente necesario para un proyecto.", "Mentor activo. Dedica tiempo a enseñar y dar retroalimentacion util para resolver mejor y mas rapido.", "Socio Estrategico. Maestro en coaching; crea alianzas que generan valor social y ambiental duradero."],
+                        ["L5: Integrador (Cohesión Interna)", "Falta de pasion y vision. No actua bajo los valores de la organizacion; genera desconfianza.", "Confianza selectiva. Explica el para que de las tareas solo a personas de su circulo cercano.", "Valores en accion. Decide con los valores de Confa en mente y mantiene un buen ambiente de equipo.", "Inspirador autentico. Su ejemplo hace que la gente se sienta profundamente orgullosa de su trabajo."],
+                        ["L4: Facilitador (Transformación)", "Controlador y rigido. Teme al riesgo; se enfoca poco en la innovacion o la estrategia de cambio.", "Cautela al cambio. Se adapta a las prioridades pero prefiere los metodos conocidos.", "Facilitador del aprendizaje. Delega con confianza y aprende de los errores para ayudar a otros.", "Evolucion Valiente. Empodera a las personas y promueve activamente el equilibrio vida-trabajo."],
+                        ["L3: Organizador (Autoestima)", "Burocratico o estatus. Falla al enfocarse en resultados; seguimiento inconsistente de metas.", "Productividad bajo procesos. Cumple acuerdos pero pone tramites de mas que frenan el trabajo.", "Orientado a la excelencia. Define metas claras, usa metricas y busca formas sencillas de trabajar mejor.", "Maestro de la Eficiencia. Domina la complejidad; deja practicas que funcionan perfectamente sin su presencia."],
+                        ["L2: Relaciones (Relación)", "Conflictivo o evitativo. Evita conversaciones dificiles o da muchas vueltas para hablar.", "Comunicacion puntual. Reconoce el buen trabajo pero no de forma constante o publica.", "Constructor de armonia. Gestiona conflictos, habla claro y a tiempo, incluso en temas dificiles.", "Conexion Total. Escucha de verdad, trata a todos con respeto y es accesible para todo el staff."],
+                        ["L1: Crisis (Supervivencia)", "Dictatorial o incapaz de confiar. Descuida la seguridad y bienestar del equipo; malgasta recursos.", "Viabilidad basica. Se mantiene tranquilo ante problemas menores pero se desborda en crisis reales.", "Gestion prudente. Piensa en los riesgos antes de decidir y cuida los recursos como si fueran propios.", "Calma en la Adversidad. Maneja el caos con sabiduria; es el pilar de seguridad y bienestar del equipo."]
+                    ]
+                    
+                    # Encabezados de tabla
+                    pdf.set_font('Helvetica', 'B', 7); pdf.set_fill_color(240, 240, 240)
+                    col_w = [30, 40, 40, 40, 40]
+                    headers = ["Nivel de Consciencia", "Bajo (Reactivo / Limitado)", "Medio (Funcional / En Desarrollo)", "Alto (Competente / Consistente)", "Superior (Ejemplar / Maestría)"]
+                    for i, h in enumerate(headers):
+                        pdf.cell(col_w[i], 10, h, 1, 0, 'C', True)
+                    pdf.ln()
 
+                    pdf.set_font('Helvetica', '', 6)
+                    for f in filas:
+                        y_pre = pdf.get_y()
+                        x_curr = 10
+                        max_h = 0
+                        # Primera pasada para determinar altura de fila
+                        for i, txt in enumerate(f):
+                            pdf.set_xy(x_curr + sum(col_w[:i]), y_pre)
+                            pdf.multi_cell(col_w[i], 3, txt, 0, 'L')
+                            if (pdf.get_y() - y_pre) > max_h: max_h = pdf.get_y() - y_pre
+                        
+                        # Segunda pasada para dibujar bordes y contenido real
+                        x_curr = 10
+                        for i, txt in enumerate(f):
+                            pdf.rect(x_curr + sum(col_w[:i]), y_pre, col_w[i], max_h)
+                            pdf.set_xy(x_curr + sum(col_w[:i]), y_pre)
+                            pdf.multi_cell(col_w[i], 3, txt, 0, 'L')
+                        
+                        pdf.set_y(y_pre + max_h)
+                        if pdf.get_y() > 260: pdf.add_page()
+
+                # --- PÁGINA DASHBOARD (AMBOS) ---
                 pdf.add_page()
                 pdf.set_font('Helvetica', 'B', 16); pdf.cell(0, 10, 'REPORTE ESTRATÉGICO INTEGRAL', ln=True, align='C')
                 pdf.set_font('Helvetica', '', 12); pdf.cell(0, 8, f'Evaluado: {lider_sel}', ln=True, align='C')
                 pdf.set_font('Helvetica', 'B', 10); pdf.cell(0, 8, f'Total Evaluadores: {int(d.CANT_EVAL)} | Auto: {int(d.CANT_AUTO)} | Jefe: {int(d.CANT_JEFE)} | Pares: {int(d.CANT_PAR)} | Colab: {int(d.CANT_COL)}', ln=True, align='C')
                 
-                pdf.ln(2); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Frecuencia de comportamientos por niveles (%)', ln=True)
+                pdf.ln(2); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, '📊 Frecuencia de comportamientos por niveles (%)', ln=True)
                 y_frec = pdf.get_y()
                 pdf.image(save_pdf_chart(generar_fig_barras(v_auto, "", "#3498db"), "b1.png", "Autoevaluacion"), x=10, y=y_frec, w=60)
                 pdf.image(save_pdf_chart(generar_fig_barras(v_ind, "", "#2ecc71"), "b2.png", "Evaluacion 360"), x=75, y=y_frec, w=60)
                 pdf.image(save_pdf_chart(generar_fig_barras(v_org, "", "#e74c3c"), "b3.png", "Promedio Organizacional"), x=140, y=y_frec, w=60)
                 
-                pdf.set_y(y_frec + 43); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Resultados Evaluación 360° (Niveles Barrett)', ln=True)
+                pdf.set_y(y_frec + 43); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, '⏳ Resultados Evaluación 360° (Niveles Barrett)', ln=True)
                 y_relojes_base = pdf.get_y()
                 pdf.image(save_pdf_chart(generar_fig_reloj(v_auto, False), "r1p.png", "Autoevaluacion"), x=35, y=y_relojes_base+3, w=60)
                 pdf.image(save_pdf_chart(generar_fig_reloj(v_ind, False), "r2p.png", "Evaluacion 360"), x=88, y=y_relojes_base+3, w=60)
                 pdf.image(save_pdf_chart(generar_fig_reloj(v_org, False), "r3p.png", "Promedio organizacional"), x=141, y=y_relojes_base+3, w=60)
                 
                 pdf.set_font('Helvetica', '', 7); pdf.set_text_color(100, 100, 100)
-                niv_m = ["L7-Visionario", "L6-Mentor", "L5-Autentico", "L4-Facilitador", "L3-Desempeño", "L2-Relaciones", "L1-Crisis"]
+                niv_m = ["L7-Visionario", "L6-Mentor Socio", "L5-Autentico", "L4-Facilitador Innovador", "L3-Gestor de Desempeno", "L2-Gestor de Relaciones", "L1-Gestor de Crisis"]
                 for i, txt in enumerate(niv_m): pdf.text(10, y_relojes_base + 10 + (i * 4), txt)
                 pdf.set_text_color(0, 0, 0)
                 
-                pdf.set_y(y_relojes_base + 45); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Alineación de Consciencia e Índice de Equilibrio', ln=True)
+                pdf.set_y(y_relojes_base + 45); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, '🎯 Alineación de Consciencia e ⚖️ Índice de Equilibrio', ln=True)
                 y_radar = pdf.get_y()
                 pdf.image(save_pdf_chart(fig_radar, "radar.png", ""), x=10, y=y_radar, w=95)
                 pdf.image(save_pdf_chart(fig_dim, "dim.png", ""), x=110, y=y_radar + 5, w=90)
 
                 if tipo == "GH":
-                    pdf.add_page(); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Mapa de Talento NineBox Confa', ln=True)
+                    pdf.add_page(); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, '🟦 Mapa de Talento NineBox Confa', ln=True)
                     fig_nb.update_layout(template="plotly", paper_bgcolor='white', plot_bgcolor='white', font=dict(color='black'))
                     img_nb = os.path.join(tmp_dir, "nb.png"); fig_nb.write_image(img_nb, engine="kaleido", scale=4); pdf.image(img_nb, x=25, w=160)
-                    
-                    if es_confa or es_gerencia:
-                        pdf.add_page()
-                        pdf.set_font('Helvetica', 'B', 14)
-                        pdf.cell(0, 10, 'Matriz de Ubicación de Talentos (Detalle)', ln=True)
-                        pdf.ln(5)
-                        
-                        # Definición de los cuadrantes a listar
-                        cuads_pdf = [
-                            ("SUPERESTRELLAS", "#f89441"), ("ESTRELLA CREC.", "#fde725"), ("ENIGMA", "#b5de2b"),
-                            ("FUTURAS ESTRELLAS", "#5ec962"), ("EMPLEADOS CLAVE", "#21918c"), ("DILEMA", "#31688e"),
-                            ("PROF. CONFIABLES", "#3b528b"), ("EFECTIVOS", "#482878"), ("ICEBERG", "#440154")
-                        ]
-                        
-                        for label, color in cuads_pdf:
-                            # Filtrar nombres para este cuadrante
-                            # Usamos el split para capturar la primera palabra clave (ej: "ESTRELLA")
-                            keyword = label.split()[0]
-                            nombres = df_grupo[df_grupo['Cuadrante'].str.contains(keyword, na=False)]['Nombre_Lider'].tolist()
-                            
-                            # Encabezado del Cuadrante en la Tabla
-                            pdf.set_font('Helvetica', 'B', 10)
-                            pdf.set_fill_color(230, 230, 230) # Gris suave para el título
-                            pdf.cell(0, 8, f" Cuadrante: {label}", border=1, ln=True, fill=True)
-                            
-                            # Cuerpo de la Tabla (Nombres)
-                            pdf.set_font('Helvetica', '', 9)
-                            if nombres:
-                                # Unimos los nombres con comas y los ponemos en una celda multilínea con bordes
-                                texto_nombres = ", ".join(nombres)
-                                pdf.multi_cell(0, 6, texto_nombres, border=1)
-                            else:
-                                pdf.cell(0, 6, " Sin registros en este periodo", border=1, ln=True)
-                            
-                            pdf.ln(4) # Espacio entre cuadrantes
 
                 pdf.add_page(); pdf.set_font('Helvetica', 'B', 13); pdf.cell(0, 10, 'Analisis Ejecutivo Estrategico', ln=True); pdf.ln(5)
                 pdf.set_font('Helvetica', '', 10)
