@@ -61,15 +61,15 @@ df = load_data()
 # --- 4. LÓGICAS VISUALES ---
 def obtener_cuadrante_confa(pot, des):
     if pot < 60: p_label = "BAJO"
-    elif pot < 80: p_label = "MEDIO"
-    else: p_label = "ALTO"
+    elif pot < 80: p_label = "ALTO"
+    else: p_label = "SUPERIOR"
     if des <= 1: d_label = "BAJO"
-    elif des <= 2: d_label = "MEDIO"
-    else: d_label = "ALTO"
+    elif des <= 2: d_label = "ALTO"
+    else: d_label = "SUPERIOR"
     mapping = {
-        ("ALTO", "BAJO"): "ENIGMA: Diamante en bruto", ("ALTO", "MEDIO"): "FUTURA ESTRELLA EN CRECIMIENTO", ("ALTO", "ALTO"): "FUTUROS LIDERES: Superestrellas",
-        ("MEDIO", "BAJO"): "DILEMA", ("MEDIO", "MEDIO"): "EMPLEADOS CLAVE", ("MEDIO", "ALTO"): "FUTURAS ESTRELLAS",
-        ("BAJO", "BAJO"): "ICEBERG", ("BAJO", "MEDIO"): "EFECTIVOS", ("BAJO", "ALTO"): "PROFESIONALES CONFIABLES"
+        ("SUPERIOR", "BAJO"): "ENIGMA: DIAMANTE EN BRUTO", ("SUPERIOR", "ALTO"): "FUTURA ESTRELLA EN CRECIMIENTO", ("SUPERIOR", "SUPERIOR"): "FUTUROS LIDERES: SUPERESTRELLAS",
+        ("ALTO", "BAJO"): "DILEMA", ("ALTO", "ALTO"): "EMPLEADOS CLAVE", ("ALTO", "SUPERIOR"): "FUTURAS ESTRELLAS",
+        ("BAJO", "BAJO"): "ICEBERG", ("BAJO", "ALTO"): "EFECTIVOS", ("BAJO", "SUPERIOR"): "PROFESIONALES CONFIABLES"
     }
     return mapping.get((p_label, d_label), "No clasificado")
 
@@ -86,7 +86,7 @@ def obtener_etiqueta(v):
     return "Superior"
 
 def generar_fig_barras(vals, titulo, color):
-    labels = ['L7-Visionario', 'L6-Mentor', 'L5-Auténtico', 'L4-Facilitador', 'L3-Desempeño', 'L2-Relaciones', 'L1-Crisis']
+    labels = ['L7-Visionario', 'L6-Mentor Socio', 'L5-Auténtico', 'L4-Facilitador Innovador', 'L3-Gestor de Desempeño', 'L2-Gestor de Relaciones', 'L1-Gestor de Crisis']
     v_plot = [vals[6], vals[5], vals[4], vals[3], vals[2], vals[1], vals[0]]
     fig = go.Figure(go.Bar(x=v_plot, y=labels, orientation='h', marker_color=color, text=[f"{round(v,1)}%" for v in v_plot], textposition='inside', insidetextfont=dict(color='white')))
     fig.update_layout(title=dict(text=titulo, x=0.5), xaxis_range=[0, 105], template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(l=10, r=10, t=40, b=20), height=350, yaxis=dict(autorange="reversed"))
@@ -96,7 +96,7 @@ def generar_fig_reloj(vals, incluir_leyenda=False):
     anchos_base = [6, 5, 4, 3.2, 4, 5, 6] 
     v_rev = [vals[6], vals[5], vals[4], vals[3], vals[2], vals[1], vals[0]]
     colors_barrett = ["rgb(33,115,182)"]*3 + ["rgb(140,183,42)"] + ["rgb(241,102,35)"]*3
-    labels_niveles = ["L7-Visionario", "L6-Mentor", "L5-Auténtico", "L4-Facilitador", "L3-Desempeño", "L2-Relaciones", "L1-Crisis"]
+    labels_niveles = ['L7-Visionario', 'L6-Mentor Socio', 'L5-Auténtico', 'L4-Facilitador Innovador', 'L3-Gestor de Desempeño', 'L2-Gestor de Relaciones', 'L1-Gestor de Crisis']
     fig = go.Figure()
     fig.add_trace(go.Funnel(y=labels_niveles if incluir_leyenda else [1,2,3,4,5,6,7], x=anchos_base, textinfo="none", hoverinfo="none", marker={"color": colors_barrett, "line": {"width": 1, "color": "white"}}, connector={"visible": False}))
     for i, (val, ancho) in enumerate(zip(v_rev, anchos_base)):
@@ -135,7 +135,7 @@ if df is not None:
     cl, cr1, cr2, cr3 = st.columns([0.7, 1, 1, 1])
     with cl:
         st.markdown("<div class='titulo-seccion'>Nivel Barrett</div>", unsafe_allow_html=True)
-        niv_labels = ["L7-Visionario", "L6-Mentor", "L5-Auténtico", "L4-Facilitador", "L3-Desempeño", "L2-Relaciones", "L1-Crisis"]
+        niv_labels = ['L7-Visionario', 'L6-Mentor Socio', 'L5-Auténtico', 'L4-Facilitador Innovador', 'L3-Gestor de Desempeño', 'L2-Gestor de Relaciones', 'L1-Gestor de Crisis']
         st.markdown(f"""
             <div style="display: flex; flex-direction: column; justify-content: space-between; height: 350px; margin-top: 40px; padding-bottom: 15px; border-right: 1px solid rgba(128,128,128,0.3);">
                 {''.join([f'<div style="height: 45px; display: flex; align-items: center; justify-content: flex-end; font-size: 0.85rem; font-weight: bold; padding-right: 10px;">{n}</div>' for n in niv_labels])}
@@ -188,7 +188,7 @@ if df is not None:
 
     # --- BLOQUE IA: PROMPT MAESTRO INTEGRADO ---
     st.divider()
-    if st.button("🚀 GENERAR ANÁLISIS ESTRATÉGICO"):
+    if st.button("🚀 GENERAR INFORME"):
         prompt_maestro = f"""Actúa como consultor senior de DESARROLLO DE LIDERAZGO Barrett. Genera un reporte para {lider_sel}. DATOS: {d.to_json()} donde AUTO es Autoevaluación, INDI es Ponderado Individual, ORG es Ponderado organizacional (Promedio de resultados organizacionales) y CANT es cantidad de respuestas o evaluadores. Si alguien tiene todo 0 en AUTO es porque no hizo Autoevalaucion para que lo tengas presente en la comparativa. Si ves que sus resultados INDI son muy bajos, revisa que al menos CANT_JEFE y CANT_PAR sean mínimo 1, si no ahí esta el error y dejaremos en el reporte ese hallazgo de forma obligatoria pues seria un sesgo matemático. Si no encontramos esas inconsistencias no mencionaremos por nada del mundo esta información en el resto del informe, si y solo si se cumplen una de esas restricciones.
         PROHIBIDO USAR ANGLICISMOS. REDACTA TODO EN ESPAÑOL PURO.
         CONTEXTO BARRETT:
@@ -215,18 +215,19 @@ if df is not None:
         - INICIA DIRECTAMENTE. PROHIBIDO SALUDOS O INTRODUCCIONES o RESMENES O APRECIACIONES.
         - PROHIBIDO USAR: "desempeño", "brechas", "puntos ciegos" o hablar desde defectos o fallos, debe ser un feedback totalmente apreciativo.
         - USA: "desarrollo", "alineación", "influencia", "oportunidad de expansión".
-        - RÚBRICA: Bajo (<65), Medio (65-75), Alto (75-85), Superior (>85).
+        - RÚBRICA NIVELES DE BARRET: Bajo (<65), Medio (65-75), Alto (75-85), Superior (>85).
+        - RÚBRICA DESEMPEÑO CONFA (POTENCIAL): DEBAJO DE LO ACORDADO = Bajo (1), EN LO ACORDADO = ALTO (2), SUPERA LO ACORDADO = SUPERIOR (3).
         - SI CANT_JEFE es 0: Debes iniciar el informe con una ADVERTENCIA ESTRATÉGICA indicando que el ponderado individual se ve severamente afectado (sesgo a la baja) debido a la ausencia de la valoración del líder directo (40% del peso).
         - SI CANT_PAR es 0: Debes iniciar el informe con una ADVERTENCIA ESTRATÉGICA indicando que el ponderado individual se ve severamente afectado (sesgo a la baja) debido a la ausencia de la valoración del minimo 1 par (20% del peso si tiene colaboradores a cargo, 40% si no tiene colaboradores a cargo).
         - SI CANT_AUTO es 0: Indica que no existe punto de comparación interno.
         - Si no hay estos ceros, no menciones nada de esto.
 
         ESTRUCTURA informe OBLIGATORIA:
-        1. DESCRIPCIÓN POR NIVELES: Lista de L1 a L7 con el nombre de contexto Barret (Ejemplo L1: Gestor de Crisis). Clasifica cada nivel basándote en el 'Ponderado Individual' usando la rúbrica (Bajo, Medio, Alto, Superior) y las definiciones Barrett anteriores para generar una descripción según el modelo Barret y el nivel de la rubrica del líder. Siempre una lista de Nivel 1 a Nivel 7 no lo hagas en 1 solo párrafo porque confunde
+        1. DESCRIPCIÓN POR NIVELES: Lista de L1 a L7 con el nombre de contexto Barret (Ejemplo Nivel 1: Gestor de Crisis). Clasifica cada nivel basándote en el 'Ponderado Individual' usando la rúbrica (Bajo, Medio, Alto, Superior) y las definiciones Barrett anteriores para generar una descripción según el modelo Barret y el nivel de la rubrica del líder. Siempre una lista de Nivel 1 a Nivel 7 no lo hagas en 1 solo párrafo porque confunde
         2. ANÁLISIS DE AUTOVALORACIÓN: Un párrafo. Analiza alineación percepción interna (Autoevaluacion) vs colectiva (Ponderado individual que es la evaluación de Jefe directo, Colaboradores a cargo y Pares). Resalta donde la influencia externa es mayor a la autopercepción, o aquellos puntos donde la autoevaluacion sea mayor en rubrica a lo evaluado pues son 2 cosas diferentes a trabajar según el nivel de conciencia.
-        3. MATRIZ DE MADUREZ: Un párrafo sólido. Analiza sintonía del líder (Ponderado Individual) con el Ponderado Organizacional basándote en la Rúbrica.
+        3. MATRIZ DE MADUREZ: Un párrafo sólido. Analiza sintonía del líder (Ponderado Individual) con el Ponderado Organizacional basándote en la RÚBRICA NIVELES DE BARRET.
         4. PERFIL DE LIDERAZGO: Un párrafo sólido. Define el estilo predominante según el promedio más alto (Liderazgo: {round(liderazgo_prom,1)}%, Transición: {round(transicion_prom,1)}%, Gerencia: {round(gerencia_prom,1)}%) y ofrece 3 recomendaciones de expansión para llegar a un equilibrio de las 3 dimensiones (Liderazgo Transicion y Gerencia) punto seguido.
-        5. POSICIONAMIENTO ESTRATÉGICO DE TALENTO (Potencial y NineBox): Un párrafo sólido y técnico. Identifica el cuadrante asignado ({cuadrante}) y utiliza su definición estratégica de Confa para explicar la situación actual del evaluado. Analiza la brecha o alineación entre la AUTO_POT ({d.AUTO_POT}%) y el IND_POT ({d.IND_POT}%), determinando si existe una sobrevaloración o una subvaloración del propio potencial de crecimiento. Establece la 'Tendencia de Transición' evaluando qué tan cerca está de los límites de la rúbrica (Bajo <60, Medio 60-80, Alto >80) y define, basándose en el cruce con DES (Nivel {d.DES}), qué acciones de retención, motivación o movilidad interna son imperativas para maximizar su valor en la organización. Si el IND_POT es significativamente más alto que la AUTO_POT, resalta el "Talento Oculto"; si es al contrario, analiza la necesidad de un ajuste de expectativas de carrera. Termina con una frase sobre la proyección de este perfil hacia posiciones de mayor jerarquía o roles técnicos expertos según sea el caso.
+        5. POSICIONAMIENTO ESTRATÉGICO DE TALENTO (Potencial y NineBox): Un párrafo sólido y técnico. Identifica el cuadrante asignado ({cuadrante}) y utiliza su definición estratégica de Confa (CONTEXTO NINEBOX CONFA) para explicar la situación actual del evaluado. Analiza la brecha o alineación entre la Autoevaluacion de potencial (AUTO_POT ({d.AUTO_POT}%)) y el Resultado de evaluacion de potencial 360° ({d.IND_POT}%), determinando si existe una sobrevaloración o una subvaloración del propio potencial de crecimiento. Establece la 'Tendencia de Transición' evaluando qué tan cerca está de los límites de la rúbrica (Bajo <60, ALto 60-80, Superior >80) y define, basándose en el cruce con Desempeño Organizacional (Nivel {d.DES}), qué acciones de retención, motivación o movilidad interna son imperativas para maximizar su valor en la organización. Si el Resultado de evaluacion de potencial 360° es significativamente más alto que la Autoevaluacion de potencial, resalta el "Talento Oculto"; si es al contrario, analiza la necesidad de un ajuste de expectativas de carrera. Termina con una frase sobre la proyección de este perfil hacia posiciones de mayor jerarquía o roles técnicos expertos según sea el caso.
         """
         try:
             with st.spinner('Analizando...'):
