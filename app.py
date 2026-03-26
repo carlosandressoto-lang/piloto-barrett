@@ -345,13 +345,13 @@ if df is not None:
                 pdf.set_font('Helvetica', '', 12); pdf.cell(0, 8, f'Evaluado: {lider_sel}', ln=True, align='C')
                 pdf.set_font('Helvetica', 'B', 10); pdf.cell(0, 8, f'Total Evaluadores: {int(d.CANT_EVAL)} | Auto: {int(d.CANT_AUTO)} | Jefe: {int(d.CANT_JEFE)} | Pares: {int(d.CANT_PAR)} | Colab: {int(d.CANT_COL)}', ln=True, align='C')
                 
-                pdf.ln(2); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, '📊 Frecuencia de comportamientos por niveles (%)', ln=True)
+                pdf.ln(2); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Frecuencia de comportamientos por niveles (%)', ln=True)
                 y_frec = pdf.get_y()
                 pdf.image(save_pdf_chart(generar_fig_barras(v_auto, "", "#3498db"), "b1.png", "Autoevaluacion"), x=10, y=y_frec, w=60)
                 pdf.image(save_pdf_chart(generar_fig_barras(v_ind, "", "#2ecc71"), "b2.png", "Evaluacion 360"), x=75, y=y_frec, w=60)
                 pdf.image(save_pdf_chart(generar_fig_barras(v_org, "", "#e74c3c"), "b3.png", "Promedio Organizacional"), x=140, y=y_frec, w=60)
                 
-                pdf.set_y(y_frec + 43); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, '⏳ Resultados Evaluación 360° (Niveles Barrett)', ln=True)
+                pdf.set_y(y_frec + 43); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Resultados Evaluación 360° (Niveles Barrett)', ln=True)
                 y_relojes_base = pdf.get_y()
                 pdf.image(save_pdf_chart(generar_fig_reloj(v_auto, False), "r1p.png", "Autoevaluacion"), x=35, y=y_relojes_base+3, w=60)
                 pdf.image(save_pdf_chart(generar_fig_reloj(v_ind, False), "r2p.png", "Evaluacion 360"), x=88, y=y_relojes_base+3, w=60)
@@ -362,13 +362,13 @@ if df is not None:
                 for i, txt in enumerate(niv_m): pdf.text(10, y_relojes_base + 10 + (i * 4), txt)
                 pdf.set_text_color(0, 0, 0)
                 
-                pdf.set_y(y_relojes_base + 45); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, '🎯 Alineación de Consciencia e ⚖️ Índice de Equilibrio', ln=True)
+                pdf.set_y(y_relojes_base + 45); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Alineación de Consciencia e Índice de Equilibrio', ln=True)
                 y_radar = pdf.get_y()
                 pdf.image(save_pdf_chart(fig_radar, "radar.png", ""), x=10, y=y_radar, w=95)
                 pdf.image(save_pdf_chart(fig_dim, "dim.png", ""), x=110, y=y_radar + 5, w=90)
 
                 if tipo == "GH":
-                    pdf.add_page(); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, '🟦 Mapa de Talento NineBox Confa', ln=True)
+                    pdf.add_page(); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Mapa de Talento NineBox Confa', ln=True)
                     fig_nb.update_layout(template="plotly", paper_bgcolor='white', plot_bgcolor='white', font=dict(color='black'))
                     img_nb = os.path.join(tmp_dir, "nb.png"); fig_nb.write_image(img_nb, engine="kaleido", scale=4); pdf.image(img_nb, x=25, w=160)
                     
