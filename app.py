@@ -132,56 +132,27 @@ if df is not None:
 
     st.divider()
     st.subheader("⏳ Resultados Evaluación 360° (Niveles Barrett)")
-    
-    # Proporción ajustada para que la leyenda tenga espacio suficiente
     cl, cr1, cr2, cr3 = st.columns([0.7, 1, 1, 1])
-    
     with cl:
         st.markdown("<div class='titulo-seccion'>Nivel Barrett</div>", unsafe_allow_html=True)
-        
         niv_labels = ["L7-Visionario", "L6-Mentor", "L5-Auténtico", "L4-Facilitador", "L3-Desempeño", "L2-Relaciones", "L1-Crisis"]
-        
-        # AJUSTE MILIMÉTRICO:
-        # height: 350px y margin-top: 40px es la combinación que ancla el texto a las barras
         st.markdown(f"""
-            <div style="
-                display: flex; 
-                flex-direction: column; 
-                justify-content: space-between; 
-                height: 350px; 
-                margin-top: 40px;
-                padding-bottom: 10px;
-                border-right: 1px solid rgba(128, 128, 128, 0.3);
-            ">
+            <div style="display: flex; flex-direction: column; justify-content: space-between; height: 350px; margin-top: 40px; padding-bottom: 15px; border-right: 1px solid rgba(128,128,128,0.3);">
                 {''.join([f'<div style="height: 45px; display: flex; align-items: center; justify-content: flex-end; font-size: 0.85rem; font-weight: bold; padding-right: 10px;">{n}</div>' for n in niv_labels])}
             </div>
         """, unsafe_allow_html=True)
 
-    # Bloqueamos el layout del gráfico para que no genere márgenes automáticos
-    fig_config_fix = {
-        "margin": dict(l=0, r=0, t=10, b=10), # Margen superior mínimo para que no baile
-        "height": 400,
-        "showlegend": False
-    }
-
+    fig_config_fix = {"margin": dict(l=0, r=0, t=10, b=10), "height": 400, "showlegend": False}
     with cr1: 
         st.markdown("<div class='titulo-seccion'>Autovaloración</div>", unsafe_allow_html=True)
-        f1 = generar_fig_reloj(v_auto)
-        f1.update_layout(**fig_config_fix)
-        st.plotly_chart(f1, key="r1_dash", use_container_width=True, config={'displayModeBar': False})
-
+        f1 = generar_fig_reloj(v_auto); f1.update_layout(**fig_config_fix); st.plotly_chart(f1, key="r1_dash", use_container_width=True, config={'displayModeBar': False})
     with cr2: 
         st.markdown("<div class='titulo-seccion'>Individual</div>", unsafe_allow_html=True)
-        f2 = generar_fig_reloj(v_ind)
-        f2.update_layout(**fig_config_fix)
-        st.plotly_chart(f2, key="r2_dash", use_container_width=True, config={'displayModeBar': False})
-
+        f2 = generar_fig_reloj(v_ind); f2.update_layout(**fig_config_fix); st.plotly_chart(f2, key="r2_dash", use_container_width=True, config={'displayModeBar': False})
     with cr3: 
         st.markdown("<div class='titulo-seccion'>Organizacional</div>", unsafe_allow_html=True)
-        f3 = generar_fig_reloj(v_org)
-        f3.update_layout(**fig_config_fix)
-        st.plotly_chart(f3, key="r3_dash", use_container_width=True, config={'displayModeBar': False})
-        
+        f3 = generar_fig_reloj(v_org); f3.update_layout(**fig_config_fix); st.plotly_chart(f3, key="r3_dash", use_container_width=True, config={'displayModeBar': False})
+
     st.divider()
     col_radar, col_dim = st.columns([1, 1])
     with col_radar:
@@ -215,9 +186,9 @@ if df is not None:
     with cnb2:
         st.markdown(f"<div class='metric-box'><h3>{cuadrante}</h3><hr><p><b>Potencial Individual:</b> {round(d.IND_POT,2)}%</p><p><b>Desempeño:</b> {d.DES}</p><p><b>Autoevaluación Potencial:</b> {round(d.AUTO_POT,2)}%</p></div>", unsafe_allow_html=True)
 
-    # --- BLOQUE IA: PROMPT MAESTRO ---
+    # --- BLOQUE IA: PROMPT MAESTRO INTEGRADO ---
     st.divider()
-    if st.button("🚀 GENERAR INFORME"):
+    if st.button("🚀 GENERAR ANÁLISIS ESTRATÉGICO"):
         prompt_maestro = f"""Actúa como consultor senior de DESARROLLO DE LIDERAZGO Barrett. Genera un reporte para {lider_sel}. DATOS: {d.to_json()} donde AUTO es Autoevaluación, INDI es Ponderado Individual, ORG es Ponderado organizacional (Promedio de resultados organizacionales) y CANT es cantidad de respuestas o evaluadores. Si alguien tiene todo 0 en AUTO es porque no hizo Autoevalaucion para que lo tengas presente en la comparativa. Si ves que sus resultados INDI son muy bajos, revisa que al menos CANT_JEFE y CANT_PAR sean mínimo 1, si no ahí esta el error y dejaremos en el reporte ese hallazgo de forma obligatoria pues seria un sesgo matemático. Si no encontramos esas inconsistencias no mencionaremos por nada del mundo esta información en el resto del informe, si y solo si se cumplen una de esas restricciones.
         PROHIBIDO USAR ANGLICISMOS. REDACTA TODO EN ESPAÑOL PURO.
         CONTEXTO BARRETT:
@@ -255,7 +226,7 @@ if df is not None:
         2. ANÁLISIS DE AUTOVALORACIÓN: Un párrafo. Analiza alineación percepción interna (Autoevaluacion) vs colectiva (Ponderado individual que es la evaluación de Jefe directo, Colaboradores a cargo y Pares). Resalta donde la influencia externa es mayor a la autopercepción, o aquellos puntos donde la autoevaluacion sea mayor en rubrica a lo evaluado pues son 2 cosas diferentes a trabajar según el nivel de conciencia.
         3. MATRIZ DE MADUREZ: Un párrafo sólido. Analiza sintonía del líder (Ponderado Individual) con el Ponderado Organizacional basándote en la Rúbrica.
         4. PERFIL DE LIDERAZGO: Un párrafo sólido. Define el estilo predominante según el promedio más alto (Liderazgo: {round(liderazgo_prom,1)}%, Transición: {round(transicion_prom,1)}%, Gerencia: {round(gerencia_prom,1)}%) y ofrece 3 recomendaciones de expansión para llegar a un equilibrio de las 3 dimensiones (Liderazgo Transicion y Gerencia) punto seguido.
-        5. POSICIONAMIENTO ESTRATÉGICO DE TALENTO (Potencial y NineBox): Un párrafo sólido y técnico. Identifica el cuadrante asignado ({cuadrante}) y utiliza su definición estratégica de Confa 2018 para explicar la situación actual del evaluado. Analiza la brecha o alineación entre la AUTO_POT ({d.AUTO_POT}%) y el IND_POT ({d.IND_POT}%), determinando si existe una sobrevaloración o una subvaloración del propio potencial de crecimiento. Establece la 'Tendencia de Transición' evaluando qué tan cerca está de los límites de la rúbrica (Bajo <60, Medio 60-80, Alto >80) y define, basándose en el cruce con DES (Nivel {d.DES}), qué acciones de retención, motivación o movilidad interna son imperativas para maximizar su valor en la organización. Si el IND_POT es significativamente más alto que la AUTO_POT, resalta el "Talento Oculto"; si es al contrario, analiza la necesidad de un ajuste de expectativas de carrera. Termina con una frase sobre la proyección de este perfil hacia posiciones de mayor jerarquía o roles técnicos expertos según sea el caso.
+        5. POSICIONAMIENTO ESTRATÉGICO DE TALENTO (Potencial y NineBox): Un párrafo sólido y técnico. Identifica el cuadrante asignado ({cuadrante}) y utiliza su definición estratégica de Confa para explicar la situación actual del evaluado. Analiza la brecha o alineación entre la AUTO_POT ({d.AUTO_POT}%) y el IND_POT ({d.IND_POT}%), determinando si existe una sobrevaloración o una subvaloración del propio potencial de crecimiento. Establece la 'Tendencia de Transición' evaluando qué tan cerca está de los límites de la rúbrica (Bajo <60, Medio 60-80, Alto >80) y define, basándose en el cruce con DES (Nivel {d.DES}), qué acciones de retención, motivación o movilidad interna son imperativas para maximizar su valor en la organización. Si el IND_POT es significativamente más alto que la AUTO_POT, resalta el "Talento Oculto"; si es al contrario, analiza la necesidad de un ajuste de expectativas de carrera. Termina con una frase sobre la proyección de este perfil hacia posiciones de mayor jerarquía o roles técnicos expertos según sea el caso.
         """
         try:
             with st.spinner('Analizando...'):
@@ -264,52 +235,102 @@ if df is not None:
                 st.write(res.text)
         except Exception as e: st.error(e)
 
-    # --- 6. REPORTE PDF ---
+    # --- 6. GENERACIÓN DE REPORTES PDF ---
     if lider_sel in st.session_state.informe_cache:
-        if st.button("📄 DESCARGAR PDF"):
-            try:
-                pdf = FPDF()
-                pdf.set_auto_page_break(auto=True, margin=15)
-                with tempfile.TemporaryDirectory() as tmp_dir:
-                    def save_pdf_chart(fig, name, title=""):
-                        fig.update_layout(template="plotly", paper_bgcolor='white', plot_bgcolor='white', font=dict(color='black'), title=dict(text=title, x=0.5, font=dict(size=14), y=0.95), margin=dict(t=60, b=20, l=10, r=10))
-                        path = os.path.join(tmp_dir, name)
-                        fig.write_image(path, engine="kaleido", scale=2)
-                        return path
+        st.divider()
+        col_btn1, col_btn2 = st.columns(2)
 
+        def generar_pdf_final(tipo="GH"):
+            pdf = FPDF()
+            pdf.set_auto_page_break(auto=True, margin=15)
+            
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                def save_pdf_chart(fig, name, title=""):
+                    fig.update_layout(template="plotly", paper_bgcolor='white', plot_bgcolor='white', font=dict(color='black'), title=dict(text=title, x=0.5, font=dict(size=14), y=0.95), margin=dict(t=60, b=20, l=10, r=10))
+                    path = os.path.join(tmp_dir, name)
+                    fig.write_image(path, engine="kaleido", scale=2)
+                    return path
+
+                # --- PÁGINA 1: CONTEXTO (SOLO COLABORADOR) ---
+                if tipo == "COLABORADOR":
                     pdf.add_page()
-                    pdf.set_font('Helvetica', 'B', 16); pdf.cell(0, 10, 'REPORTE ESTRATÉGICO INTEGRAL', ln=True, align='C')
-                    pdf.set_font('Helvetica', '', 12); pdf.cell(0, 8, f'Evaluado: {lider_sel}', ln=True, align='C')
-                    pdf.set_font('Helvetica', 'B', 10); pdf.cell(0, 8, f'Total Evaluadores: {int(d.CANT_EVAL)} | Auto: {int(d.CANT_AUTO)} | Jefe: {int(d.CANT_JEFE)} | Pares: {int(d.CANT_PAR)} | Colab: {int(d.CANT_COL)}', ln=True, align='C')
+                    pdf.set_font('Helvetica', 'B', 16); pdf.cell(0, 10, 'MODELO DE LIDERAZGO CONFA', ln=True, align='C'); pdf.ln(5)
+                    pdf.set_font('Helvetica', 'B', 12); pdf.cell(0, 10, 'Introduccion al Modelo Barrett', ln=True); pdf.ln(2)
+                    pdf.set_font('Helvetica', '', 10)
+                    pdf.multi_cell(0, 5, "El liderazgo en Confa se fundamenta en el Modelo de Barrett, un marco diseñado para liberar el potencial humano a través de la comprension de las necesidades y motivaciones que subyacen al comportamiento. Este modelo evalua siete niveles de consciencia, permitiendo a los lideres transitar desde la estabilidad operativa hasta el servicio con vision de futuro.\n\nEl enfoque de esta evaluacion no es punitivo, sino de desarrollo y aprendizaje. Busca identificar fortalezas y oportunidades de expansion para potenciar el bienestar individual y el proposito colectivo de Confa.")
+                    pdf.ln(5)
+                    pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Interpretacion de Niveles de Desarrollo', ln=True); pdf.ln(2)
                     
-                    y_frec = pdf.get_y()
-                    pdf.image(save_pdf_chart(generar_fig_barras(v_auto, "", "#3498db"), "b1.png", "Autoevaluacion"), x=10, y=y_frec, w=60)
-                    pdf.image(save_pdf_chart(generar_fig_barras(v_ind, "", "#2ecc71"), "b2.png", "Evaluacion 360°"), x=75, y=y_frec, w=60)
-                    pdf.image(save_pdf_chart(generar_fig_barras(v_org, "", "#e74c3c"), "b3.png", "Promedio Organizacional"), x=140, y=y_frec, w=60)
+                    # Tabla de niveles
+                    pdf.set_font('Helvetica', 'B', 8); pdf.set_fill_color(240, 240, 240)
+                    pdf.cell(40, 10, 'Nivel de Consciencia', 1, 0, 'C', True)
+                    pdf.cell(38, 10, 'Superior', 1, 0, 'C', True)
+                    pdf.cell(38, 10, 'Alto', 1, 0, 'C', True)
+                    pdf.cell(38, 10, 'Medio', 1, 0, 'C', True)
+                    pdf.cell(38, 10, 'Bajo', 1, 1, 'C', True)
                     
-                    pdf.set_y(y_frec + 43)
-                    y_radar = pdf.get_y()
-                    pdf.image(save_pdf_chart(fig_radar, "radar.png", ""), x=10, y=y_radar, w=95)
-                    pdf.image(save_pdf_chart(fig_dim, "dim.png", ""), x=110, y=y_radar + 5, w=90)
-                    
-                    pdf.set_y(y_radar + 75)
-                    y_relojes_base = pdf.get_y()
-                    pdf.image(save_pdf_chart(generar_fig_reloj(v_auto, False), "r1p.png", "Autoevaluacion"), x=35, y=y_relojes_base+3, w=60)
-                    pdf.image(save_pdf_chart(generar_fig_reloj(v_ind, False), "r2p.png", "Evaluacion 360°"), x=88, y=y_relojes_base+3, w=60)
-                    pdf.image(save_pdf_chart(generar_fig_reloj(v_org, False), "r3p.png", "Promedio organizacional"), x=141, y=y_relojes_base+3, w=60)
-                    
-                    pdf.set_font('Helvetica', '', 7); pdf.set_text_color(100, 100, 100)
-                    for i, txt in enumerate(["L7-Visionario", "L6-Mentor", "L5-Autentico", "L4-Facilitador", "L3-Desempeño", "L2-Relaciones", "L1-Crisis"]):
-                        pdf.text(10, y_relojes_base + 10 + (i * 4), txt)
-                    pdf.set_text_color(0, 0, 0)
+                    pdf.set_font('Helvetica', '', 7)
+                    filas = [
+                        ["L7: Visionario", "Liderazgo etico constante", "Actua con proposito", "Perspectiva ocasional", "Enfoque infrecuente"],
+                        ["L6: Mentor", "Maestro en coaching", "Colabora activamente", "Relaciones intermitentes", "Prioridad no recurrente"],
+                        ["L5: Integrador", "Maxima integridad", "Fomenta cohesion", "Confianza selectiva", "Compromiso raro"],
+                        ["L4: Facilitador", "Innovacion constante", "Adaptacion rapida", "Cautela al cambio", "Busqueda limitada"],
+                        ["L3: Organizador", "Excelencia operativa", "Orientado a resultados", "Productividad bajo procesos", "Enfoque inconsistente"],
+                        ["L2: Relaciones", "Armonia absoluta", "Gestiona conflictos", "Comunicacion puntual", "Resolucion escasa"],
+                        ["L1: Crisis", "Calma en adversidad", "Gestion prudente", "Viabilidad basica", "Costos insuficientes"]
+                    ]
+                    for f in filas:
+                        pdf.cell(40, 8, f[0], 1); pdf.cell(38, 8, f[1], 1); pdf.cell(38, 8, f[2], 1); pdf.cell(38, 8, f[3], 1); pdf.cell(38, 8, f[4], 1, 1)
 
+                # --- PÁGINA DASHBOARD (AMBOS) ---
+                pdf.add_page()
+                pdf.set_font('Helvetica', 'B', 16); pdf.cell(0, 10, 'REPORTE ESTRATÉGICO INTEGRAL', ln=True, align='C')
+                pdf.set_font('Helvetica', '', 12); pdf.cell(0, 8, f'Evaluado: {lider_sel}', ln=True, align='C')
+                pdf.set_font('Helvetica', 'B', 10); pdf.cell(0, 8, f'Total Evaluadores: {int(d.CANT_EVAL)} | Auto: {int(d.CANT_AUTO)} | Jefe: {int(d.CANT_JEFE)} | Pares: {int(d.CANT_PAR)} | Colab: {int(d.CANT_COL)}', ln=True, align='C')
+                
+                y_frec = pdf.get_y()
+                pdf.image(save_pdf_chart(generar_fig_barras(v_auto, "", "#3498db"), "b1.png", "Autoevaluacion"), x=10, y=y_frec, w=60)
+                pdf.image(save_pdf_chart(generar_fig_barras(v_ind, "", "#2ecc71"), "b2.png", "Evaluacion 360°"), x=75, y=y_frec, w=60)
+                pdf.image(save_pdf_chart(generar_fig_barras(v_org, "", "#e74c3c"), "b3.png", "Promedio Organizacional"), x=140, y=y_frec, w=60)
+                
+                pdf.set_y(y_frec + 43)
+                y_radar = pdf.get_y()
+                pdf.image(save_pdf_chart(fig_radar, "radar.png", ""), x=10, y=y_radar, w=95)
+                pdf.image(save_pdf_chart(fig_dim, "dim.png", ""), x=110, y=y_radar + 5, w=90)
+                
+                pdf.set_y(y_radar + 75)
+                y_relojes_base = pdf.get_y()
+                img_r1 = save_pdf_chart(generar_fig_reloj(v_auto, False), "r1p.png", "Autoevaluacion")
+                img_r2 = save_pdf_chart(generar_fig_reloj(v_ind, False), "r2p.png", "Evaluacion 360°")
+                img_r3 = save_pdf_chart(generar_fig_reloj(v_org, False), "r3p.png", "Promedio organizacional")
+                pdf.image(img_r1, x=35, y=y_relojes_base+3, w=60); pdf.image(img_r2, x=88, y=y_relojes_base+3, w=60); pdf.image(img_r3, x=141, y=y_relojes_base+3, w=60)
+                
+                pdf.set_font('Helvetica', '', 7); pdf.set_text_color(100, 100, 100)
+                for i, txt in enumerate(["L7-Visionario", "L6-Mentor", "L5-Autentico", "L4-Facilitador", "L3-Desempeño", "L2-Relaciones", "L1-Crisis"]):
+                    pdf.text(10, y_relojes_base + 10 + (i * 4), txt)
+                pdf.set_text_color(0, 0, 0)
+
+                # --- PÁGINA NINEBOX (SOLO GH) ---
+                if tipo == "GH":
                     pdf.add_page(); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, '4. Posicionamiento Estratégico NineBox Confa', ln=True)
                     fig_nb.update_layout(template="plotly", paper_bgcolor='white', plot_bgcolor='white', font=dict(color='black'))
                     img_nb = os.path.join(tmp_dir, "nb.png"); fig_nb.write_image(img_nb, engine="kaleido", scale=4); pdf.image(img_nb, x=25, w=160)
-                    
-                    pdf.ln(5); pdf.set_font('Helvetica', 'B', 13); pdf.cell(0, 10, '5. Análisis Ejecutivo Estratégico', ln=True); pdf.set_font('Helvetica', '', 10)
-                    limpio = st.session_state.informe_cache[lider_sel].replace("**", "").encode('latin-1', 'replace').decode('latin-1')
-                    pdf.multi_cell(0, 6, limpio)
 
-                st.download_button("📥 Guardar PDF Final", data=bytes(pdf.output()), file_name=f"Reporte_{lider_sel}.pdf", mime="application/pdf")
-            except Exception as e: st.error(f"Error PDF: {e}")
+                # --- ANÁLISIS IA (AMBOS CON FILTRO) ---
+                pdf.add_page(); pdf.set_font('Helvetica', 'B', 13); pdf.cell(0, 10, 'Analisis Ejecutivo Estrategico', ln=True); pdf.ln(5)
+                pdf.set_font('Helvetica', '', 10)
+                
+                texto_ia = st.session_state.informe_cache[lider_sel]
+                if tipo == "COLABORADOR":
+                    # Filtramos el punto 5 de Posicionamiento Estratégico
+                    texto_ia = re.split(r'5\.\s*POSICIONAMIENTO', texto_ia, flags=re.IGNORECASE)[0]
+                
+                limpio = texto_ia.replace("**", "").encode('latin-1', 'replace').decode('latin-1')
+                pdf.multi_cell(0, 6, limpio)
+
+            return pdf.output()
+
+        with col_btn1:
+            st.download_button("📄 INFORME GESTIÓN HUMANA", data=bytes(generar_pdf_final(tipo="GH")), file_name=f"Reporte_GH_{lider_sel}.pdf", mime="application/pdf")
+        with col_btn2:
+            st.download_button("👤 INFORME COLABORADOR", data=bytes(generar_pdf_final(tipo="COLABORADOR")), file_name=f"Reporte_Colaborador_{lider_sel}.pdf", mime="application/pdf")
