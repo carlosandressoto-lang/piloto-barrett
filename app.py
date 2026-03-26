@@ -109,19 +109,20 @@ if df is not None:
     lideres = sorted(df['Nombre_Lider'].unique())
     lider_sel = st.selectbox("Seleccione el líder:", lideres)
     
-    # LÓGICA DE GERENCIA Y CONFA
+    # LÓGICA DE SELECCIÓN DIRECTA (CONFA / GERENCIA / INDIVIDUAL)
     es_gerencia = lider_sel.startswith("GER_")
     es_confa = lider_sel == "CONFA"
 
+    # d toma la fila exacta pre-calculada de la base de datos
+    d = df[df['Nombre_Lider'] == lider_sel].iloc[0]
+
+    # df_grupo se usa para poblar los puntos de la NineBox y la tabla detallada
     if es_confa:
-        d = df.mean(numeric_only=True)
-        df_grupo = df[df['Nombre_Lider'] != "CONFA"]
+        df_grupo = df[~df['Nombre_Lider'].isin(["CONFA"]) & ~df['Nombre_Lider'].str.startswith("GER_")]
     elif es_gerencia:
         nombre_area = lider_sel.replace("GER_", "")
-        df_grupo = df[df['Nombre_Lider'].str.contains(nombre_area, na=False)]
-        d = df_grupo.mean(numeric_only=True)
+        df_grupo = df[df['Nombre_Lider'].str.contains(nombre_area, na=False) & ~df['Nombre_Lider'].str.startswith("GER_")]
     else:
-        d = df[df['Nombre_Lider'] == lider_sel].iloc[0]
         df_grupo = df[df['Nombre_Lider'] == lider_sel]
 
     st.subheader("👥 Información de la Evaluación")
@@ -194,9 +195,9 @@ if df is not None:
             fig_nb.add_shape(type="rect", x0=x0, y0=y0, x1=x1, y1=y1, fillcolor=color, opacity=0.75, line=dict(color="rgba(255,255,255,0.3)", width=1))
             fig_nb.add_annotation(x=(x0+x1)/2, y=y1-2.5, text=f"<b>{label}</b>", showarrow=False, font=dict(size=9, color="white"))
         
-        # SI ES MACRO, MUESTRA TODOS LOS PUNTOS
+        # VISUALIZACIÓN MACRO (SÓLO PUNTOS) VS INDIVIDUAL
         if es_confa or es_gerencia:
-            fig_nb.add_trace(go.Scatter(x=df_grupo['DES'], y=df_grupo['IND_POT'], mode='markers+text', text=df_grupo['Nombre_Lider'], textposition="top center", textfont=dict(size=8, color="white"), marker=dict(size=10, color='red', symbol='diamond', line=dict(width=1, color='white'))))
+            fig_nb.add_trace(go.Scatter(x=df_grupo['DES'], y=df_grupo['IND_POT'], mode='markers', text=df_grupo['Nombre_Lider'], hoverinfo="text", marker=dict(size=10, color='red', symbol='diamond', line=dict(width=1, color='white'))))
         else:
             fig_nb.add_trace(go.Scatter(x=[d.DES], y=[d.IND_POT], mode='markers+text', text=[f"({d.DES}, {round(d.IND_POT,1)}%)"], textposition="top center", textfont=dict(color="white", size=11), marker=dict(size=14, color='red', symbol='diamond', line=dict(width=2, color='white'))))
         
@@ -205,10 +206,24 @@ if df is not None:
     with cnb2:
         st.markdown(f"<div class='metric-box'><h3>{cuadrante}</h3><hr><p><b>Potencial Individual:</b> {round(d.IND_POT,2)}%</p><p><b>Desempeño:</b> {d.DES}</p><p><b>Autoevaluación Potencial:</b> {round(d.AUTO_POT,2)}%</p></div>", unsafe_allow_html=True)
 
+    # TABLA DE LIDERES (SÓLO CONFA O GERENCIAS)
+    if es_confa or es_gerencia:
+        st.write("### 📋 Distribución de Líderes por Cuadrante")
+        df_grupo['Cuadrante'] = df_grupo.apply(lambda x: obtener_cuadrante_confa(x['IND_POT'], x['DES']), axis=1)
+        st.dataframe(
+            df_grupo[['Nombre_Lider', 'Cuadrante', 'DES', 'IND_POT']].sort_values('Cuadrante'),
+            column_config={
+                "Nombre_Lider": "Líder",
+                "IND_POT": st.column_config.NumberColumn("Potencial", format="%.1f%%"),
+                "DES": "Desempeño"
+            },
+            hide_index=True,
+            use_container_width=True
+        )
+
     # --- BLOQUE IA: PROMPT MAESTRO INTEGRADO ---
     st.divider()
     if st.button("🚀 GENERAR INFORME"):
-        # Ajuste de contexto para gerencias
         texto_gerencia = ""
         if es_gerencia or es_confa:
             texto_gerencia = "NOTA: Este es un análisis GRUPAL. No hables de individuos, habla de capacidad instalada del equipo y cultura organizacional de la gerencia."
@@ -272,14 +287,12 @@ if df is not None:
             
             with tempfile.TemporaryDirectory() as tmp_dir:
                 def save_pdf_chart(fig, name, title=""):
-                    # AJUSTE PARA EVITAR ERROR DE EMOJIS: Limpieza de títulos Unicode
                     titulo_limpio = title.replace("📊 ", "").replace("⏳ ", "").replace("🎯 ", "").replace("⚖️ ", "").replace("🟦 ", "")
                     fig.update_layout(template="plotly", paper_bgcolor='white', plot_bgcolor='white', font=dict(color='black'), title=dict(text=titulo_limpio, x=0.5, font=dict(size=14), y=0.95), margin=dict(t=60, b=20, l=10, r=10))
                     path = os.path.join(tmp_dir, name)
                     fig.write_image(path, engine="kaleido", scale=2)
                     return path
 
-                # --- PÁGINA 1: CONTEXTO (SOLO COLABORADOR) ---
                 if tipo == "COLABORADOR":
                     pdf.add_page()
                     pdf.set_font('Helvetica', 'B', 16); pdf.cell(0, 10, 'MODELO DE LIDERAZGO CONFA', ln=True, align='C'); pdf.ln(5)
@@ -287,42 +300,24 @@ if df is not None:
                     pdf.set_font('Helvetica', '', 10)
                     pdf.multi_cell(0, 5, "El liderazgo en Confa se fundamenta en el Modelo de Barrett, un marco diseñado para liberar el potencial humano a través de la comprension de las necesidades y motivaciones que subyacen al comportamiento. Este modelo evalua siete niveles de consciencia, permitiendo a los lideres transitar desde la estabilidad operativa hasta el servicio con vision de futuro.\n\nEl enfoque de esta evaluacion no es punitivo, sino de desarrollo y aprendizaje. Busca identificar fortalezas y oportunidades de expansion para potenciar el bienestar individual y el proposito colectivo de Confa.")
                     pdf.ln(5); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Interpretacion de Niveles de Desarrollo', ln=True); pdf.ln(2)
-                    
-                    # Tabla de niveles
                     pdf.set_font('Helvetica', 'B', 8); pdf.set_fill_color(240, 240, 240)
-                    pdf.cell(40, 10, 'Nivel de Consciencia', 1, 0, 'C', True)
-                    pdf.cell(38, 10, 'Superior', 1, 0, 'C', True)
-                    pdf.cell(38, 10, 'Alto', 1, 0, 'C', True)
-                    pdf.cell(38, 10, 'Medio', 1, 0, 'C', True)
-                    pdf.cell(38, 10, 'Bajo', 1, 1, 'C', True)
-                    
+                    pdf.cell(40, 10, 'Nivel de Consciencia', 1, 0, 'C', True); pdf.cell(38, 10, 'Superior', 1, 0, 'C', True); pdf.cell(38, 10, 'Alto', 1, 0, 'C', True); pdf.cell(38, 10, 'Medio', 1, 0, 'C', True); pdf.cell(38, 10, 'Bajo', 1, 1, 'C', True)
                     pdf.set_font('Helvetica', '', 7)
-                    filas = [
-                        ["L7: Visionario", "Liderazgo etico constante", "Actua con proposito", "Perspectiva ocasional", "Enfoque infrecuente"],
-                        ["L6: Mentor", "Maestro en coaching", "Colabora activamente", "Relaciones intermitentes", "Prioridad no recurrente"],
-                        ["L5: Integrador", "Maxima integridad", "Fomenta cohesion", "Confianza selectiva", "Compromiso raro"],
-                        ["L4: Facilitador", "Innovacion constante", "Adaptacion rapida", "Cautela al cambio", "Busqueda limitada"],
-                        ["L3: Organizador", "Excelencia operativa", "Orientado a resultados", "Productividad bajo procesos", "Enfoque inconsistente"],
-                        ["L2: Relaciones", "Armonia absoluta", "Gestiona conflictos", "Comunicacion puntual", "Resolucion escasa"],
-                        ["L1: Crisis", "Calma en adversidad", "Gestion prudente", "Viabilidad basica", "Costos insuficientes"]
-                    ]
+                    filas = [["L7: Visionario", "Liderazgo etico constante", "Actua con proposito", "Perspectiva ocasional", "Enfoque infrecuente"], ["L6: Mentor", "Maestro en coaching", "Colabora activamente", "Relaciones intermitentes", "Prioridad no recurrente"], ["L5: Integrador", "Maxima integridad", "Fomenta cohesion", "Confianza selectiva", "Compromiso raro"], ["L4: Facilitador", "Innovacion constante", "Adaptacion rapida", "Cautela al cambio", "Busqueda limitada"], ["L3: Organizador", "Excelencia operativa", "Orientado a resultados", "Productividad bajo procesos", "Enfoque inconsistente"], ["L2: Relaciones", "Armonia absoluta", "Gestiona conflictos", "Comunicacion puntual", "Resolucion escasa"], ["L1: Crisis", "Calma en adversidad", "Gestion prudente", "Viabilidad basica", "Costos insuficientes"]]
                     for f in filas:
                         pdf.cell(40, 8, f[0], 1); pdf.cell(38, 8, f[1], 1); pdf.cell(38, 8, f[2], 1); pdf.cell(38, 8, f[3], 1); pdf.cell(38, 8, f[4], 1, 1)
 
-                # --- PÁGINA DASHBOARD (AMBOS) ---
                 pdf.add_page()
                 pdf.set_font('Helvetica', 'B', 16); pdf.cell(0, 10, 'REPORTE ESTRATÉGICO INTEGRAL', ln=True, align='C')
                 pdf.set_font('Helvetica', '', 12); pdf.cell(0, 8, f'Evaluado: {lider_sel}', ln=True, align='C')
                 pdf.set_font('Helvetica', 'B', 10); pdf.cell(0, 8, f'Total Evaluadores: {int(d.CANT_EVAL)} | Auto: {int(d.CANT_AUTO)} | Jefe: {int(d.CANT_JEFE)} | Pares: {int(d.CANT_PAR)} | Colab: {int(d.CANT_COL)}', ln=True, align='C')
                 
-                # 1. Frecuencia
                 pdf.ln(2); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Frecuencia de comportamientos por niveles (%)', ln=True)
                 y_frec = pdf.get_y()
                 pdf.image(save_pdf_chart(generar_fig_barras(v_auto, "", "#3498db"), "b1.png", "Autoevaluacion"), x=10, y=y_frec, w=60)
                 pdf.image(save_pdf_chart(generar_fig_barras(v_ind, "", "#2ecc71"), "b2.png", "Evaluacion 360"), x=75, y=y_frec, w=60)
                 pdf.image(save_pdf_chart(generar_fig_barras(v_org, "", "#e74c3c"), "b3.png", "Promedio Organizacional"), x=140, y=y_frec, w=60)
                 
-                # 2. Resultados Barrett
                 pdf.set_y(y_frec + 43); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Resultados Evaluacion 360 (Niveles Barrett)', ln=True)
                 y_relojes_base = pdf.get_y()
                 pdf.image(save_pdf_chart(generar_fig_reloj(v_auto, False), "r1p.png", "Autoevaluacion"), x=35, y=y_relojes_base+3, w=60)
@@ -334,25 +329,22 @@ if df is not None:
                 for i, txt in enumerate(niv_m): pdf.text(10, y_relojes_base + 10 + (i * 4), txt)
                 pdf.set_text_color(0, 0, 0)
                 
-                # 3. Alineación y Equilibrio
                 pdf.set_y(y_relojes_base + 45); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Alineacion de Consciencia e Indice de Equilibrio', ln=True)
                 y_radar = pdf.get_y()
                 pdf.image(save_pdf_chart(fig_radar, "radar.png", ""), x=10, y=y_radar, w=95)
                 pdf.image(save_pdf_chart(fig_dim, "dim.png", ""), x=110, y=y_radar + 5, w=90)
 
-                # 4. NineBox (Solo GH)
                 if tipo == "GH":
                     pdf.add_page(); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Mapa de Talento NineBox Confa', ln=True)
                     fig_nb.update_layout(template="plotly", paper_bgcolor='white', plot_bgcolor='white', font=dict(color='black'))
                     img_nb = os.path.join(tmp_dir, "nb.png"); fig_nb.write_image(img_nb, engine="kaleido", scale=4); pdf.image(img_nb, x=25, w=160)
 
-                # --- ANÁLISIS IA (AMBOS CON FILTRO ROBUSTO) ---
                 pdf.add_page(); pdf.set_font('Helvetica', 'B', 13); pdf.cell(0, 10, 'Analisis Ejecutivo Estrategico', ln=True); pdf.ln(5)
                 pdf.set_font('Helvetica', '', 10)
                 
                 texto_ia = st.session_state.informe_cache[lider_sel]
                 if tipo == "COLABORADOR":
-                    # VERSIÓN MÁS ROBUSTA DEL CORTE: Captura negritas (**), número 5 y palabra clave
+                    # VERSIÓN ROBUSTA DEL CORTE
                     patron_corte = r'(\n|\s)*\**5\.\s*POSICIONAMIENTO.*'
                     texto_ia = re.split(patron_corte, texto_ia, flags=re.IGNORECASE | re.DOTALL)[0]
                     texto_ia = texto_ia.strip()
