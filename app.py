@@ -302,7 +302,7 @@ if df is not None:
         - SI CANT_AUTO es 0: Indica que no existe punto de comparación interno.
         - Si no hay estos ceros, no menciones nada de esto.
 
-        ESTRUCTURA informe OBLIGATORIA:
+        ESTRUCTURA informe OBLIGATORIA: Respeta estrictamente los titulos, números y puntos hasta los dos puntos (:), por ejemplo 1. DESCRIPCIÓN POR NIVELES, 2. ANÁLISIS DE AUTOVALORACIÓN
         1. DESCRIPCIÓN POR NIVELES: Lista de L1 a L7 con el nombre de contexto Barret (Ejemplo Nivel 1: Gestor de Crisis). Clasifica cada nivel basándote en el 'Ponderado Individual' usando la rúbrica (Bajo, Medio, Alto, Superior) y las definiciones Barrett anteriores para generar una descripción según el modelo Barret y el nivel de la rubrica del líder. Siempre una lista de Nivel 1 a Nivel 7 no lo hagas en 1 solo párrafo porque confunde
         2. ANÁLISIS DE AUTOVALORACIÓN: Un párrafo. Analiza alineación percepción interna (Autoevaluacion) vs colectiva (Ponderado individual que es la evaluación de Jefe directo, Colaboradores a cargo y Pares). Resalta donde la influencia externa es mayor a la autopercepción, o aquellos puntos donde la autoevaluacion sea mayor en rubrica a lo evaluado pues son 2 cosas diferentes a trabajar según el nivel de conciencia.
         3. MATRIZ DE MADUREZ: Un párrafo sólido. Analiza sintonía del líder (Ponderado Individual) con el Ponderado Organizacional basándote en la RÚBRICA NIVELES DE BARRET.
@@ -384,7 +384,14 @@ if df is not None:
                 
                 texto_ia = st.session_state.informe_cache[lider_sel]
                 if tipo == "COLABORADOR":
-                    patron_corte = r'(\n|\s)*\**5\.\s*POSICIONAMIENTO.*'
+                    # Esta versión es mucho más amplia:
+                    # ^\s* -> Busca al inicio de cualquier línea (con posibles espacios)
+                    # \** -> Captura si hay negritas de Markdown
+                    # 5[\.\s:]+ -> Busca el número 5 seguido de punto, espacio o dos puntos
+                    # POSICIONAMIENTO -> Palabra ancla opcional para mayor seguridad
+                    # flags=re.MULTILINE -> Permite buscar el inicio del patrón en cualquier línea del texto
+                    
+                    patron_corte = r'(?m)^\s*\**5[\.\s:]+POSICIONAMIENTO.*'
                     texto_ia = re.split(patron_corte, texto_ia, flags=re.IGNORECASE | re.DOTALL)[0]
                     texto_ia = texto_ia.strip()
                 
