@@ -373,27 +373,39 @@ if df is not None:
                     img_nb = os.path.join(tmp_dir, "nb.png"); fig_nb.write_image(img_nb, engine="kaleido", scale=4); pdf.image(img_nb, x=25, w=160)
                     
                     if es_confa or es_gerencia:
-                        pdf.add_page(); pdf.set_font('Helvetica', 'B', 14); pdf.cell(0, 10, 'Matriz de Ubicacion de Talentos (Detalle)', ln=True); pdf.ln(5)
-                        pdf.set_font('Helvetica', 'B', 9); pdf.set_fill_color(240, 240, 240)
+                        pdf.add_page()
+                        pdf.set_font('Helvetica', 'B', 14)
+                        pdf.cell(0, 10, 'Matriz de Ubicación de Talentos (Detalle)', ln=True)
+                        pdf.ln(5)
                         
-                        cuadrantes_pdf = [
-                            ("ENIGMA", "#b5de2b"), ("ESTRELLA CREC.", "#fde725"), ("SUPERESTRELLAS", "#f89441"),
-                            ("DILEMA", "#31688e"), ("EMPLEADOS CLAVE", "#21918c"), ("FUTURAS ESTRELLAS", "#5ec962"),
-                            ("ICEBERG", "#440154"), ("EFECTIVOS", "#482878"), ("PROF. CONFIABLES", "#3b528b")
+                        # Definición de los cuadrantes a listar
+                        cuads_pdf = [
+                            ("SUPERESTRELLAS", "#f89441"), ("ESTRELLA CREC.", "#fde725"), ("ENIGMA", "#b5de2b"),
+                            ("FUTURAS ESTRELLAS", "#5ec962"), ("EMPLEADOS CLAVE", "#21918c"), ("DILEMA", "#31688e"),
+                            ("PROF. CONFIABLES", "#3b528b"), ("EFECTIVOS", "#482878"), ("ICEBERG", "#440154")
                         ]
                         
-                        for label, color in cuadrantes_pdf:
+                        for label, color in cuads_pdf:
                             # Filtrar nombres para este cuadrante
+                            # Usamos el split para capturar la primera palabra clave (ej: "ESTRELLA")
                             keyword = label.split()[0]
                             nombres = df_grupo[df_grupo['Cuadrante'].str.contains(keyword, na=False)]['Nombre_Lider'].tolist()
+                            
+                            # Encabezado del Cuadrante en la Tabla
                             pdf.set_font('Helvetica', 'B', 10)
-                            pdf.cell(0, 8, f">> {label}", ln=True, fill=True)
+                            pdf.set_fill_color(230, 230, 230) # Gris suave para el título
+                            pdf.cell(0, 8, f" Cuadrante: {label}", border=1, ln=True, fill=True)
+                            
+                            # Cuerpo de la Tabla (Nombres)
                             pdf.set_font('Helvetica', '', 9)
                             if nombres:
-                                pdf.multi_cell(0, 6, ", ".join(nombres))
+                                # Unimos los nombres con comas y los ponemos en una celda multilínea con bordes
+                                texto_nombres = ", ".join(nombres)
+                                pdf.multi_cell(0, 6, texto_nombres, border=1)
                             else:
-                                pdf.cell(0, 6, "Sin registros", ln=True)
-                            pdf.ln(2)
+                                pdf.cell(0, 6, " Sin registros en este periodo", border=1, ln=True)
+                            
+                            pdf.ln(4) # Espacio entre cuadrantes
 
                 pdf.add_page(); pdf.set_font('Helvetica', 'B', 13); pdf.cell(0, 10, 'Analisis Ejecutivo Estrategico', ln=True); pdf.ln(5)
                 pdf.set_font('Helvetica', '', 10)
