@@ -25,8 +25,11 @@ st.markdown("""
         text-align: left; 
         border: 1px solid rgba(128, 128, 128, 0.3); 
     }
-    .leyenda-v3 { display: flex; flex-direction: column; justify-content: space-between; height: 340px; margin-top: 35px; padding-right: 10px; border-right: 1px solid rgba(128, 128, 128, 0.3); }
-    .item-ley { height: 48px; display: flex; align-items: center; justify-content: flex-end; font-size: 0.85rem; font-weight: bold; }
+    /* Estilos para la Matriz Visual de Nombres */
+    .ninebox-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; }
+    .quadrant-box { border-radius: 8px; padding: 15px; min-height: 150px; color: white; font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.2); }
+    .quad-title { font-weight: bold; border-bottom: 1px solid rgba(255,255,255,0.4); margin-bottom: 8px; padding-bottom: 4px; text-transform: uppercase; font-size: 0.75rem; }
+    .name-list { line-height: 1.4; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -48,6 +51,10 @@ def load_data():
         df['Nombre_Lider'] = df['Nombre_Lider'].astype(str).str.strip()
         df = df[~df['Nombre_Lider'].isin(['0.0', 'nan', ''])]
         df = df.dropna(subset=['Nombre_Lider'])
+        # Asegurar que GER_LID sea string
+        if 'GER_LID' in df.columns:
+            df['GER_LID'] = df['GER_LID'].fillna("N/A").astype(str)
+        
         cols_to_fix = [c for c in df.columns if ('L' in c and any(x in c for x in ['AUTO', 'INDIV', 'ORG'])) or 'CANT_' in c or 'POT' in c or 'DES' == c]
         for col in cols_to_fix:
             df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
@@ -73,6 +80,7 @@ def obtener_cuadrante_confa(pot, des):
     }
     return mapping.get((p_label, d_label), "No clasificado")
 
+# [Funciones generar_fig_barras, obtener_color_desarrollo, obtener_etiqueta, generar_fig_reloj permanecen iguales]
 def obtener_color_desarrollo(v):
     if v < 65: return "#ff4b4b" 
     if v < 75: return "#f1c40f" 
@@ -109,14 +117,11 @@ if df is not None:
     lideres = sorted(df['Nombre_Lider'].unique())
     lider_sel = st.selectbox("Seleccione el líder:", lideres)
     
-    # LÓGICA DE SELECCIÓN DIRECTA (CONFA / GERENCIA / INDIVIDUAL)
     es_gerencia = lider_sel.startswith("GER_")
     es_confa = lider_sel == "CONFA"
 
-    # d toma la fila exacta pre-calculada de la base de datos
     d = df[df['Nombre_Lider'] == lider_sel].iloc[0]
 
-    # df_grupo se usa para poblar los puntos de la NineBox y la tabla detallada
     if es_confa:
         df_grupo = df[~df['Nombre_Lider'].isin(["CONFA"]) & ~df['Nombre_Lider'].str.startswith("GER_")]
     elif es_gerencia:
@@ -128,8 +133,11 @@ if df is not None:
     st.subheader("👥 Información de la Evaluación")
     c_ev1, c_ev2 = st.columns([1, 2])
     with c_ev1: st.metric("Total Evaluadores", int(d.CANT_EVAL))
-    with c_ev2: st.write(f"**Auto:** {int(d.CANT_AUTO)} | **Jefe:** {int(d.CANT_JEFE)} | **Pares:** {int(d.CANT_PAR)} | **Colab:** {int(d.CANT_COL)}")
+    with c_ev2: 
+        ger_lid_val = d.get('GER_LID', 'N/A')
+        st.write(f"**Gerencia:** {ger_lid_val} | **Auto:** {int(d.CANT_AUTO)} | **Jefe:** {int(d.CANT_JEFE)} | **Pares:** {int(d.CANT_PAR)} | **Colab:** {int(d.CANT_COL)}")
 
+    # [Cálculos de promedios v_auto, v_ind, v_org, liderazgo_prom, etc. permanecen iguales]
     v_auto = [d.AUTO_L1, d.AUTO_L2, d.AUTO_L3, d.AUTO_L4, d.AUTO_L5, d.AUTO_L6, d.AUTO_L7]
     v_ind = [d.INDIV_L1, d.INDIV_L2, d.INDIV_L3, d.INDIV_L4, d.INDIV_L5, d.INDIV_L6, d.INDIV_L7]
     v_org = [d.ORG_L1, d.ORG_L2, d.ORG_L3, d.ORG_L4, d.ORG_L5, d.ORG_L6, d.ORG_L7]
@@ -137,7 +145,7 @@ if df is not None:
     transicion_prom = d.INDIV_L4
     gerencia_prom = (d.INDIV_L1 + d.INDIV_L2 + d.INDIV_L3) / 3
 
-    # DASHBOARD WEB
+    # [DASHBOARD WEB - Gráficas de Barras y Relojes permanecen iguales]
     st.subheader("📊 Frecuencia de comportamientos por niveles (%)")
     c1, c2, c3 = st.columns(3)
     with c1: st.markdown("<div class='titulo-seccion'>Autovaloración</div>", unsafe_allow_html=True); st.plotly_chart(generar_fig_barras(v_auto, "", "#3498db"), use_container_width=True)
@@ -188,14 +196,25 @@ if df is not None:
     st.subheader("🟦 Mapa de Talento NineBox Confa")
     cnb1, cnb2 = st.columns([1.5, 1])
     cuadrante = obtener_cuadrante_confa(d.IND_POT, d.DES)
+    
     with cnb1:
         fig_nb = go.Figure()
-        quads = [(0.5, 1.5, 0, 33.33, "#440154", "ICEBERG"), (1.5, 2.5, 0, 33.33, "#482878", "EFECTIVOS"), (2.5, 3.5, 0, 33.33, "#3b528b", "PROF. CONFIABLES"), (0.5, 1.5, 33.33, 66.66, "#31688e", "DILEMA"), (1.5, 2.5, 33.33, 66.66, "#21918c", "EMPLEADOS CLAVE"), (2.5, 3.5, 33.33, 66.66, "#5ec962", "FUTURAS ESTRELLAS"), (0.5, 1.5, 66.66, 100, "#b5de2b", "ENIGMA"), (1.5, 2.5, 66.66, 100, "#fde725", "ESTRELLA CREC."), (2.5, 3.5, 66.66, 100, "#f89441", "SUPERESTRELLAS")]
+        # Definición de cajas con sus colores
+        quads = [
+            (0.5, 1.5, 0, 33.33, "#440154", "ICEBERG"), 
+            (1.5, 2.5, 0, 33.33, "#482878", "EFECTIVOS"), 
+            (2.5, 3.5, 0, 33.33, "#3b528b", "PROF. CONFIABLES"), 
+            (0.5, 1.5, 33.33, 66.66, "#31688e", "DILEMA"), 
+            (1.5, 2.5, 33.33, 66.66, "#21918c", "EMPLEADOS CLAVE"), 
+            (2.5, 3.5, 33.33, 66.66, "#5ec962", "FUTURAS ESTRELLAS"), 
+            (0.5, 1.5, 66.66, 100, "#b5de2b", "ENIGMA"), 
+            (1.5, 2.5, 66.66, 100, "#fde725", "ESTRELLA CREC."), 
+            (2.5, 3.5, 66.66, 100, "#f89441", "SUPERESTRELLAS")
+        ]
         for x0, x1, y0, y1, color, label in quads:
             fig_nb.add_shape(type="rect", x0=x0, y0=y0, x1=x1, y1=y1, fillcolor=color, opacity=0.75, line=dict(color="rgba(255,255,255,0.3)", width=1))
             fig_nb.add_annotation(x=(x0+x1)/2, y=y1-2.5, text=f"<b>{label}</b>", showarrow=False, font=dict(size=9, color="white"))
         
-        # VISUALIZACIÓN MACRO (SÓLO PUNTOS) VS INDIVIDUAL
         if es_confa or es_gerencia:
             fig_nb.add_trace(go.Scatter(x=df_grupo['DES'], y=df_grupo['IND_POT'], mode='markers', text=df_grupo['Nombre_Lider'], hoverinfo="text", marker=dict(size=10, color='red', symbol='diamond', line=dict(width=1, color='white'))))
         else:
@@ -203,24 +222,53 @@ if df is not None:
         
         fig_nb.update_layout(xaxis=dict(title="Desempeño", tickvals=[1,2,3], range=[0.4, 3.6]), yaxis=dict(title="Potencial (%)", tickvals=[0, 33.3, 66.6, 100], range=[-5, 105]), template="plotly_dark", height=500, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
         st.plotly_chart(fig_nb, use_container_width=True)
+
     with cnb2:
         st.markdown(f"<div class='metric-box'><h3>{cuadrante}</h3><hr><p><b>Potencial Individual:</b> {round(d.IND_POT,2)}%</p><p><b>Desempeño:</b> {d.DES}</p><p><b>Autoevaluación Potencial:</b> {round(d.AUTO_POT,2)}%</p></div>", unsafe_allow_html=True)
 
-    # TABLA DE LIDERES (SÓLO CONFA O GERENCIAS)
+    # --- MATRIZ VISUAL DE NOMBRES POR CUADRANTE ---
     if es_confa or es_gerencia:
-        st.write("### 📋 Distribución de Líderes por Cuadrante")
+        st.markdown("### 🗺️ Matriz de Ubicación de Talentos")
         df_grupo['Cuadrante'] = df_grupo.apply(lambda x: obtener_cuadrante_confa(x['IND_POT'], x['DES']), axis=1)
-        st.dataframe(
-            df_grupo[['Nombre_Lider', 'Cuadrante', 'DES', 'IND_POT']].sort_values('Cuadrante'),
-            column_config={
-                "Nombre_Lider": "Líder",
-                "IND_POT": st.column_config.NumberColumn("Potencial", format="%.1f%%"),
-                "DES": "Desempeño"
-            },
-            hide_index=True,
-            use_container_width=True
-        )
+        
+        # Organizar por Potencial (Filas) y Desempeño (Columnas)
+        # Fila Superior (Potencial Alto)
+        c1, c2, c3 = st.columns(3)
+        with c1: 
+            names = df_grupo[df_grupo['Cuadrante'].str.contains("ENIGMA")]['Nombre_Lider'].tolist()
+            st.markdown(f"<div class='quadrant-box' style='background-color: #b5de2b;'><div class='quad-title'>ENIGMA</div><div class='name-list'>{'<br>'.join(names) if names else 'Sin registros'}</div></div>", unsafe_allow_html=True)
+        with c2:
+            names = df_grupo[df_grupo['Cuadrante'].str.contains("ESTRELLA CRECIMIENTO")]['Nombre_Lider'].tolist()
+            st.markdown(f"<div class='quadrant-box' style='background-color: #fde725; color: black;'><div class='quad-title'>ESTRELLA CREC.</div><div class='name-list'>{'<br>'.join(names) if names else 'Sin registros'}</div></div>", unsafe_allow_html=True)
+        with c3:
+            names = df_grupo[df_grupo['Cuadrante'].str.contains("SUPERESTRELLAS")]['Nombre_Lider'].tolist()
+            st.markdown(f"<div class='quadrant-box' style='background-color: #f89441;'><div class='quad-title'>SUPERESTRELLAS</div><div class='name-list'>{'<br>'.join(names) if names else 'Sin registros'}</div></div>", unsafe_allow_html=True)
 
+        # Fila Media (Potencial Medio)
+        c4, c5, c6 = st.columns(3)
+        with c4:
+            names = df_grupo[df_grupo['Cuadrante'].str.contains("DILEMA")]['Nombre_Lider'].tolist()
+            st.markdown(f"<div class='quadrant-box' style='background-color: #31688e;'><div class='quad-title'>DILEMA</div><div class='name-list'>{'<br>'.join(names) if names else 'Sin registros'}</div></div>", unsafe_allow_html=True)
+        with c5:
+            names = df_grupo[df_grupo['Cuadrante'].str.contains("EMPLEADOS CLAVE")]['Nombre_Lider'].tolist()
+            st.markdown(f"<div class='quadrant-box' style='background-color: #21918c;'><div class='quad-title'>EMPLEADOS CLAVE</div><div class='name-list'>{'<br>'.join(names) if names else 'Sin registros'}</div></div>", unsafe_allow_html=True)
+        with c6:
+            names = df_grupo[df_grupo['Cuadrante'].str.contains("FUTURAS ESTRELLAS")]['Nombre_Lider'].tolist()
+            st.markdown(f"<div class='quadrant-box' style='background-color: #5ec962;'><div class='quad-title'>FUTURAS ESTRELLAS</div><div class='name-list'>{'<br>'.join(names) if names else 'Sin registros'}</div></div>", unsafe_allow_html=True)
+
+        # Fila Inferior (Potencial Bajo)
+        c7, c8, c9 = st.columns(3)
+        with c7:
+            names = df_grupo[df_grupo['Cuadrante'].str.contains("ICEBERG")]['Nombre_Lider'].tolist()
+            st.markdown(f"<div class='quadrant-box' style='background-color: #440154;'><div class='quad-title'>ICEBERG</div><div class='name-list'>{'<br>'.join(names) if names else 'Sin registros'}</div></div>", unsafe_allow_html=True)
+        with c8:
+            names = df_grupo[df_grupo['Cuadrante'].str.contains("EFECTIVOS")]['Nombre_Lider'].tolist()
+            st.markdown(f"<div class='quadrant-box' style='background-color: #482878;'><div class='quad-title'>EFECTIVOS</div><div class='name-list'>{'<br>'.join(names) if names else 'Sin registros'}</div></div>", unsafe_allow_html=True)
+        with c9:
+            names = df_grupo[df_grupo['Cuadrante'].str.contains("PROFESIONALES CONFIABLES")]['Nombre_Lider'].tolist()
+            st.markdown(f"<div class='quadrant-box' style='background-color: #3b528b;'><div class='quad-title'>PROF. CONFIABLES</div><div class='name-list'>{'<br>'.join(names) if names else 'Sin registros'}</div></div>", unsafe_allow_html=True)
+
+    # [RESTO DEL CÓDIGO DE IA Y PDF PERMANECE IGUAL QUE EN app v4.txt]
     # --- BLOQUE IA: PROMPT MAESTRO INTEGRADO ---
     st.divider()
     if st.button("🚀 GENERAR INFORME"):
@@ -293,6 +341,7 @@ if df is not None:
                     fig.write_image(path, engine="kaleido", scale=2)
                     return path
 
+                # --- PÁGINA 1: CONTEXTO (SOLO COLABORADOR) ---
                 if tipo == "COLABORADOR":
                     pdf.add_page()
                     pdf.set_font('Helvetica', 'B', 16); pdf.cell(0, 10, 'MODELO DE LIDERAZGO CONFA', ln=True, align='C'); pdf.ln(5)
@@ -300,6 +349,7 @@ if df is not None:
                     pdf.set_font('Helvetica', '', 10)
                     pdf.multi_cell(0, 5, "El liderazgo en Confa se fundamenta en el Modelo de Barrett, un marco diseñado para liberar el potencial humano a través de la comprension de las necesidades y motivaciones que subyacen al comportamiento. Este modelo evalua siete niveles de consciencia, permitiendo a los lideres transitar desde la estabilidad operativa hasta el servicio con vision de futuro.\n\nEl enfoque de esta evaluacion no es punitivo, sino de desarrollo y aprendizaje. Busca identificar fortalezas y oportunidades de expansion para potenciar el bienestar individual y el proposito colectivo de Confa.")
                     pdf.ln(5); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Interpretacion de Niveles de Desarrollo', ln=True); pdf.ln(2)
+                    
                     pdf.set_font('Helvetica', 'B', 8); pdf.set_fill_color(240, 240, 240)
                     pdf.cell(40, 10, 'Nivel de Consciencia', 1, 0, 'C', True); pdf.cell(38, 10, 'Superior', 1, 0, 'C', True); pdf.cell(38, 10, 'Alto', 1, 0, 'C', True); pdf.cell(38, 10, 'Medio', 1, 0, 'C', True); pdf.cell(38, 10, 'Bajo', 1, 1, 'C', True)
                     pdf.set_font('Helvetica', '', 7)
