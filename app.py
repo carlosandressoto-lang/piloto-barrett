@@ -256,7 +256,7 @@ if df is not None:
             names = df_grupo[df_grupo['Cuadrante'].str.contains("CONFIABLES", na=False)]['Nombre_Lider'].tolist()
             st.markdown(f"<div class='quadrant-box' style='background-color: #3b528b;'><div class='quad-title'>PROF. CONFIABLES</div><div class='name-list'>{'<br>'.join(names) if names else 'Sin registros'}</div></div>", unsafe_allow_html=True)
 
-    # --- BLOQUE IA ---
+    # --- BLOQUE IA: PROMPT MAESTRO INTEGRADO ---
     st.divider()
     if st.button("🚀 GENERAR INFORME"):
         texto_gerencia = ""
@@ -322,6 +322,7 @@ if df is not None:
             
             with tempfile.TemporaryDirectory() as tmp_dir:
                 def save_pdf_chart(fig, name, title=""):
+                    # Eliminamos emojis solo en el título del layout de Plotly para el PDF
                     titulo_limpio = title.replace("📊 ", "").replace("⏳ ", "").replace("🎯 ", "").replace("⚖️ ", "").replace("🟦 ", "")
                     fig.update_layout(template="plotly", paper_bgcolor='white', plot_bgcolor='white', font=dict(color='black'), title=dict(text=titulo_limpio, x=0.5, font=dict(size=14), y=0.95), margin=dict(t=60, b=20, l=10, r=10))
                     path = os.path.join(tmp_dir, name)
@@ -347,43 +348,49 @@ if df is not None:
                         ["L1: Crisis (Supervivencia)", "Dictatorial o incapaz de confiar. Descuida la seguridad y bienestar del equipo; malgasta recursos.", "Viabilidad básica. Se mantiene tranquilo ante problemas menores pero se desborda en crisis reales.", "Gestión prudente. Piensa en los riesgos antes de decidir y cuida los recursos como si fueran propios.", "Calma en la Adversidad. Maneja el caos con sabiduría; es el pilar de seguridad y bienestar del equipo."]
                     ]
                     
-                    # 1. DIBUJAMOS EL ENCABEZADO DE FORMA SEGURA (SIN MULTICELL PARA EVITAR TRASLAPE)
+                    # Encabezados de tabla - CORRECCIÓN: Usar cell para evitar traslape
                     pdf.set_font('Helvetica', 'B', 7); pdf.set_fill_color(240, 240, 240)
                     col_w = [30, 40, 40, 40, 40]
                     headers = ["Nivel de Consciencia", "Bajo (Reactivo / Limitado)", "Medio (Funcional / En Desarrollo)", "Alto (Competente / Consistente)", "Superior (Ejemplar / Maestría)"]
                     
-                    y_headers = pdf.get_y()
+                    y_h = pdf.get_y()
                     for i, h in enumerate(headers):
-                        pdf.set_xy(10 + sum(col_w[:i]), y_headers)
-                        # Usamos cell para el título de la columna para que la posición X se mantenga limpia
+                        pdf.set_xy(10 + sum(col_w[:i]), y_h)
+                        # Usamos cell en lugar de multicell para que los encabezados cortos no traslapen
                         pdf.cell(col_w[i], 10, h, 1, 0, 'C', True)
                     pdf.ln(10)
 
-                    # 2. DIBUJAMOS LAS FILAS CON CÁLCULO DE ALTURA PREVIO
+                    # Cuerpo de la tabla con cálculo dinámico de altura por fila
                     pdf.set_font('Helvetica', '', 6)
                     for f in filas:
                         y_pre = pdf.get_y()
-                        # Medimos la altura necesaria para cada columna
+                        
+                        # PASO 1: Calcular la altura que necesita la fila basándose en la columna con más texto
                         alturas = []
                         for i, txt in enumerate(f):
-                            alturas.append(pdf.get_string_width(txt) / (col_w[i] - 2) * 3.2) # Estimación
+                            # Obtenemos la cantidad de líneas que ocupará el texto
+                            n_lines = len(pdf.multi_cell_text(txt, col_w[i]))
+                            alturas.append(n_lines * 3.2) # 3.2 es el interlineado estándar para fuente 6
                         
                         max_h = max(alturas)
-                        if max_h < 8: max_h = 8
+                        if max_h < 8: max_h = 8 # Altura mínima
                         
-                        # Salto de página preventivo
-                        if y_pre + max_h > 260: pdf.add_page(); y_pre = pdf.get_y()
+                        # Salto de página si no cabe la fila completa
+                        if y_pre + max_h > 265:
+                            pdf.add_page()
+                            y_pre = pdf.get_y()
                         
+                        # PASO 2: Dibujar las celdas asegurando que todas cierren con la misma altura
                         for i, txt in enumerate(f):
                             pdf.set_xy(10 + sum(col_w[:i]), y_pre)
-                            # Dibujamos el marco de la celda completo primero
+                            # Dibujamos el borde con la altura máxima
                             pdf.rect(10 + sum(col_w[:i]), y_pre, col_w[i], max_h)
-                            # Escribimos el contenido (el multi_cell ahora tiene espacio libre)
+                            # Escribimos el texto con multicell (interlineado 3.2)
                             pdf.multi_cell(col_w[i], 3.2, txt, 0, 'L')
                         
                         pdf.set_y(y_pre + max_h)
 
-                # --- PÁGINA DASHBOARD ---
+                # --- PÁGINA DASHBOARD (AMBOS) ---
                 pdf.add_page()
                 pdf.set_font('Helvetica', 'B', 16); pdf.cell(0, 10, 'REPORTE ESTRATÉGICO INTEGRAL', ln=True, align='C')
                 pdf.set_font('Helvetica', '', 12); pdf.cell(0, 8, f'Evaluado: {lider_sel}', ln=True, align='C')
@@ -395,14 +402,14 @@ if df is not None:
                 pdf.image(save_pdf_chart(generar_fig_barras(v_ind, "", "#2ecc71"), "b2.png", "Evaluacion 360"), x=75, y=y_frec, w=60)
                 pdf.image(save_pdf_chart(generar_fig_barras(v_org, "", "#e74c3c"), "b3.png", "Promedio Organizacional"), x=140, y=y_frec, w=60)
                 
-                pdf.set_y(y_frec + 43); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Resultados Evaluacion 360 (Niveles Barrett)', ln=True)
+                pdf.set_y(y_frec + 43); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Resultados Evaluación 360 (Niveles Barrett)', ln=True)
                 y_relojes_base = pdf.get_y()
                 pdf.image(save_pdf_chart(generar_fig_reloj(v_auto, False), "r1p.png", "Autoevaluacion"), x=35, y=y_relojes_base+3, w=60)
                 pdf.image(save_pdf_chart(generar_fig_reloj(v_ind, False), "r2p.png", "Evaluacion 360"), x=88, y=y_relojes_base+3, w=60)
                 pdf.image(save_pdf_chart(generar_fig_reloj(v_org, False), "r3p.png", "Promedio organizacional"), x=141, y=y_relojes_base+3, w=60)
                 
                 pdf.set_font('Helvetica', '', 7); pdf.set_text_color(100, 100, 100)
-                niv_m = ["L7-Visionario", "L6-Mentor Socio", "L5-Autentico", "L4-Facilitador Innovador", "L3-Gestor de Desempeno", "L2-Gestor de Relaciones", "L1-Gestor de Crisis"]
+                niv_m = ["L7-Visionario", "L6-Mentor Socio", "L5-Autentico", "L4-Facilitador Innovador", "L3-Gestor de Desempeño", "L2-Gestor de Relaciones", "L1-Gestor de Crisis"]
                 for i, txt in enumerate(niv_m): pdf.text(10, y_relojes_base + 10 + (i * 4), txt)
                 pdf.set_text_color(0, 0, 0)
                 
