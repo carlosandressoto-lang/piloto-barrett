@@ -338,22 +338,25 @@ if df is not None:
                     pdf.ln(5); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Interpretación de Niveles de Desarrollo', ln=True); pdf.ln(2)
                     
                     filas = [
-                        ["L7: Visionario (Servicio)", "Falta de etica o humildad. No conecta el dia a dia con el proposito mayor de Confa.", "Perspectiva ocasional. Entiende la vision pero solo la comparte en momentos clave o formales.", "Liderazgo etico. Decide pensando en el bien comun y comparte una vision clara seguido.", "Sabiduria y Humildad. Inspira a ir mas alla del minimo esperado y maneja el caos con calma total."],
-                        ["L6: Mentor (Hacer la Diferencia)", "Falta de empatia. Se enfoca solo en sus tareas y no en las relaciones externas o el entorno.", "Relaciones intermitentes. Colabora con otras areas solo cuando es estrictamente necesario para un proyecto.", "Mentor activo. Dedica tiempo a enseñar y dar retroalimentacion util para resolver mejor y mas rapido.", "Socio Estrategico. Maestro en coaching; crea alianzas que generan valor social y ambiental duradero."],
-                        ["L5: Integrador (Cohesión Interna)", "Falta de pasion y vision. No actua bajo los valores de la organizacion; genera desconfianza.", "Confianza selectiva. Explica el para que de las tareas solo a personas de su circulo cercano.", "Valores en accion. Decide con los valores de Confa en mente y mantiene un buen ambiente de equipo.", "Inspirador autentico. Su ejemplo hace que la gente se sienta profundamente orgullosa de su trabajo."],
-                        ["L4: Facilitador (Transformación)", "Controlador y rigido. Teme al riesgo; se enfoca poco en la innovacion o la estrategia de cambio.", "Cautela al cambio. Se adapta a las prioridades pero prefiere los metodos conocidos.", "Facilitador del aprendizaje. Delega con confianza y aprende de los errores para ayudar a otros.", "Evolucion Valiente. Empodera a las personas y promueve activamente el equilibrio vida-trabajo."],
-                        ["L3: Organizador (Autoestima)", "Burocratico o estatus. Falla al enfocarse en resultados; seguimiento inconsistente de metas.", "Productividad bajo procesos. Cumple acuerdos pero pone tramites de mas que frenan el trabajo.", "Orientado a la excelencia. Define metas claras, usa metricas y busca formas sencillas de trabajar mejor.", "Maestro de la Eficiencia. Domina la complejidad; deja practicas que funcionan perfectamente sin su presencia."],
-                        ["L2: Relaciones (Relación)", "Conflictivo o evitativo. Evita conversaciones dificiles o da muchas vueltas para hablar.", "Comunicacion puntual. Reconoce el buen trabajo pero no de forma constante o publica.", "Constructor de armonia. Gestiona conflictos, habla claro y a tiempo, incluso en temas dificiles.", "Conexion Total. Escucha de verdad, trata a todos con respeto y es accesible para todo el staff."],
-                        ["L1: Crisis (Supervivencia)", "Dictatorial o incapaz de confiar. Descuida la seguridad y bienestar del equipo; malgasta recursos.", "Viabilidad basica. Se mantiene tranquilo ante problemas menores pero se desborda en crisis reales.", "Gestion prudente. Piensa en los riesgos antes de decidir y cuida los recursos como si fueran propios.", "Calma en la Adversidad. Maneja el caos con sabiduria; es el pilar de seguridad y bienestar del equipo."]
+                        ["L7: Visionario (Servicio)", "Falta de ética o humildad. No conecta el día a día con el propósito mayor de Confa.", "Perspectiva ocasional. Entiende la visión pero solo la comparte en momentos clave o formales.", "Liderazgo ético. Decide pensando en el bien común y comparte una visión clara seguido.", "Sabiduría y Humildad. Inspira a ir más allá del mínimo esperado y maneja el caos con calma total."],
+                        ["L6: Mentor (Hacer la Diferencia)", "Falta de empatía. Se enfoca solo en sus tareas y no en las relaciones externas o el entorno.", "Relaciones intermitentes. Colabora con otras áreas solo cuando es estrictamente necesario para un proyecto.", "Mentor activo. Dedica tiempo a enseñar y dar retroalimentación útil para resolver mejor y más rápido.", "Socio Estratégico. Maestro en coaching; crea alianzas que generan valor social y ambiental duradero."],
+                        ["L5: Integrador (Cohesión Interna)", "Falta de pasión y visión. No actúa bajo los valores de la organización; genera desconfianza.", "Confianza selectiva. Explica el para qué de las tareas solo a personas de su círculo cercano.", "Valores en acción. Decide con los valores de Confa en mente y mantiene un buen ambiente de equipo.", "Inspirador auténtico. Su ejemplo hace que la gente se sienta profundamente orgullosa de su trabajo."],
+                        ["L4: Facilitador (Transformación)", "Controlador y rígido. Teme al riesgo; se enfoca poco en la innovación o la estrategia de cambio.", "Cautela al cambio. Se adapta a las prioridades pero prefiere los métodos conocidos.", "Facilitador del aprendizaje. Delega con confianza y aprende de los errores para ayudar a otros.", "Evolución Valiente. Empodera a las personas y promueve activamente el equilibrio vida-trabajo."],
+                        ["L3: Organizador (Autoestima)", "Burocrático o estatus. Falla al enfocarse en resultados; seguimiento inconsistente de metas.", "Productividad bajo procesos. Cumple acuerdos pero pone trámites de más que frenan el trabajo.", "Orientado a la excelencia. Define metas claras, usa métricas y busca formas sencillas de trabajar mejor.", "Maestro de la Eficiencia. Domina la complejidad; deja prácticas que funcionan perfectamente sin su presencia."],
+                        ["L2: Relaciones (Relación)", "Conflictivo o evitativo. Evita conversaciones difíciles o da muchas vueltas para hablar.", "Comunicación puntual. Reconoce el buen trabajo pero no de forma constante o pública.", "Constructor de armonía. Gestiona conflictos, habla claro y a tiempo, incluso en temas difíciles.", "Conexión Total. Escucha de verdad, trata a todos con respeto y es accesible para todo el staff."],
+                        ["L1: Crisis (Supervivencia)", "Dictatorial o incapaz de confiar. Descuida la seguridad y bienestar del equipo; malgasta recursos.", "Viabilidad básica. Se mantiene tranquilo ante problemas menores pero se desborda en crisis reales.", "Gestión prudente. Piensa en los riesgos antes de decidir y cuida los recursos como si fueran propios.", "Calma en la Adversidad. Maneja el caos con sabiduría; es el pilar de seguridad y bienestar del equipo."]
                     ]
                     
                     # Encabezados de tabla
                     pdf.set_font('Helvetica', 'B', 7); pdf.set_fill_color(240, 240, 240)
                     col_w = [30, 40, 40, 40, 40]
                     headers = ["Nivel de Consciencia", "Bajo (Reactivo / Limitado)", "Medio (Funcional / En Desarrollo)", "Alto (Competente / Consistente)", "Superior (Ejemplar / Maestría)"]
+                    
+                    y_headers = pdf.get_y()
                     for i, h in enumerate(headers):
-                        pdf.cell(col_w[i], 10, h, 1, 0, 'C', True)
-                    pdf.ln()
+                        pdf.set_xy(10 + sum(col_w[:i]), y_headers)
+                        pdf.multi_cell(col_w[i], 5, h, 1, 'C', True)
+                    pdf.ln(0)
 
                     pdf.set_font('Helvetica', '', 6)
                     for f in filas:
@@ -395,7 +398,7 @@ if df is not None:
                 pdf.image(save_pdf_chart(generar_fig_reloj(v_org, False), "r3p.png", "Promedio organizacional"), x=141, y=y_relojes_base+3, w=60)
                 
                 pdf.set_font('Helvetica', '', 7); pdf.set_text_color(100, 100, 100)
-                niv_m = ["L7-Visionario", "L6-Mentor Socio", "L5-Autentico", "L4-Facilitador Innovador", "L3-Gestor de Desempeno", "L2-Gestor de Relaciones", "L1-Gestor de Crisis"]
+                niv_m = ["L7-Visionario", "L6-Mentor", "L5-Autentico", "L4-Facilitador", "L3-Desempeño", "L2-Relaciones", "L1-Crisis"]
                 for i, txt in enumerate(niv_m): pdf.text(10, y_relojes_base + 10 + (i * 4), txt)
                 pdf.set_text_color(0, 0, 0)
                 
