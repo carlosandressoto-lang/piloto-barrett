@@ -256,7 +256,7 @@ if df is not None:
             names = df_grupo[df_grupo['Cuadrante'].str.contains("CONFIABLES", na=False)]['Nombre_Lider'].tolist()
             st.markdown(f"<div class='quadrant-box' style='background-color: #3b528b;'><div class='quad-title'>PROF. CONFIABLES</div><div class='name-list'>{'<br>'.join(names) if names else 'Sin registros'}</div></div>", unsafe_allow_html=True)
 
-    # --- BLOQUE IA: PROMPT MAESTRO INTEGRADO ---
+    # --- BLOQUE IA ---
     st.divider()
     if st.button("🚀 GENERAR INFORME"):
         texto_gerencia = ""
@@ -334,84 +334,76 @@ if df is not None:
                     pdf.set_font('Helvetica', 'B', 16); pdf.cell(0, 10, 'MODELO DE LIDERAZGO CONFA', ln=True, align='C'); pdf.ln(5)
                     pdf.set_font('Helvetica', 'B', 12); pdf.cell(0, 10, 'Introducción al Modelo Barrett', ln=True); pdf.ln(2)
                     pdf.set_font('Helvetica', '', 10)
-                    pdf.multi_cell(0, 5, "El liderazgo en Confa se fundamenta en el Modelo de Barrett, un marco diseñado para liberar el potencial humano a través de la comprensión de las necesidades y motivaciones que subyacen al comportamiento...")
+                    pdf.multi_cell(0, 5, "El liderazgo en Confa se fundamenta en el Modelo de Barrett, un marco diseñado para liberar el potencial humano a través de la comprensión de las necesidades y motivaciones que subyacen al comportamiento. Este modelo evalúa siete niveles de consciencia, permitiendo a los líderes transitar desde la estabilidad operativa hasta el servicio con visión de futuro.\n\nEl enfoque de esta evaluación no es punitivo, sino de desarrollo y aprendizaje.")
                     pdf.ln(5); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Interpretación de Niveles de Desarrollo', ln=True); pdf.ln(2)
                     
+                    filas = [
+                        ["L7: Visionario (Servicio)", "Falta de ética o humildad. No conecta el día a día con el propósito mayor de Confa.", "Perspectiva ocasional. Entiende la visión pero solo la comparte en momentos clave o formales.", "Liderazgo ético. Decide pensando en el bien común y comparte una visión clara seguido.", "Sabiduría y Humildad. Inspira a ir más allá del mínimo esperado y maneja el caos con calma total."],
+                        ["L6: Mentor (Hacer la Diferencia)", "Falta de empatía. Se enfoca solo en sus tareas y no en las relaciones externas o el entorno.", "Relaciones intermitentes. Colabora con otras áreas solo cuando es estrictamente necesario para un proyecto.", "Mentor activo. Dedica tiempo a enseñar y dar retroalimentación útil para resolver mejor y más rápido.", "Socio Estratégico. Maestro en coaching; crea alianzas que generan valor social y ambiental duradero."],
+                        ["L5: Integrador (Cohesión Interna)", "Falta de pasión y visión. No actúa bajo los valores de la organización; genera desconfianza.", "Confianza selectiva. Explica el para qué de las tareas solo a personas de su círculo cercano.", "Valores en acción. Decide con los valores de Confa en mente y mantiene un buen ambiente de equipo.", "Inspirador auténtico. Su ejemplo hace que la gente se sienta profundamente orgullosa de su trabajo."],
+                        ["L4: Facilitador (Transformación)", "Controlador y rígido. Teme al riesgo; se enfoca poco en la innovación o la estrategia de cambio.", "Cautela al cambio. Se adapta a las prioridades pero prefiere los métodos conocidos.", "Facilitador del aprendizaje. Delega con confianza y aprende de los errores para ayudar a otros.", "Evolución Valiente. Empodera a las personas y promueve activamente el equilibrio vida-trabajo."],
+                        ["L3: Organizador (Autoestima)", "Burocrático o estatus. Falla al enfocarse en resultados; seguimiento inconsistente de metas.", "Productividad bajo procesos. Cumple acuerdos pero pone trámites de más que frenan el trabajo.", "Orientado a la excelencia. Define metas claras, usa métricas y busca formas sencillas de trabajar mejor.", "Maestro de la Eficiencia. Domina la complejidad; deja prácticas que funcionan perfectamente sin su presencia."],
+                        ["L2: Relaciones (Relación)", "Conflictivo o evitativo. Evita conversaciones difíciles o da muchas vueltas para hablar.", "Comunicación puntual. Reconoce el buen trabajo pero no de forma constante o pública.", "Constructor de armonía. Gestiona conflictos, habla claro y a tiempo, incluso en temas difíciles.", "Conexión Total. Escucha de verdad, trata a todos con respeto y es accesible para todo el staff."],
+                        ["L1: Crisis (Supervivencia)", "Dictatorial o incapaz de confiar. Descuida la seguridad y bienestar del equipo; malgasta recursos.", "Viabilidad básica. Se mantiene tranquilo ante problemas menores pero se desborda en crisis reales.", "Gestión prudente. Piensa en los riesgos antes de decidir y cuida los recursos como si fueran propios.", "Calma en la Adversidad. Maneja el caos con sabiduría; es el pilar de seguridad y bienestar del equipo."]
+                    ]
+                    
+                    pdf.set_font('Helvetica', 'B', 7); pdf.set_fill_color(240, 240, 240)
                     col_w = [30, 40, 40, 40, 40]
                     headers = ["Nivel de Consciencia", "Bajo (Reactivo / Limitado)", "Medio (Funcional / En Desarrollo)", "Alto (Competente / Consistente)", "Superior (Ejemplar / Maestría)"]
                     
-                    # 1. ENCABEZADO DE LA TABLA
-                    pdf.set_font('Helvetica', 'B', 7); pdf.set_fill_color(240, 240, 240)
-                    y_h = pdf.get_y()
+                    y_headers = pdf.get_y()
                     for i, h in enumerate(headers):
-                        pdf.set_xy(10 + sum(col_w[:i]), y_h)
-                        # Altura fija de 5 para el encabezado para evitar que se encime el texto
+                        pdf.set_xy(10 + sum(col_w[:i]), y_headers)
                         pdf.multi_cell(col_w[i], 5, h, 1, 'C', True)
                     
-                    # Ajustamos la posición Y al final de los encabezados (asumiendo que el más largo ocupa 10mm)
-                    pdf.set_y(y_h + 10)
-                
-                    # 2. FILAS DE LA TABLA
+                    pdf.set_y(y_headers + 10)
                     pdf.set_font('Helvetica', '', 6)
                     for f in filas:
                         y_pre = pdf.get_y()
-                        
-                        # --- PASO CLAVE: Calcular altura máxima real de la fila antes de escribir ---
                         alturas = []
                         for i, txt in enumerate(f):
-                            # Calculamos cuántas líneas ocupará el texto en este ancho de columna
-                            lineas = len(pdf.multi_cell_text(txt, col_w[i]))
-                            alturas.append(lineas * 3.2) # 3.2 es el alto de línea estándar para fuente tamaño 6
+                            alturas.append(len(pdf.multi_cell_text(txt, col_w[i])) * 3.2)
                         
                         max_h = max(alturas)
-                        if max_h < 8: max_h = 8 # Altura mínima de celda
+                        if max_h < 8: max_h = 8
+                        if y_pre + max_h > 265: pdf.add_page(); y_pre = pdf.get_y()
                         
-                        # Salto de página si la fila no cabe
-                        if y_pre + max_h > 265: 
-                            pdf.add_page()
-                            y_pre = pdf.get_y()
-                        
-                        # --- PASO CLAVE: Dibujar cada celda con la altura máxima calculada ---
                         for i, txt in enumerate(f):
                             pdf.set_xy(10 + sum(col_w[:i]), y_pre)
-                            # Dibujamos el borde primero con la altura total calculada para la fila
                             pdf.rect(10 + sum(col_w[:i]), y_pre, col_w[i], max_h)
-                            # Escribimos el texto SIN borde (borde=0) para evitar que multi_cell dibuje cuadros cortos
                             pdf.multi_cell(col_w[i], 3.2, txt, 0, 'L')
-                        
-                        # Movemos el cursor al final de la fila más alta
                         pdf.set_y(y_pre + max_h)
-        
-                # --- PÁGINA DASHBOARD (AMBOS) ---
+
+                # --- PÁGINA DASHBOARD ---
                 pdf.add_page()
                 pdf.set_font('Helvetica', 'B', 16); pdf.cell(0, 10, 'REPORTE ESTRATÉGICO INTEGRAL', ln=True, align='C')
                 pdf.set_font('Helvetica', '', 12); pdf.cell(0, 8, f'Evaluado: {lider_sel}', ln=True, align='C')
                 pdf.set_font('Helvetica', 'B', 10); pdf.cell(0, 8, f'Total Evaluadores: {int(d.CANT_EVAL)} | Auto: {int(d.CANT_AUTO)} | Jefe: {int(d.CANT_JEFE)} | Pares: {int(d.CANT_PAR)} | Colab: {int(d.CANT_COL)}', ln=True, align='C')
                 
-                pdf.ln(2); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Frecuencia de comportamientos por niveles (%)', ln=True)
+                pdf.ln(2); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, '📊 Frecuencia de comportamientos por niveles (%)', ln=True)
                 y_frec = pdf.get_y()
                 pdf.image(save_pdf_chart(generar_fig_barras(v_auto, "", "#3498db"), "b1.png", "Autoevaluacion"), x=10, y=y_frec, w=60)
                 pdf.image(save_pdf_chart(generar_fig_barras(v_ind, "", "#2ecc71"), "b2.png", "Evaluacion 360"), x=75, y=y_frec, w=60)
                 pdf.image(save_pdf_chart(generar_fig_barras(v_org, "", "#e74c3c"), "b3.png", "Promedio Organizacional"), x=140, y=y_frec, w=60)
                 
-                pdf.set_y(y_frec + 43); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Resultados Evaluación 360° (Niveles Barrett)', ln=True)
+                pdf.set_y(y_frec + 43); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, '⏳ Resultados Evaluación 360° (Niveles Barrett)', ln=True)
                 y_relojes_base = pdf.get_y()
                 pdf.image(save_pdf_chart(generar_fig_reloj(v_auto, False), "r1p.png", "Autoevaluacion"), x=35, y=y_relojes_base+3, w=60)
                 pdf.image(save_pdf_chart(generar_fig_reloj(v_ind, False), "r2p.png", "Evaluacion 360"), x=88, y=y_relojes_base+3, w=60)
                 pdf.image(save_pdf_chart(generar_fig_reloj(v_org, False), "r3p.png", "Promedio organizacional"), x=141, y=y_relojes_base+3, w=60)
                 
                 pdf.set_font('Helvetica', '', 7); pdf.set_text_color(100, 100, 100)
-                niv_m = ["L7-Visionario", "L6-Mentor", "L5-Autentico", "L4-Facilitador", "L3-Desempeño", "L2-Relaciones", "L1-Crisis"]
+                niv_m = ["L7-Visionario", "L6-Mentor Socio", "L5-Autentico", "L4-Facilitador Innovador", "L3-Gestor de Desempeno", "L2-Gestor de Relaciones", "L1-Gestor de Crisis"]
                 for i, txt in enumerate(niv_m): pdf.text(10, y_relojes_base + 10 + (i * 4), txt)
                 pdf.set_text_color(0, 0, 0)
                 
-                pdf.set_y(y_relojes_base + 45); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Alineación de Consciencia e Índice de Equilibrio', ln=True)
+                pdf.set_y(y_relojes_base + 45); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, '🎯 Alineación de Consciencia e ⚖️ Índice de Equilibrio', ln=True)
                 y_radar = pdf.get_y()
                 pdf.image(save_pdf_chart(fig_radar, "radar.png", ""), x=10, y=y_radar, w=95)
                 pdf.image(save_pdf_chart(fig_dim, "dim.png", ""), x=110, y=y_radar + 5, w=90)
 
                 if tipo == "GH":
-                    pdf.add_page(); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Mapa de Talento NineBox Confa', ln=True)
+                    pdf.add_page(); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, '🟦 Mapa de Talento NineBox Confa', ln=True)
                     fig_nb.update_layout(template="plotly", paper_bgcolor='white', plot_bgcolor='white', font=dict(color='black'))
                     img_nb = os.path.join(tmp_dir, "nb.png"); fig_nb.write_image(img_nb, engine="kaleido", scale=4); pdf.image(img_nb, x=25, w=160)
 
