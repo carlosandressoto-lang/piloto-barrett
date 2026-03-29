@@ -403,7 +403,7 @@ if df is not None:
                 pdf.image(save_pdf_chart(fig_dim, "dim.png", ""), x=110, y=y_radar + 5, w=90)
 
                 if tipo == "GH":
-                    pdf.add_page(); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, '🟦 Mapa de Talento NineBox Confa', ln=True)
+                    pdf.add_page(); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Mapa de Talento NineBox Confa', ln=True)
                     fig_nb.update_layout(template="plotly", paper_bgcolor='white', plot_bgcolor='white', font=dict(color='black'))
                     img_nb = os.path.join(tmp_dir, "nb.png"); fig_nb.write_image(img_nb, engine="kaleido", scale=4); pdf.image(img_nb, x=25, w=160)
 
