@@ -256,7 +256,7 @@ if df is not None:
             names = df_grupo[df_grupo['Cuadrante'].str.contains("CONFIABLES", na=False)]['Nombre_Lider'].tolist()
             st.markdown(f"<div class='quadrant-box' style='background-color: #3b528b;'><div class='quad-title'>PROF. CONFIABLES</div><div class='name-list'>{'<br>'.join(names) if names else 'Sin registros'}</div></div>", unsafe_allow_html=True)
 
-    # --- BLOQUE IA: PROMPT MAESTRO INTEGRADO ---
+    # --- BLOQUE IA ---
     st.divider()
     if st.button("🚀 GENERAR INFORME"):
         texto_gerencia = ""
@@ -301,8 +301,8 @@ if df is not None:
         1. DESCRIPCIÓN POR NIVELES: Lista de L1 a L7 con el nombre de contexto Barret (Ejemplo Nivel 1: Gestor de Crisis). Clasifica cada nivel basándote en el 'Ponderado Individual' usando la rúbrica (Bajo, Medio, Alto, Superior) y las definiciones Barrett anteriores para generar una descripción según el modelo Barret y el nivel de la rubrica del líder. Siempre una lista de Nivel 1 a Nivel 7 no lo hagas en 1 solo párrafo porque confunde
         2. ANÁLISIS DE AUTOVALORACIÓN: Un párrafo. Analiza alineación percepción interna (Autoevaluacion) vs colectiva (Ponderado individual que es la evaluación de Jefe directo, Colaboradores a cargo y Pares). Resalta donde la influencia externa es mayor a la autopercepción, o aquellos puntos donde la autoevaluacion sea mayor en rubrica a lo evaluado pues son 2 cosas diferentes a trabajar según el nivel de conciencia.
         3. MATRIZ DE MADUREZ: Un párrafo sólido. Analiza sintonía del líder (Ponderado Individual) con el Ponderado Organizacional basándote en la RÚBRICA NIVELES DE BARRET.
-        4. PERFIL DE LIDERAZGO: Un párrafo sólido. Define el estilo predominante según el promedio más alto (Liderazgo: {round(liderazgo_prom,1)}%, Transición: {round(transicion_prom,1)}%, Gerencia: {round(gerencia_prom,1)}%) y ofrece 3 recomendaciones de expansión para llegar a un equilibrio de las 3 dimensiones (Liderazgo Transicion y Gerencia) punto seguido.
-        5. POSICIONAMIENTO ESTRATÉGICO DE TALENTO (Potencial y NineBox): Un párrafo sólido y técnico. Identifica el cuadrante asignado ({cuadrante}) y utiliza su definición estratégica de Confa (CONTEXTO NINEBOX CONFA) para explicar la situación actual del evaluado. Analiza la brecha o alineación entre la Autoevaluacion de potencial (AUTO_POT ({d.AUTO_POT}%)) y el Resultado de evaluacion de potencial 360° ({d.IND_POT}%), determinando si existe una sobrevaloración o una subvaloración del propio potencial de crecimiento. Establece la 'Tendencia de Transición' evaluando qué tan cerca está de los límites de la rúbrica (Bajo <60, ALto 60-80, Superior >80) y define, basándose en el cruce con Desempeño Organizacional (Nivel {d.DES}), qué acciones de retención, motivación o movilidad interna son imperativas para maximizar su valor en la organización. Si el Resultado de evaluacion de potencial 360° es significativamente más alto que la Autoevaluacion de potencial, resalta el "Talento Oculto"; si es al contrario, analiza la necesidad de un ajuste de expectativas de carrera. Termina con una frase sobre la proyección de este perfil hacia posiciones de mayor jerarquía o roles técnicos expertos según sea el caso.
+        4. PERFIL DE LIDERAZGO: Un párrafo sólido. Define el estilo predominante según el promedio más alto (Liderazgo: {round(liderazgo_prom,1)}%, Transición: {round(transicion_prom,1)}%, Gerencia: {round(gerencia_prom,1)}%) y ofrece 3 recomendaciones de expansión para llegar a un equilibrio de las 3 dimensiones (Liderazgo Transicion and Gerencia) punto seguido.
+        5. POSICIONAMIENTO ESTRATÉGICO DE TALENTO (Potencial y NineBox): Un párrafo sólido y técnico. Identifica el cuadrante asignado ({cuadrante}) y utiliza su definición estratégica de Confa (CONTEXTO NINEBOX CONFA) para explicar la situación actual del evaluado. Analiza la brecha o alineación entre la Autoevaluacion de potencial (AUTO_POT ({d.AUTO_POT}%)) and el Resultado de evaluacion de potencial 360° ({d.IND_POT}%), determinando si existe una sobrevaloración o una subvaloración del propio potencial de crecimiento. Establece la 'Tendencia de Transición' evaluando qué tan cerca está de los límites de la rúbrica (Bajo <60, ALto 60-80, Superior >80) and define, basándose en el cruce con Desempeño Organizacional (Nivel {d.DES}), qué acciones de retención, motivación o movilidad interna son imperativas para maximizar su valor en la organización. Si el Resultado de evaluacion de potencial 360° es significativamente más alto que la Autoevaluacion de potencial, resalta el "Talento Oculto"; si es al contrario, analiza la necesidad de un ajuste de expectativas de carrera. Termina con una frase sobre la proyección de este perfil hacia posiciones de mayor jerarquía o roles técnicos expertos según sea el caso.
         """
         try:
             with st.spinner('Analizando...'):
@@ -347,6 +347,7 @@ if df is not None:
                         ["L1: Crisis (Supervivencia)", "Dictatorial o incapaz de confiar. Descuida la seguridad y bienestar del equipo; malgasta recursos.", "Viabilidad básica. Se mantiene tranquilo ante problemas menores pero se desborda en crisis reales.", "Gestión prudente. Piensa en los riesgos antes de decidir y cuida los recursos como si fueran propios.", "Calma en la Adversidad. Maneja el caos con sabiduría; es el pilar de seguridad y bienestar del equipo."]
                     ]
                     
+                    # 1. DIBUJAMOS EL ENCABEZADO DE FORMA SEGURA (SIN MULTICELL PARA EVITAR TRASLAPE)
                     pdf.set_font('Helvetica', 'B', 7); pdf.set_fill_color(240, 240, 240)
                     col_w = [30, 40, 40, 40, 40]
                     headers = ["Nivel de Consciencia", "Bajo (Reactivo / Limitado)", "Medio (Funcional / En Desarrollo)", "Alto (Competente / Consistente)", "Superior (Ejemplar / Maestría)"]
@@ -354,29 +355,33 @@ if df is not None:
                     y_headers = pdf.get_y()
                     for i, h in enumerate(headers):
                         pdf.set_xy(10 + sum(col_w[:i]), y_headers)
-                        pdf.multi_cell(col_w[i], 5, h, 1, 'C', True)
-                    pdf.ln(0)
+                        # Usamos cell para el título de la columna para que la posición X se mantenga limpia
+                        pdf.cell(col_w[i], 10, h, 1, 0, 'C', True)
+                    pdf.ln(10)
 
+                    # 2. DIBUJAMOS LAS FILAS CON CÁLCULO DE ALTURA PREVIO
                     pdf.set_font('Helvetica', '', 6)
                     for f in filas:
                         y_pre = pdf.get_y()
-                        x_curr = 10
-                        max_h = 0
-                        # Determinar altura maxima
+                        # Medimos la altura necesaria para cada columna
+                        alturas = []
                         for i, txt in enumerate(f):
-                            pdf.set_xy(x_curr + sum(col_w[:i]), y_pre)
-                            pdf.multi_cell(col_w[i], 3, txt, 0, 'L')
-                            if (pdf.get_y() - y_pre) > max_h: max_h = pdf.get_y() - y_pre
+                            alturas.append(pdf.get_string_width(txt) / (col_w[i] - 2) * 3.2) # Estimación
                         
-                        # Dibujar bordes y contenido real
-                        x_curr = 10
+                        max_h = max(alturas)
+                        if max_h < 8: max_h = 8
+                        
+                        # Salto de página preventivo
+                        if y_pre + max_h > 260: pdf.add_page(); y_pre = pdf.get_y()
+                        
                         for i, txt in enumerate(f):
-                            pdf.rect(x_curr + sum(col_w[:i]), y_pre, col_w[i], max_h)
-                            pdf.set_xy(x_curr + sum(col_w[:i]), y_pre)
-                            pdf.multi_cell(col_w[i], 3, txt, 0, 'L')
+                            pdf.set_xy(10 + sum(col_w[:i]), y_pre)
+                            # Dibujamos el marco de la celda completo primero
+                            pdf.rect(10 + sum(col_w[:i]), y_pre, col_w[i], max_h)
+                            # Escribimos el contenido (el multi_cell ahora tiene espacio libre)
+                            pdf.multi_cell(col_w[i], 3.2, txt, 0, 'L')
                         
                         pdf.set_y(y_pre + max_h)
-                        if pdf.get_y() > 260: pdf.add_page()
 
                 # --- PÁGINA DASHBOARD ---
                 pdf.add_page()
@@ -390,7 +395,7 @@ if df is not None:
                 pdf.image(save_pdf_chart(generar_fig_barras(v_ind, "", "#2ecc71"), "b2.png", "Evaluacion 360"), x=75, y=y_frec, w=60)
                 pdf.image(save_pdf_chart(generar_fig_barras(v_org, "", "#e74c3c"), "b3.png", "Promedio Organizacional"), x=140, y=y_frec, w=60)
                 
-                pdf.set_y(y_frec + 43); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Resultados Evaluación 360 (Niveles Barrett)', ln=True)
+                pdf.set_y(y_frec + 43); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Resultados Evaluacion 360 (Niveles Barrett)', ln=True)
                 y_relojes_base = pdf.get_y()
                 pdf.image(save_pdf_chart(generar_fig_reloj(v_auto, False), "r1p.png", "Autoevaluacion"), x=35, y=y_relojes_base+3, w=60)
                 pdf.image(save_pdf_chart(generar_fig_reloj(v_ind, False), "r2p.png", "Evaluacion 360"), x=88, y=y_relojes_base+3, w=60)
@@ -401,7 +406,7 @@ if df is not None:
                 for i, txt in enumerate(niv_m): pdf.text(10, y_relojes_base + 10 + (i * 4), txt)
                 pdf.set_text_color(0, 0, 0)
                 
-                pdf.set_y(y_relojes_base + 45); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Alineación de Consciencia e Indice de Equilibrio', ln=True)
+                pdf.set_y(y_relojes_base + 45); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Alineacion de Consciencia e Indice de Equilibrio', ln=True)
                 y_radar = pdf.get_y()
                 pdf.image(save_pdf_chart(fig_radar, "radar.png", ""), x=10, y=y_radar, w=95)
                 pdf.image(save_pdf_chart(fig_dim, "dim.png", ""), x=110, y=y_radar + 5, w=90)
