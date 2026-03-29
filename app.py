@@ -421,4 +421,4 @@ if df is not None:
             return pdf.output()
 
         with col_btn1: st.download_button("📄 INFORME GESTIÓN HUMANA", data=bytes(generar_pdf_final(tipo="GH")), file_name=f"Reporte_GH_{lider_sel}.pdf", mime="application/pdf")
-        with col_btn2: st.download_button("👤 INFORME COLABORADOR", data=bytes(generar_pdf_final(tipo="COLABORADOR")), file_name=f"Reporte_Colaborador_{lider_sel}.pdf", mime="application/pdf")
+        with col_btn2: st.download_button("INFORME COLABORADOR", data=bytes(generar_pdf_final(tipo="COLABORADOR")), file_name=f"Reporte_Colaborador_{lider_sel}.pdf", mime="application/pdf")
