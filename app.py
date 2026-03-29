@@ -322,7 +322,6 @@ if df is not None:
             
             with tempfile.TemporaryDirectory() as tmp_dir:
                 def save_pdf_chart(fig, name, title=""):
-                    # Eliminamos emojis solo en el título del layout de Plotly para el PDF
                     titulo_limpio = title.replace("📊 ", "").replace("⏳ ", "").replace("🎯 ", "").replace("⚖️ ", "").replace("🟦 ", "")
                     fig.update_layout(template="plotly", paper_bgcolor='white', plot_bgcolor='white', font=dict(color='black'), title=dict(text=titulo_limpio, x=0.5, font=dict(size=14), y=0.95), margin=dict(t=60, b=20, l=10, r=10))
                     path = os.path.join(tmp_dir, name)
@@ -339,56 +338,43 @@ if df is not None:
                     pdf.ln(5); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Interpretación de Niveles de Desarrollo', ln=True); pdf.ln(2)
                     
                     filas = [
-                        ["L7: Visionario (Servicio)", "Falta de ética o humildad. No conecta el día a día con el propósito mayor de Confa.", "Perspectiva ocasional. Entiende la visión pero solo la comparte en momentos clave o formales.", "Liderazgo ético. Decide pensando en el bien común y comparte una visión clara seguido.", "Sabiduría y Humildad. Inspira a ir más allá del mínimo esperado y maneja el caos con calma total."],
-                        ["L6: Mentor (Hacer la Diferencia)", "Falta de empatía. Se enfoca solo en sus tareas y no en las relaciones externas o el entorno.", "Relaciones intermitentes. Colabora con otras áreas solo cuando es estrictamente necesario para un proyecto.", "Mentor activo. Dedica tiempo a enseñar y dar retroalimentación útil para resolver mejor y más rápido.", "Socio Estratégico. Maestro en coaching; crea alianzas que generan valor social y ambiental duradero."],
-                        ["L5: Integrador (Cohesión Interna)", "Falta de pasión y visión. No actúa bajo los valores de la organización; genera desconfianza.", "Confianza selectiva. Explica el para qué de las tareas solo a personas de su círculo cercano.", "Valores en acción. Decide con los valores de Confa en mente y mantiene un buen ambiente de equipo.", "Inspirador auténtico. Su ejemplo hace que la gente se sienta profundamente orgullosa de su trabajo."],
-                        ["L4: Facilitador (Transformación)", "Controlador y rígido. Teme al riesgo; se enfoca poco en la innovación o la estrategia de cambio.", "Cautela al cambio. Se adapta a las prioridades pero prefiere los métodos conocidos.", "Facilitador del aprendizaje. Delega con confianza y aprende de los errores para ayudar a otros.", "Evolución Valiente. Empodera a las personas y promueve activamente el equilibrio vida-trabajo."],
-                        ["L3: Organizador (Autoestima)", "Burocrático o estatus. Falla al enfocarse en resultados; seguimiento inconsistente de metas.", "Productividad bajo procesos. Cumple acuerdos pero pone trámites de más que frenan el trabajo.", "Orientado a la excelencia. Define metas claras, usa métricas y busca formas sencillas de trabajar mejor.", "Maestro de la Eficiencia. Domina la complejidad; deja prácticas que funcionan perfectamente sin su presencia."],
-                        ["L2: Relaciones (Relación)", "Conflictivo o evitativo. Evita conversaciones difíciles o da muchas vueltas para hablar.", "Comunicación puntual. Reconoce el buen trabajo pero no de forma constante o pública.", "Constructor de armonía. Gestiona conflictos, habla claro y a tiempo, incluso en temas difíciles.", "Conexión Total. Escucha de verdad, trata a todos con respeto y es accesible para todo el staff."],
-                        ["L1: Crisis (Supervivencia)", "Dictatorial o incapaz de confiar. Descuida la seguridad y bienestar del equipo; malgasta recursos.", "Viabilidad básica. Se mantiene tranquilo ante problemas menores pero se desborda en crisis reales.", "Gestión prudente. Piensa en los riesgos antes de decidir y cuida los recursos como si fueran propios.", "Calma en la Adversidad. Maneja el caos con sabiduría; es el pilar de seguridad y bienestar del equipo."]
+                        ["L7: Visionario (Servicio)", "Falta de etica o humildad. No conecta el dia a dia con el proposito mayor de Confa.", "Perspectiva ocasional. Entiende la vision pero solo la comparte en momentos clave o formales.", "Liderazgo etico. Decide pensando en el bien comun y comparte una vision clara seguido.", "Sabiduria y Humildad. Inspira a ir mas alla del minimo esperado y maneja el caos con calma total."],
+                        ["L6: Mentor (Hacer la Diferencia)", "Falta de empatia. Se enfoca solo en sus tareas y no en las relaciones externas o el entorno.", "Relaciones intermitentes. Colabora con otras areas solo cuando es estrictamente necesario para un proyecto.", "Mentor activo. Dedica tiempo a enseñar y dar retroalimentacion util para resolver mejor y mas rapido.", "Socio Estrategico. Maestro en coaching; crea alianzas que generan valor social y ambiental duradero."],
+                        ["L5: Integrador (Cohesión Interna)", "Falta de pasion y vision. No actua bajo los valores de la organizacion; genera desconfianza.", "Confianza selectiva. Explica el para que de las tareas solo a personas de su circulo cercano.", "Valores en accion. Decide con los valores de Confa en mente y mantiene un buen ambiente de equipo.", "Inspirador autentico. Su ejemplo hace que la gente se sienta profundamente orgullosa de su trabajo."],
+                        ["L4: Facilitador (Transformación)", "Controlador y rigido. Teme al riesgo; se enfoca poco en la innovacion o la estrategia de cambio.", "Cautela al cambio. Se adapta a las prioridades pero prefiere los metodos conocidos.", "Facilitador del aprendizaje. Delega con confianza y aprende de los errores para ayudar a otros.", "Evolucion Valiente. Empodera a las personas y promueve activamente el equilibrio vida-trabajo."],
+                        ["L3: Organizador (Autoestima)", "Burocratico o estatus. Falla al enfocarse en resultados; seguimiento inconsistente de metas.", "Productividad bajo procesos. Cumple acuerdos pero pone tramites de mas que frenan el trabajo.", "Orientado a la excelencia. Define metas claras, usa metricas y busca formas sencillas de trabajar mejor.", "Maestro de la Eficiencia. Domina la complejidad; deja practicas que funcionan perfectamente sin su presencia."],
+                        ["L2: Relaciones (Relación)", "Conflictivo o evitativo. Evita conversaciones dificiles o da muchas vueltas para hablar.", "Comunicacion puntual. Reconoce el buen trabajo pero no de forma constante o publica.", "Constructor de armonia. Gestiona conflictos, habla claro y a tiempo, incluso en temas dificiles.", "Conexion Total. Escucha de verdad, trata a todos con respeto y es accesible para todo el staff."],
+                        ["L1: Crisis (Supervivencia)", "Dictatorial o incapaz de confiar. Descuida la seguridad y bienestar del equipo; malgasta recursos.", "Viabilidad basica. Se mantiene tranquilo ante problemas menores pero se desborda en crisis reales.", "Gestion prudente. Piensa en los riesgos antes de decidir y cuida los recursos como si fueran propios.", "Calma en la Adversidad. Maneja el caos con sabiduria; es el pilar de seguridad y bienestar del equipo."]
                     ]
                     
-                    # Encabezados de tabla - CORRECCIÓN: Usar cell para evitar traslape
+                    # Encabezados de tabla
                     pdf.set_font('Helvetica', 'B', 7); pdf.set_fill_color(240, 240, 240)
                     col_w = [30, 40, 40, 40, 40]
-                    headers = ["Nivel de Consciencia", "Bajo (Reactivo / Limitado)", "Medio (Funcional / En Desarrollo)", "Alto (Competente / Consistente)", "Superior (Ejemplar / Maestría)"]
-                    
-                    y_h = pdf.get_y()
+                    headers = ["Nivel de Consciencia", "Bajo (Reactivo/Limitado)", "Medio (Funcional/En Desarrollo)", "Alto (Competente/Consistente)", "Superior (Ejemplar/Maestría)"]
                     for i, h in enumerate(headers):
-                        pdf.set_xy(10 + sum(col_w[:i]), y_h)
-                        # Usamos cell en lugar de multicell para que los encabezados cortos no traslapen
                         pdf.cell(col_w[i], 10, h, 1, 0, 'C', True)
-                    pdf.ln(10)
+                    pdf.ln()
 
-                    # Cuerpo de la tabla con cálculo dinámico de altura por fila
                     pdf.set_font('Helvetica', '', 6)
                     for f in filas:
                         y_pre = pdf.get_y()
-                        
-                        # PASO 1: Calcular la altura que necesita la fila basándose en la columna con más texto
-                        alturas = []
+                        x_curr = 10
+                        max_h = 0
+                        # Primera pasada para determinar altura de fila
                         for i, txt in enumerate(f):
-                            # Obtenemos la cantidad de líneas que ocupará el texto
-                            n_lines = len(pdf.multi_cell_text(txt, col_w[i]))
-                            alturas.append(n_lines * 3.2) # 3.2 es el interlineado estándar para fuente 6
+                            pdf.set_xy(x_curr + sum(col_w[:i]), y_pre)
+                            pdf.multi_cell(col_w[i], 3, txt, 0, 'L')
+                            if (pdf.get_y() - y_pre) > max_h: max_h = pdf.get_y() - y_pre
                         
-                        max_h = max(alturas)
-                        if max_h < 8: max_h = 8 # Altura mínima
-                        
-                        # Salto de página si no cabe la fila completa
-                        if y_pre + max_h > 265:
-                            pdf.add_page()
-                            y_pre = pdf.get_y()
-                        
-                        # PASO 2: Dibujar las celdas asegurando que todas cierren con la misma altura
+                        # Segunda pasada para dibujar bordes y contenido real
+                        x_curr = 10
                         for i, txt in enumerate(f):
-                            pdf.set_xy(10 + sum(col_w[:i]), y_pre)
-                            # Dibujamos el borde con la altura máxima
-                            pdf.rect(10 + sum(col_w[:i]), y_pre, col_w[i], max_h)
-                            # Escribimos el texto con multicell (interlineado 3.2)
-                            pdf.multi_cell(col_w[i], 3.2, txt, 0, 'L')
+                            pdf.rect(x_curr + sum(col_w[:i]), y_pre, col_w[i], max_h)
+                            pdf.set_xy(x_curr + sum(col_w[:i]), y_pre)
+                            pdf.multi_cell(col_w[i], 3, txt, 0, 'L')
                         
                         pdf.set_y(y_pre + max_h)
+                        if pdf.get_y() > 260: pdf.add_page()
 
                 # --- PÁGINA DASHBOARD (AMBOS) ---
                 pdf.add_page()
@@ -402,18 +388,18 @@ if df is not None:
                 pdf.image(save_pdf_chart(generar_fig_barras(v_ind, "", "#2ecc71"), "b2.png", "Evaluacion 360"), x=75, y=y_frec, w=60)
                 pdf.image(save_pdf_chart(generar_fig_barras(v_org, "", "#e74c3c"), "b3.png", "Promedio Organizacional"), x=140, y=y_frec, w=60)
                 
-                pdf.set_y(y_frec + 43); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Resultados Evaluación 360 (Niveles Barrett)', ln=True)
+                pdf.set_y(y_frec + 43); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Resultados Evaluación 360° (Niveles Barrett)', ln=True)
                 y_relojes_base = pdf.get_y()
                 pdf.image(save_pdf_chart(generar_fig_reloj(v_auto, False), "r1p.png", "Autoevaluacion"), x=35, y=y_relojes_base+3, w=60)
                 pdf.image(save_pdf_chart(generar_fig_reloj(v_ind, False), "r2p.png", "Evaluacion 360"), x=88, y=y_relojes_base+3, w=60)
                 pdf.image(save_pdf_chart(generar_fig_reloj(v_org, False), "r3p.png", "Promedio organizacional"), x=141, y=y_relojes_base+3, w=60)
                 
                 pdf.set_font('Helvetica', '', 7); pdf.set_text_color(100, 100, 100)
-                niv_m = ["L7-Visionario", "L6-Mentor Socio", "L5-Autentico", "L4-Facilitador Innovador", "L3-Gestor de Desempeño", "L2-Gestor de Relaciones", "L1-Gestor de Crisis"]
+                niv_m = ["L7-Visionario", "L6-Mentor Socio", "L5-Autentico", "L4-Facilitador Innovador", "L3-Gestor de Desempeno", "L2-Gestor de Relaciones", "L1-Gestor de Crisis"]
                 for i, txt in enumerate(niv_m): pdf.text(10, y_relojes_base + 10 + (i * 4), txt)
                 pdf.set_text_color(0, 0, 0)
                 
-                pdf.set_y(y_relojes_base + 45); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Alineacion de Consciencia e Indice de Equilibrio', ln=True)
+                pdf.set_y(y_relojes_base + 45); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Alineación de Consciencia e Índice de Equilibrio', ln=True)
                 y_radar = pdf.get_y()
                 pdf.image(save_pdf_chart(fig_radar, "radar.png", ""), x=10, y=y_radar, w=95)
                 pdf.image(save_pdf_chart(fig_dim, "dim.png", ""), x=110, y=y_radar + 5, w=90)
