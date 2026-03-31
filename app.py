@@ -78,6 +78,15 @@ def obtener_cuadrante_confa(pot, des):
     }
     return mapping.get((p_label, d_label), "No clasificado")
 
+def normalizar_potencial(p):
+    """Mapea el potencial a una escala visual de 0-100 con tercios iguales para los rangos."""
+    if p < 60:
+        return (p / 60) * 33.33
+    elif p < 83:
+        return 33.33 + ((p - 60) / (83 - 60)) * 33.33
+    else:
+        return 66.66 + ((p - 83) / (100 - 83)) * 33.34
+
 def obtener_color_desarrollo(v):
     if v < 65: return "#ff4b4b" 
     if v < 75: return "#f1c40f" 
@@ -193,13 +202,14 @@ if df is not None:
     
     with cnb1:
         fig_nb = go.Figure()
+        # CAJAS PARAMETRIZADAS: Visualmente iguales (0-33.3, 33.3-66.6, 66.6-100)
         quads = [
-            (0.5, 1.5, 0, 60, "#440154", "ICEBERG"), 
-            (1.5, 2.5, 0, 60, "#482878", "EFECTIVOS"), 
-            (2.5, 3.5, 0, 60, "#3b528b", "PROF. CONFIABLES"), 
-            (0.5, 1.5, 33.33, 83, "#31688e", "DILEMA"), 
-            (1.5, 2.5, 33.33, 83, "#21918c", "EMPLEADOS CLAVE"), 
-            (2.5, 3.5, 33.33, 83, "#5ec962", "FUTURAS ESTRELLAS"), 
+            (0.5, 1.5, 0, 33.33, "#440154", "ICEBERG"), 
+            (1.5, 2.5, 0, 33.33, "#482878", "EFECTIVOS"), 
+            (2.5, 3.5, 0, 33.33, "#3b528b", "PROF. CONFIABLES"), 
+            (0.5, 1.5, 33.33, 66.66, "#31688e", "DILEMA"), 
+            (1.5, 2.5, 33.33, 66.66, "#21918c", "EMPLEADOS CLAVE"), 
+            (2.5, 3.5, 33.33, 66.66, "#5ec962", "FUTURAS ESTRELLAS"), 
             (0.5, 1.5, 66.66, 100, "#b5de2b", "ENIGMA"), 
             (1.5, 2.5, 66.66, 100, "#fde725", "ESTRELLA CREC."), 
             (2.5, 3.5, 66.66, 100, "#f89441", "SUPERESTRELLAS")
@@ -209,11 +219,25 @@ if df is not None:
             fig_nb.add_annotation(x=(x0+x1)/2, y=y1-2.5, text=f"<b>{label}</b>", showarrow=False, font=dict(size=9, color="white"))
         
         if es_confa or es_gerencia:
-            fig_nb.add_trace(go.Scatter(x=df_grupo['DES'], y=df_grupo['IND_POT'], mode='markers', text=df_grupo['Nombre_Lider'], hoverinfo="text", marker=dict(size=10, color='red', symbol='diamond', line=dict(width=1, color='white'))))
+            # Mapeo normalizado para grupos
+            y_norm = df_grupo['IND_POT'].apply(normalizar_potencial)
+            fig_nb.add_trace(go.Scatter(x=df_grupo['DES'], y=y_norm, mode='markers', text=df_grupo['Nombre_Lider'], hoverinfo="text", marker=dict(size=10, color='red', symbol='diamond', line=dict(width=1, color='white'))))
         else:
-            fig_nb.add_trace(go.Scatter(x=[d.DES], y=[d.IND_POT], mode='markers+text', text=[f"({d.DES}, {round(d.IND_POT,1)}%)"], textposition="top center", textfont=dict(color="white", size=11), marker=dict(size=14, color='red', symbol='diamond', line=dict(width=2, color='white'))))
+            # Mapeo normalizado para individuo
+            y_norm_val = normalizar_potencial(d.IND_POT)
+            fig_nb.add_trace(go.Scatter(x=[d.DES], y=[y_norm_val], mode='markers+text', text=[f"({d.DES}, {round(d.IND_POT,1)}%)"], textposition="top center", textfont=dict(color="white", size=11), marker=dict(size=14, color='red', symbol='diamond', line=dict(width=2, color='white'))))
         
-        fig_nb.update_layout(xaxis=dict(title="Desempeño", tickvals=[1,2,3], range=[0.4, 3.6]), yaxis=dict(title="Potencial (%)", tickvals=[0, 33.3, 66.6, 100], range=[-5, 105]), template="plotly_dark", height=500, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+        # Ajuste de ticks para que el usuario vea los rangos reales en el eje pero visualmente sean tercios
+        fig_nb.update_layout(
+            xaxis=dict(title="Desempeño", tickvals=[1,2,3], range=[0.4, 3.6]), 
+            yaxis=dict(
+                title="Potencial (Escala Parametrizada %)", 
+                tickvals=[0, 33.33, 66.66, 100], 
+                ticktext=["0", "60", "83", "100"],
+                range=[-5, 105]
+            ), 
+            template="plotly_dark", height=500, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)'
+        )
         st.plotly_chart(fig_nb, use_container_width=True)
 
     with cnb2:
@@ -338,16 +362,15 @@ if df is not None:
                     pdf.ln(5); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Interpretación de Niveles de Desarrollo', ln=True); pdf.ln(2)
                     
                     filas = [
-                        ["L7: Visionario (Servicio)", "Falta de etica o humildad. No conecta el dia a dia con el proposito mayor de Confa.", "Perspectiva ocasional. Entiende la vision pero solo la comparte en momentos clave o formales.", "Liderazgo etico. Decide pensando en el bien comun y comparte una vision clara seguido.", "Sabiduria y Humildad. Inspira a ir mas alla del minimo esperado y maneja el caos con calma total."],
-                        ["L6: Mentor (Hacer la Diferencia)", "Falta de empatia. Se enfoca solo en sus tareas y no en las relaciones externas o el entorno.", "Relaciones intermitentes. Colabora con otras areas solo cuando es estrictamente necesario para un proyecto.", "Mentor activo. Dedica tiempo a enseñar y dar retroalimentacion util para resolver mejor y mas rapido.", "Socio Estrategico. Maestro en coaching; crea alianzas que generan valor social y ambiental duradero."],
-                        ["L5: Integrador (Cohesión Interna)", "Falta de pasion y vision. No actua bajo los valores de la organizacion; genera desconfianza.", "Confianza selectiva. Explica el para que de las tareas solo a personas de su circulo cercano.", "Valores en accion. Decide con los valores de Confa en mente y mantiene un buen ambiente de equipo.", "Inspirador autentico. Su ejemplo hace que la gente se sienta profundamente orgullosa de su trabajo."],
-                        ["L4: Facilitador (Transformación)", "Controlador y rigido. Teme al riesgo; se enfoca poco en la innovacion o la estrategia de cambio.", "Cautela al cambio. Se adapta a las prioridades pero prefiere los metodos conocidos.", "Facilitador del aprendizaje. Delega con confianza y aprende de los errores para ayudar a otros.", "Evolucion Valiente. Empodera a las personas y promueve activamente el equilibrio vida-trabajo."],
-                        ["L3: Organizador (Autoestima)", "Burocratico o estatus. Falla al enfocarse en resultados; seguimiento inconsistente de metas.", "Productividad bajo procesos. Cumple acuerdos pero pone tramites de mas que frenan el trabajo.", "Orientado a la excelencia. Define metas claras, usa metricas y busca formas sencillas de trabajar mejor.", "Maestro de la Eficiencia. Domina la complejidad; deja practicas que funcionan perfectamente sin su presencia."],
-                        ["L2: Relaciones (Relación)", "Conflictivo o evitativo. Evita conversaciones dificiles o da muchas vueltas para hablar.", "Comunicacion puntual. Reconoce el buen trabajo pero no de forma constante o publica.", "Constructor de armonia. Gestiona conflictos, habla claro y a tiempo, incluso en temas dificiles.", "Conexion Total. Escucha de verdad, trata a todos con respeto y es accesible para todo el staff."],
-                        ["L1: Crisis (Supervivencia)", "Dictatorial o incapaz de confiar. Descuida la seguridad y bienestar del equipo; malgasta recursos.", "Viabilidad basica. Se mantiene tranquilo ante problemas menores pero se desborda en crisis reales.", "Gestion prudente. Piensa en los riesgos antes de decidir y cuida los recursos como si fueran propios.", "Calma en la Adversidad. Maneja el caos con sabiduria; es el pilar de seguridad y bienestar del equipo."]
+                        ["L7: Visionario (Servicio)", "Falta de ética o humildad. No conecta el día a día con el propósito mayor de Confa.", "Perspectiva ocasional. Entiende la visión pero solo la comparte en momentos clave o formales.", "Liderazgo ético. Decide pensando en el bien común y comparte una visión clara seguido.", "Sabiduría y Humildad. Inspira a ir más allá del mínimo esperado y maneja el caos con calma total."],
+                        ["L6: Mentor (Hacer la Diferencia)", "Falta de empatía. Se enfoca solo en sus tareas y no en las relaciones externas o el entorno.", "Relaciones intermitentes. Colabora con otras áreas solo cuando es estrictamente necesario para un proyecto.", "Mentor activo. Dedica tiempo a enseñar y dar retroalimentación útil para resolver mejor y más rápido.", "Socio Estratégico. Maestro en coaching; crea alianzas que generan valor social y ambiental duradero."],
+                        ["L5: Integrador (Cohesión Interna)", "Falta de pasión y visión. No actúa bajo los valores de la organización; genera desconfianza.", "Confianza selectiva. Explica el para qué de las tareas solo a personas de su círculo cercano.", "Valores en acción. Decide con los valores de Confa en mente y mantiene un buen ambiente de equipo.", "Inspirador auténtico. Su ejemplo hace que la gente se sienta profundamente orgullosa de su trabajo."],
+                        ["L4: Facilitador (Transformación)", "Controlador y rígido. Teme al riesgo; se enfoca poco en la innovación o la estrategia de cambio.", "Cautela al cambio. Se adapta a las prioridades pero prefiere los métodos conocidos.", "Facilitador del aprendizaje. Delega con confianza y aprende de los errores para ayudar a otros.", "Evolución Valiente. Empodera a las personas y promueve activamente el equilibrio vida-trabajo."],
+                        ["L3: Organizador (Autoestima)", "Burocrático o estatus. Falla al enfocarse en resultados; seguimiento inconsistente de metas.", "Productividad bajo procesos. Cumple acuerdos pero pone trámites de más que frenan el trabajo.", "Orientado a la excelencia. Define metas claras, usa métricas y busca formas sencillas de trabajar mejor.", "Maestro de la Eficiencia. Domina la complejidad; deja prácticas que funcionan perfectamente sin su presencia."],
+                        ["L2: Relaciones (Relación)", "Conflictivo o evitativo. Evita conversaciones difíciles o da muchas vueltas para hablar.", "Comunicación puntual. Reconoce el buen trabajo pero no de forma constante o pública.", "Constructor de armonía. Gestiona conflictos, habla claro y a tiempo, incluso en temas difíciles.", "Conexión Total. Escucha de verdad, trata a todos con respeto y es accesible para todo el staff."],
+                        ["L1: Crisis (Supervivencia)", "Dictatorial o incapaz de confiar. Descuida la seguridad y bienestar del equipo; malgasta recursos.", "Viabilidad básica. Se mantiene tranquilo ante problemas menores pero se desborda en crisis reales.", "Gestión prudente. Piensa en los riesgos antes de decidir y cuida los recursos como si fueran propios.", "Calma en la Adversidad. Maneja el caos con sabiduría; es el pilar de seguridad y bienestar del equipo."]
                     ]
                     
-                    # Encabezados de tabla
                     pdf.set_font('Helvetica', 'B', 7); pdf.set_fill_color(240, 240, 240)
                     col_w = [30, 40, 40, 40, 40]
                     headers = ["Nivel de Consciencia", "Bajo (Reactivo/Limitado)", "Medio (Funcional/En Desarrollo)", "Alto (Competente/Consistente)", "Superior (Ejemplar/Maestría)"]
@@ -360,13 +383,11 @@ if df is not None:
                         y_pre = pdf.get_y()
                         x_curr = 10
                         max_h = 0
-                        # Primera pasada para determinar altura de fila
                         for i, txt in enumerate(f):
                             pdf.set_xy(x_curr + sum(col_w[:i]), y_pre)
                             pdf.multi_cell(col_w[i], 3, txt, 0, 'L')
                             if (pdf.get_y() - y_pre) > max_h: max_h = pdf.get_y() - y_pre
                         
-                        # Segunda pasada para dibujar bordes y contenido real
                         x_curr = 10
                         for i, txt in enumerate(f):
                             pdf.rect(x_curr + sum(col_w[:i]), y_pre, col_w[i], max_h)
@@ -406,8 +427,20 @@ if df is not None:
 
                 if tipo == "GH":
                     pdf.add_page(); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Mapa de Talento NineBox Confa', ln=True)
-                    fig_nb.update_layout(template="plotly", paper_bgcolor='white', plot_bgcolor='white', font=dict(color='black'))
-                    img_nb = os.path.join(tmp_dir, "nb.png"); fig_nb.write_image(img_nb, engine="kaleido", scale=4); pdf.image(img_nb, x=25, w=160)
+                    # Nota: Para el PDF también normalizamos el punto del NineBox
+                    fig_nb_pdf = go.Figure()
+                    for x0, x1, y0, y1, color, label in quads:
+                        fig_nb_pdf.add_shape(type="rect", x0=x0, y0=y0, x1=x1, y1=y1, fillcolor=color, opacity=0.75, line=dict(color="rgba(0,0,0,0.3)", width=1))
+                    
+                    y_norm_pdf = normalizar_potencial(d.IND_POT)
+                    fig_nb_pdf.add_trace(go.Scatter(x=[d.DES], y=[y_norm_pdf], mode='markers', marker=dict(size=14, color='red', symbol='diamond')))
+                    fig_nb_pdf.update_layout(
+                        xaxis=dict(tickvals=[1,2,3], range=[0.4, 3.6]), 
+                        yaxis=dict(tickvals=[0, 33.33, 66.66, 100], ticktext=["0", "60", "83", "100"], range=[-5, 105]),
+                        template="plotly", paper_bgcolor='white', plot_bgcolor='white'
+                    )
+                    
+                    img_nb = os.path.join(tmp_dir, "nb.png"); fig_nb_pdf.write_image(img_nb, engine="kaleido", scale=4); pdf.image(img_nb, x=25, w=160)
 
                 pdf.add_page(); pdf.set_font('Helvetica', 'B', 13); pdf.cell(0, 10, 'Analisis Ejecutivo Estrategico', ln=True); pdf.ln(5)
                 pdf.set_font('Helvetica', '', 10)
