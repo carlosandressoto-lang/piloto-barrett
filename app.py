@@ -409,11 +409,11 @@ if df is not None:
 
                 if tipo == "GH":
                     pdf.add_page(); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Mapa de Talento NineBox Confa', ln=True)
-                    # SE AGREGAN LAS ANOTACIONES AQUÍ PARA EL PDF [cite: 1370]
+                    # SE AGREGAN LAS ANOTACIONES AQUÍ PARA EL PDF
                     fig_nb_pdf = go.Figure()
                     for x0, x1, y0, y1, color, label in quads_config:
                         fig_nb_pdf.add_shape(type="rect", x0=x0, y0=y0, x1=x1, y1=y1, fillcolor=color, opacity=0.75, line=dict(color="rgba(0,0,0,0.3)", width=1))
-                        fig_nb_pdf.add_annotation(x=(x0+x1)/2, y=y1-2.5, text=f"<b>{label}</b>", showarrow=False, font=dict(size=8, color="black"))
+                        fig_nb_pdf.add_annotation(x=(x0+x1)/2, y=y1-2.5, text=f"<b>{label}</b>", showarrow=False, font=dict(size=8, color="white"))
                     
                     if es_confa or es_gerencia:
                         y_norm_pdf = df_grupo['IND_POT'].apply(normalizar_potencial)
