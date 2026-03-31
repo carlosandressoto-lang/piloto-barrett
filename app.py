@@ -79,7 +79,6 @@ def obtener_cuadrante_confa(pot, des):
     return mapping.get((p_label, d_label), "No clasificado")
 
 def normalizar_potencial(p):
-    """Mapea el potencial a una escala visual de 0-100 con tercios iguales para los rangos."""
     if p < 60:
         return (p / 60) * 33.33
     elif p < 83:
@@ -114,7 +113,7 @@ def generar_fig_reloj(vals, incluir_leyenda=False):
     fig = go.Figure()
     fig.add_trace(go.Funnel(y=labels_niveles if incluir_leyenda else [1,2,3,4,5,6,7], x=anchos_base, textinfo="none", hoverinfo="none", marker={"color": colors_barrett, "line": {"width": 1, "color": "white"}}, connector={"visible": False}))
     for i, (val, ancho) in enumerate(zip(v_rev, anchos_base)):
-        fig.add_annotation(x=0, y=i if incluir_leyenda else i+1, text=obtener_etiqueta(val), showarrow=False, font=dict(color=obtener_color_desarrollo(val), size=11, family='Arial Black'), bgcolor="white", borderpad=4, width=anchcho * 22.0)
+        fig.add_annotation(x=0, y=i if incluir_leyenda else i+1, text=obtener_etiqueta(val), showarrow=False, font=dict(color=obtener_color_desarrollo(val), size=11, family='Arial Black'), bgcolor="white", borderpad=4, width=ancho * 22.0)
     fig.update_layout(height=400, margin=dict(l=100 if incluir_leyenda else 10, r=10, t=10, b=10), xaxis=dict(visible=False), yaxis=dict(visible=incluir_leyenda), plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', template="plotly_dark")
     return fig
 
@@ -202,7 +201,6 @@ if df is not None:
     
     with cnb1:
         fig_nb = go.Figure()
-        # CAJAS PARAMETRIZADAS: Visualmente iguales (0-33.3, 33.3-66.6, 66.6-100)
         quads = [
             (0.5, 1.5, 0, 33.33, "#440154", "ICEBERG"), 
             (1.5, 2.5, 0, 33.33, "#482878", "EFECTIVOS"), 
@@ -219,33 +217,30 @@ if df is not None:
             fig_nb.add_annotation(x=(x0+x1)/2, y=y1-2.5, text=f"<b>{label}</b>", showarrow=False, font=dict(size=9, color="white"))
         
         if es_confa or es_gerencia:
-            # Mapeo normalizado para grupos
             y_norm = df_grupo['IND_POT'].apply(normalizar_potencial)
             fig_nb.add_trace(go.Scatter(
                 x=df_grupo['DES'], 
                 y=y_norm, 
                 mode='markers', 
                 text=df_grupo['Nombre_Lider'],
-                customdata=df_grupo['IND_POT'], # Pasamos el valor real aquí
+                customdata=df_grupo['IND_POT'],
                 hovertemplate="<b>%{text}</b><br>Desempeño: %{x}<br>Potencial: %{customdata:.2f}%<extra></extra>",
                 marker=dict(size=10, color='red', symbol='diamond', line=dict(width=1, color='white'))
             ))
         else:
-            # Mapeo normalizado para individuo
             y_norm_val = normalizar_potencial(d.IND_POT)
             fig_nb.add_trace(go.Scatter(
                 x=[d.DES], 
                 y=[y_norm_val], 
                 mode='markers+text', 
                 text=[f"({d.DES}, {round(d.IND_POT,1)}%)"], 
-                customdata=[d.IND_POT], # Pasamos el valor real aquí
+                customdata=[d.IND_POT],
                 hovertemplate="Desempeño: %{x}<br>Potencial: %{customdata:.2f}%<extra></extra>",
                 textposition="top center", 
                 textfont=dict(color="white", size=11), 
                 marker=dict(size=14, color='red', symbol='diamond', line=dict(width=2, color='white'))
             ))
         
-        # Ajuste de ticks para que el usuario vea los rangos reales en el eje pero visualmente sean tercios
         fig_nb.update_layout(
             xaxis=dict(title="Desempeño", tickvals=[1,2,3], range=[0.4, 3.6]), 
             yaxis=dict(
@@ -364,7 +359,6 @@ if df is not None:
             
             with tempfile.TemporaryDirectory() as tmp_dir:
                 def save_pdf_chart(fig, name, title=""):
-                    # AJUSTE SEGURO: Eliminamos emojis para evitar errores de codificación FPDF
                     titulo_limpio = title.replace("📊 ", "").replace("⏳ ", "").replace("🎯 ", "").replace("⚖️ ", "").replace("🟦 ", "").replace("⭐ ", "")
                     fig.update_layout(template="plotly", paper_bgcolor='white', plot_bgcolor='white', font=dict(color='black'), title=dict(text=titulo_limpio, x=0.5, font=dict(size=14), y=0.95), margin=dict(t=60, b=20, l=10, r=10))
                     path = os.path.join(tmp_dir, name)
@@ -448,7 +442,6 @@ if df is not None:
 
                 if tipo == "GH":
                     pdf.add_page(); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Mapa de Talento NineBox Confa', ln=True)
-                    # Nota: Para el PDF también normalizamos el punto del NineBox
                     fig_nb_pdf = go.Figure()
                     for x0, x1, y0, y1, color, label in quads:
                         fig_nb_pdf.add_shape(type="rect", x0=x0, y0=y0, x1=x1, y1=y1, fillcolor=color, opacity=0.75, line=dict(color="rgba(0,0,0,0.3)", width=1))
