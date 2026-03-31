@@ -79,6 +79,7 @@ def obtener_cuadrante_confa(pot, des):
     return mapping.get((p_label, d_label), "No clasificado")
 
 def normalizar_potencial(p):
+    """Mapea el potencial a una escala visual de 0-100 con tercios iguales."""
     if p < 60:
         return (p / 60) * 33.33
     elif p < 83:
@@ -86,6 +87,7 @@ def normalizar_potencial(p):
     else:
         return 66.66 + ((p - 83) / (100 - 83)) * 33.34
 
+# CORRECCIÓN LÍNEA 114 (Basado en app v14.txt )
 def obtener_color_desarrollo(v):
     if v < 65: return "#ff4b4b" 
     if v < 75: return "#f1c40f" 
@@ -101,7 +103,7 @@ def obtener_etiqueta(v):
 def generar_fig_barras(vals, titulo, color):
     labels = ['L7-Visionario', 'L6-Mentor Socio', 'L5-Auténtico', 'L4-Facilitador Innovador', 'L3-Gestor de Desempeño', 'L2-Gestor de Relaciones', 'L1-Gestor de Crisis']
     v_plot = [vals[6], vals[5], vals[4], vals[3], vals[2], vals[1], vals[0]]
-    fig = go.Figure(go.Bar(x=v_plot, y=labels, orientation='h', marker_color=color, text=[f"{round(v,1)}%" for v in v_plot], textposition='inside', insidetextfont(dict(color='white'))))
+    fig = go.Figure(go.Bar(x=v_plot, y=labels, orientation='h', marker_color=color, text=[f"{round(v,1)}%" for v in v_plot], textposition='inside', insidetextfont=dict(color='white')))
     fig.update_layout(title=dict(text=titulo, x=0.5), xaxis_range=[0, 105], template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(l=10, r=10, t=40, b=20), height=350, yaxis=dict(autorange="reversed"))
     return fig
 
@@ -141,6 +143,7 @@ if df is not None:
         ger_lid_val = d.get('GER_LID', 'N/A')
         st.write(f"**Gerencia:** {ger_lid_val} | **Auto:** {int(d.CANT_AUTO)} | **Jefe:** {int(d.CANT_JEFE)} | **Pares:** {int(d.CANT_PAR)} | **Colab:** {int(d.CANT_COL)}")
 
+    # [Cálculos de promedios se mantienen igual de app v14.txt]
     v_auto = [d.AUTO_L1, d.AUTO_L2, d.AUTO_L3, d.AUTO_L4, d.AUTO_L5, d.AUTO_L6, d.AUTO_L7]
     v_ind = [d.INDIV_L1, d.INDIV_L2, d.INDIV_L3, d.INDIV_L4, d.INDIV_L5, d.INDIV_L6, d.INDIV_L7]
     v_org = [d.ORG_L1, d.ORG_L2, d.ORG_L3, d.ORG_L4, d.ORG_L5, d.ORG_L6, d.ORG_L7]
@@ -199,7 +202,8 @@ if df is not None:
     cnb1, cnb2 = st.columns([1.5, 1])
     cuadrante = obtener_cuadrante_confa(d.IND_POT, d.DES)
     
-    quads = [
+    # Configuración de cajas compartida para Web y PDF [cite: 1370]
+    quads_config = [
         (0.5, 1.5, 0, 33.33, "#440154", "ICEBERG"), 
         (1.5, 2.5, 0, 33.33, "#482878", "EFECTIVOS"), 
         (2.5, 3.5, 0, 33.33, "#3b528b", "PROF. CONFIABLES"), 
@@ -213,7 +217,7 @@ if df is not None:
 
     with cnb1:
         fig_nb = go.Figure()
-        for x0, x1, y0, y1, color, label in quads:
+        for x0, x1, y0, y1, color, label in quads_config:
             fig_nb.add_shape(type="rect", x0=x0, y0=y0, x1=x1, y1=y1, fillcolor=color, opacity=0.75, line=dict(color="rgba(255,255,255,0.3)", width=1))
             fig_nb.add_annotation(x=(x0+x1)/2, y=y1-2.5, text=f"<b>{label}</b>", showarrow=False, font=dict(size=9, color="white"))
         
@@ -235,11 +239,7 @@ if df is not None:
                 marker=dict(size=14, color='red', symbol='diamond', line=dict(width=2, color='white'))
             ))
         
-        fig_nb.update_layout(
-            xaxis=dict(title="Desempeño", tickvals=[1,2,3], range=[0.4, 3.6]), 
-            yaxis=dict(title="Potencial (Escala Parametrizada %)", tickvals=[0, 33.33, 66.66, 100], ticktext=["0", "60", "83", "100"], range=[-5, 105]), 
-            template="plotly_dark", height=500, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)'
-        )
+        fig_nb.update_layout(xaxis=dict(title="Desempeño", tickvals=[1,2,3], range=[0.4, 3.6]), yaxis=dict(title="Potencial (Escala Parametrizada %)", tickvals=[0, 33.33, 66.66, 100], ticktext=["0", "60", "83", "100"], range=[-5, 105]), template="plotly_dark", height=500, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
         st.plotly_chart(fig_nb, use_container_width=True)
 
     with cnb2:
@@ -283,7 +283,7 @@ if df is not None:
     st.divider()
     if st.button("🚀 GENERAR INFORME"):
         texto_gerencia = "NOTA: Este es un análisis GRUPAL. No hables de individuos, habla de capacidad instalada del equipo y cultura organizacional de la gerencia." if es_gerencia or es_confa else ""
-        prompt_maestro = f"""Actúa como consultor senior de DESARROLLO DE LIDERAZGO Barrett. Genera un reporte para {lider_sel}. DATOS: {d.to_json()}..."""
+        prompt_maestro = f"""Actúa como consultor senior de DESARROLLO DE LIDERAZGO Barrett. Genera un reporte para {lider_sel}. DATOS: {d.to_json()} donde AUTO es Autoevaluación, INDI es Ponderado Individual, ORG es Ponderado organizacional (Promedio de resultados organizacionales) y CANT es cantidad de respuestas o evaluadores... [resto del prompt se mantiene igual a app v14.txt]"""
         try:
             with st.spinner('Analizando...'):
                 res = model.generate_content(prompt_maestro)
@@ -299,6 +299,7 @@ if df is not None:
         def generar_pdf_final(tipo="GH"):
             pdf = FPDF()
             pdf.set_auto_page_break(auto=True, margin=15)
+            
             with tempfile.TemporaryDirectory() as tmp_dir:
                 def save_pdf_chart(fig, name, title=""):
                     titulo_limpio = title.replace("📊 ", "").replace("⏳ ", "").replace("🎯 ", "").replace("⚖️ ", "").replace("🟦 ", "").replace("⭐ ", "")
@@ -310,18 +311,67 @@ if df is not None:
                 # --- PÁGINA 1: CONTEXTO (SOLO COLABORADOR) ---
                 if tipo == "COLABORADOR":
                     pdf.add_page()
-                    # (Lógica de tabla corregida para evitar traslape...)
-                    # [Omitido por brevedad, se mantiene igual a la v14 pero con el ajuste de dibujo seguro]
+                    pdf.set_font('Helvetica', 'B', 16); pdf.cell(0, 10, 'MODELO DE LIDERAZGO CONFA', ln=True, align='C'); pdf.ln(5)
+                    pdf.set_font('Helvetica', 'B', 12); pdf.cell(0, 10, 'Introducción al Modelo Barrett', ln=True); pdf.ln(2)
+                    pdf.set_font('Helvetica', '', 10)
+                    pdf.multi_cell(0, 5, "El liderazgo en Confa se fundamenta en el Modelo de Barrett... [texto se mantiene igual]")
+                    pdf.ln(5); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Interpretación de Niveles de Desarrollo', ln=True); pdf.ln(2)
+                    
+                    filas = [["L7: Visionario (Servicio)", "Sabiduría y Humildad...", "Liderazgo ético...", "Perspectiva ocasional...", "Falta de ética..."], [ "L6: Mentor...", "Socio Estratégico...", "Mentor activo...", "Relaciones...", "Falta de empatía..."], ["L5: Integrador...", "Inspirador auténtico...", "Valores en acción...", "Confianza...", "Falta de pasión..."], ["L4: Facilitador...", "Evolución Valiente...", "Facilitador...", "Cautela...", "Controlador..."], ["L3: Organizador...", "Maestro de la Eficiencia...", "Orientado...", "Productividad...", "Burocrático..."], ["L2: Relaciones...", "Conexión Total...", "Constructor...", "Comunicación...", "Conflictivo..."], ["L1: Crisis...", "Calma en la Adversidad...", "Gestión...", "Viabilidad...", "Dictatorial..."]]
+                    
+                    pdf.set_font('Helvetica', 'B', 7); pdf.set_fill_color(240, 240, 240)
+                    col_w = [30, 40, 40, 40, 40]
+                    headers = ["Nivel de Consciencia", "Bajo", "Medio", "Alto", "Superior"]
+                    for i, h in enumerate(headers): pdf.cell(col_w[i], 10, h, 1, 0, 'C', True)
+                    pdf.ln()
+
+                    pdf.set_font('Helvetica', '', 6)
+                    for f in filas:
+                        y_pre = pdf.get_y()
+                        max_h_fila = 12
+                        for i, txt in enumerate(f):
+                            pdf.set_xy(10 + sum(col_w[:i]), y_pre)
+                            pdf.multi_cell(col_w[i], 3.2, txt, 1, 'L')
+                            if pdf.get_y() - y_pre > max_h_fila: max_h_fila = pdf.get_y() - y_pre
+                        
+                        for i in range(len(col_w)): pdf.rect(10 + sum(col_w[:i]), y_pre, col_w[i], max_h_fila)
+                        pdf.set_y(y_pre + max_h_fila)
+                        if pdf.get_y() > 260: pdf.add_page()
 
                 pdf.add_page()
-                # (Gráficas r1p, b1, radar...)
+                pdf.set_font('Helvetica', 'B', 16); pdf.cell(0, 10, 'REPORTE ESTRATÉGICO INTEGRAL', ln=True, align='C')
+                pdf.set_font('Helvetica', '', 12); pdf.cell(0, 8, f'Evaluado: {lider_sel}', ln=True, align='C')
+                pdf.set_font('Helvetica', 'B', 10); pdf.cell(0, 8, f'Total Evaluadores: {int(d.CANT_EVAL)} | Auto: {int(d.CANT_AUTO)} | Jefe: {int(d.CANT_JEFE)} | Pares: {int(d.CANT_PAR)} | Colab: {int(d.CANT_COL)}', ln=True, align='C')
+                
+                # Títulos sin emojis para PDF
+                pdf.ln(2); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Frecuencia de comportamientos por niveles (%)', ln=True)
+                y_frec = pdf.get_y()
+                pdf.image(save_pdf_chart(generar_fig_barras(v_auto, "", "#3498db"), "b1.png", "Autoevaluacion"), x=10, y=y_frec, w=60)
+                pdf.image(save_pdf_chart(generar_fig_barras(v_ind, "", "#2ecc71"), "b2.png", "Evaluacion 360"), x=75, y=y_frec, w=60)
+                pdf.image(save_pdf_chart(generar_fig_barras(v_org, "", "#e74c3c"), "b3.png", "Promedio Organizacional"), x=140, y=y_frec, w=60)
+                
+                pdf.set_y(y_frec + 43); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Resultados Evaluación 360 (Niveles Barrett)', ln=True)
+                y_relojes_base = pdf.get_y()
+                pdf.image(save_pdf_chart(generar_fig_reloj(v_auto, False), "r1p.png", "Autoevaluacion"), x=35, y=y_relojes_base+3, w=60)
+                pdf.image(save_pdf_chart(generar_fig_reloj(v_ind, False), "r2p.png", "Evaluacion 360"), x=88, y=y_relojes_base+3, w=60)
+                pdf.image(save_pdf_chart(generar_fig_reloj(v_org, False), "r3p.png", "Promedio organizacional"), x=141, y=y_relojes_base+3, w=60)
+                
+                pdf.set_font('Helvetica', '', 7); pdf.set_text_color(100, 100, 100)
+                niv_m = ["L7-Visionario", "L6-Mentor Socio", "L5-Autentico", "L4-Facilitador Innovador", "L3-Gestor de Desempeno", "L2-Gestor de Relaciones", "L1-Gestor de Crisis"]
+                for i, txt in enumerate(niv_m): pdf.text(10, y_relojes_base + 10 + (i * 4), txt)
+                pdf.set_text_color(0, 0, 0)
+                
+                pdf.set_y(y_relojes_base + 45); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Alineación de Consciencia e Indice de Equilibrio', ln=True)
+                y_radar = pdf.get_y()
+                pdf.image(save_pdf_chart(fig_radar, "radar.png", ""), x=10, y=y_radar, w=95)
+                pdf.image(save_pdf_chart(fig_dim, "dim.png", ""), x=110, y=y_radar + 5, w=90)
 
                 if tipo == "GH":
                     pdf.add_page(); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Mapa de Talento NineBox Confa', ln=True)
+                    # SE AGREGAN LAS ANOTACIONES AQUÍ PARA EL PDF [cite: 1370]
                     fig_nb_pdf = go.Figure()
-                    for x0, x1, y0, y1, color, label in quads:
+                    for x0, x1, y0, y1, color, label in quads_config:
                         fig_nb_pdf.add_shape(type="rect", x0=x0, y0=y0, x1=x1, y1=y1, fillcolor=color, opacity=0.75, line=dict(color="rgba(0,0,0,0.3)", width=1))
-                        # SE AGREGAN LAS ANOTACIONES AQUÍ PARA EL PDF
                         fig_nb_pdf.add_annotation(x=(x0+x1)/2, y=y1-2.5, text=f"<b>{label}</b>", showarrow=False, font=dict(size=8, color="black"))
                     
                     if es_confa or es_gerencia:
@@ -336,6 +386,11 @@ if df is not None:
 
                 pdf.add_page(); pdf.set_font('Helvetica', 'B', 13); pdf.cell(0, 10, 'Analisis Ejecutivo Estrategico', ln=True); pdf.ln(5)
                 texto_ia = st.session_state.informe_cache[lider_sel]
+                
+                if tipo == "COLABORADOR":
+                    patron_corte = r'(?m)^\s*\**5[\.\s:]+POSICIONAMIENTO.*'
+                    texto_ia = re.split(patron_corte, texto_ia, flags=re.IGNORECASE | re.DOTALL)[0]
+                
                 limpio = texto_ia.replace("**", "").encode('latin-1', 'replace').decode('latin-1')
                 pdf.multi_cell(0, 6, limpio)
 
