@@ -225,7 +225,7 @@ if df is not None:
         else:
             # Mapeo normalizado para individuo
             y_norm_val = normalizar_potencial(d.IND_POT)
-            fig_nb.add_trace(go.Scatter(x=[d.DES], y=[d.IND_POT],mode='markers+text', text=[f"({d.DES}, {round(d.IND_POT,1)}%)"], textposition="top center", textfont=dict(color="white", size=11), marker=dict(size=14, color='red', symbol='diamond', line=dict(width=2, color='white'))))
+            fig_nb.add_trace(go.Scatter(x=[d.DES], y=[y_norm_val],mode='markers+text', text=[f"({d.DES}, {round(d.IND_POT,1)}%)"], textposition="top center", textfont=dict(color="white", size=11), marker=dict(size=14, color='red', symbol='diamond', line=dict(width=2, color='white'))))
         
         # Ajuste de ticks para que el usuario vea los rangos reales en el eje pero visualmente sean tercios
         fig_nb.update_layout(
