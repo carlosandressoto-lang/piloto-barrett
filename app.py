@@ -114,7 +114,7 @@ def generar_fig_reloj(vals, incluir_leyenda=False):
     fig = go.Figure()
     fig.add_trace(go.Funnel(y=labels_niveles if incluir_leyenda else [1,2,3,4,5,6,7], x=anchos_base, textinfo="none", hoverinfo="none", marker={"color": colors_barrett, "line": {"width": 1, "color": "white"}}, connector={"visible": False}))
     for i, (val, ancho) in enumerate(zip(v_rev, anchos_base)):
-        fig.add_annotation(x=0, y=i if incluir_leyenda else i+1, text=obtener_etiqueta(val), showarrow=False, font=dict(color=obtener_color_desarrollo(val), size=11, family='Arial Black'), bgcolor="white", borderpad=4, width=ancho * 22.0)
+        fig.add_annotation(x=0, y=i if incluir_leyenda else i+1, text=obtener_etiqueta(val), showarrow=False, font=dict(color=obtener_color_desarrollo(val), size=11, family='Arial Black'), bgcolor="white", borderpad=4, width=anchcho * 22.0)
     fig.update_layout(height=400, margin=dict(l=100 if incluir_leyenda else 10, r=10, t=10, b=10), xaxis=dict(visible=False), yaxis=dict(visible=incluir_leyenda), plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', template="plotly_dark")
     return fig
 
@@ -221,11 +221,29 @@ if df is not None:
         if es_confa or es_gerencia:
             # Mapeo normalizado para grupos
             y_norm = df_grupo['IND_POT'].apply(normalizar_potencial)
-            fig_nb.add_trace(go.Scatter(x=df_grupo['DES'], y=y_norm, mode='markers', text=df_grupo['Nombre_Lider'], hoverinfo="text", marker=dict(size=10, color='red', symbol='diamond', line=dict(width=1, color='white'))))
+            fig_nb.add_trace(go.Scatter(
+                x=df_grupo['DES'], 
+                y=y_norm, 
+                mode='markers', 
+                text=df_grupo['Nombre_Lider'],
+                customdata=df_grupo['IND_POT'], # Pasamos el valor real aquí
+                hovertemplate="<b>%{text}</b><br>Desempeño: %{x}<br>Potencial: %{customdata:.2f}%<extra></extra>",
+                marker=dict(size=10, color='red', symbol='diamond', line=dict(width=1, color='white'))
+            ))
         else:
             # Mapeo normalizado para individuo
             y_norm_val = normalizar_potencial(d.IND_POT)
-            fig_nb.add_trace(go.Scatter(x=[d.DES], y=[y_norm_val],mode='markers+text', text=[f"({d.DES}, {round(d.IND_POT,1)}%)"], textposition="top center", textfont=dict(color="white", size=11), marker=dict(size=14, color='red', symbol='diamond', line=dict(width=2, color='white'))))
+            fig_nb.add_trace(go.Scatter(
+                x=[d.DES], 
+                y=[y_norm_val], 
+                mode='markers+text', 
+                text=[f"({d.DES}, {round(d.IND_POT,1)}%)"], 
+                customdata=[d.IND_POT], # Pasamos el valor real aquí
+                hovertemplate="Desempeño: %{x}<br>Potencial: %{customdata:.2f}%<extra></extra>",
+                textposition="top center", 
+                textfont=dict(color="white", size=11), 
+                marker=dict(size=14, color='red', symbol='diamond', line=dict(width=2, color='white'))
+            ))
         
         # Ajuste de ticks para que el usuario vea los rangos reales en el eje pero visualmente sean tercios
         fig_nb.update_layout(
@@ -346,7 +364,8 @@ if df is not None:
             
             with tempfile.TemporaryDirectory() as tmp_dir:
                 def save_pdf_chart(fig, name, title=""):
-                    titulo_limpio = title.replace("📊 ", "").replace("⏳ ", "").replace("🎯 ", "").replace("⚖️ ", "").replace("🟦 ", "")
+                    # AJUSTE SEGURO: Eliminamos emojis para evitar errores de codificación FPDF
+                    titulo_limpio = title.replace("📊 ", "").replace("⏳ ", "").replace("🎯 ", "").replace("⚖️ ", "").replace("🟦 ", "").replace("⭐ ", "")
                     fig.update_layout(template="plotly", paper_bgcolor='white', plot_bgcolor='white', font=dict(color='black'), title=dict(text=titulo_limpio, x=0.5, font=dict(size=14), y=0.95), margin=dict(t=60, b=20, l=10, r=10))
                     path = os.path.join(tmp_dir, name)
                     fig.write_image(path, engine="kaleido", scale=2)
@@ -356,13 +375,13 @@ if df is not None:
                 if tipo == "COLABORADOR":
                     pdf.add_page()
                     pdf.set_font('Helvetica', 'B', 16); pdf.cell(0, 10, 'MODELO DE LIDERAZGO CONFA', ln=True, align='C'); pdf.ln(5)
-                    pdf.set_font('Helvetica', 'B', 12); pdf.cell(0, 10, 'Introducción al Modelo Barrett', ln=True); pdf.ln(2)
+                    pdf.set_font('Helvetica', 'B', 12); pdf.cell(0, 10, 'Introduccion al Modelo Barrett', ln=True); pdf.ln(2)
                     pdf.set_font('Helvetica', '', 10)
-                    pdf.multi_cell(0, 5, "El liderazgo en Confa se fundamenta en el Modelo de Barrett, un marco diseñado para liberar el potencial humano a través de la comprensión de las necesidades y motivaciones que subyacen al comportamiento. Este modelo evalúa siete niveles de consciencia, permitiendo a los líderes transitar desde la estabilidad operativa hasta el servicio con visión de futuro.\n\nEl enfoque de esta evaluación no es punitivo, sino de desarrollo y aprendizaje. Busca identificar fortalezas y oportunidades de expansión para potenciar el bienestar individual y el propósito colectivo de Confa.")
-                    pdf.ln(5); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Interpretación de Niveles de Desarrollo', ln=True); pdf.ln(2)
+                    pdf.multi_cell(0, 5, "El liderazgo en Confa se fundamenta en el Modelo de Barrett, un marco diseñado para liberar el potencial humano a través de la comprension de las necesidades y motivaciones que subyacen al comportamiento. Este modelo evalua siete niveles de consciencia, permitiendo a los lideres transitar desde la estabilidad operativa hasta el servicio con vision de futuro.\n\nEl enfoque de esta evaluacion no es punitivo, sino de desarrollo y aprendizaje. Busca identificar fortalezas y oportunidades de expansion para potenciar el bienestar individual y el proposito colectivo de Confa.")
+                    pdf.ln(5); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Interpretacion de Niveles de Desarrollo', ln=True); pdf.ln(2)
                     
                     filas = [
-                        ["L7: Visionario (Servicio)", "Falta de ética o humildad. No conecta el día a día con el propósito mayor de Confa.", "Perspectiva ocasional. Entiende la visión pero solo la comparte en momentos clave o formales.", "Liderazgo ético. Decide pensando en el bien común y comparte una visión clara seguido.", "Sabiduría y Humildad. Inspira a ir más allá del mínimo esperado y maneja el caos con calma total."],
+                        ["L7: Visionario (Servicio)", "Falta de etica o humildad. No conecta el dia a día con el propósito mayor de Confa.", "Perspectiva ocasional. Entiende la visión pero solo la comparte en momentos clave o formales.", "Liderazgo etico. Decide pensando en el bien común y comparte una visión clara seguido.", "Sabiduria y Humildad. Inspira a ir más allá del mínimo esperado y maneja el caos con calma total."],
                         ["L6: Mentor (Hacer la Diferencia)", "Falta de empatía. Se enfoca solo en sus tareas y no en las relaciones externas o el entorno.", "Relaciones intermitentes. Colabora con otras áreas solo cuando es estrictamente necesario para un proyecto.", "Mentor activo. Dedica tiempo a enseñar y dar retroalimentación útil para resolver mejor y más rápido.", "Socio Estratégico. Maestro en coaching; crea alianzas que generan valor social y ambiental duradero."],
                         ["L5: Integrador (Cohesión Interna)", "Falta de pasión y visión. No actúa bajo los valores de la organización; genera desconfianza.", "Confianza selectiva. Explica el para qué de las tareas solo a personas de su círculo cercano.", "Valores en acción. Decide con los valores de Confa en mente y mantiene un buen ambiente de equipo.", "Inspirador auténtico. Su ejemplo hace que la gente se sienta profundamente orgullosa de su trabajo."],
                         ["L4: Facilitador (Transformación)", "Controlador y rígido. Teme al riesgo; se enfoca poco en la innovación o la estrategia de cambio.", "Cautela al cambio. Se adapta a las prioridades pero prefiere los métodos conocidos.", "Facilitador del aprendizaje. Delega con confianza y aprende de los errores para ayudar a otros.", "Evolución Valiente. Empodera a las personas y promueve activamente el equilibrio vida-trabajo."],
@@ -373,31 +392,33 @@ if df is not None:
                     
                     pdf.set_font('Helvetica', 'B', 7); pdf.set_fill_color(240, 240, 240)
                     col_w = [30, 40, 40, 40, 40]
-                    headers = ["Nivel de Consciencia", "Bajo (Reactivo/Limitado)", "Medio (Funcional/En Desarrollo)", "Alto (Competente/Consistente)", "Superior (Ejemplar/Maestría)"]
+                    headers = ["Nivel de Consciencia", "Bajo (Reactivo / Limitado)", "Medio (Funcional / En Desarrollo)", "Alto (Competente / Consistente)", "Superior (Ejemplar / Maestría)"]
+                    
+                    y_h = pdf.get_y()
                     for i, h in enumerate(headers):
+                        pdf.set_xy(10 + sum(col_w[:i]), y_h)
                         pdf.cell(col_w[i], 10, h, 1, 0, 'C', True)
-                    pdf.ln()
+                    pdf.ln(10)
 
                     pdf.set_font('Helvetica', '', 6)
                     for f in filas:
                         y_pre = pdf.get_y()
-                        x_curr = 10
-                        max_h = 0
-                        for i, txt in enumerate(f):
-                            pdf.set_xy(x_curr + sum(col_w[:i]), y_pre)
-                            pdf.multi_cell(col_w[i], 3, txt, 0, 'L')
-                            if (pdf.get_y() - y_pre) > max_h: max_h = pdf.get_y() - y_pre
+                        x_start = 10
+                        max_h_fila = 12
                         
-                        x_curr = 10
                         for i, txt in enumerate(f):
-                            pdf.rect(x_curr + sum(col_w[:i]), y_pre, col_w[i], max_h)
-                            pdf.set_xy(x_curr + sum(col_w[:i]), y_pre)
-                            pdf.multi_cell(col_w[i], 3, txt, 0, 'L')
+                            pdf.set_xy(x_start + sum(col_w[:i]), y_pre)
+                            pdf.multi_cell(col_w[i], 3.2, txt, 1, 'L')
+                            if pdf.get_y() - y_pre > max_h_fila:
+                                max_h_fila = pdf.get_y() - y_pre
                         
-                        pdf.set_y(y_pre + max_h)
+                        for i in range(len(col_w)):
+                            pdf.rect(x_start + sum(col_w[:i]), y_pre, col_w[i], max_h_fila)
+                            
+                        pdf.set_y(y_pre + max_h_fila)
                         if pdf.get_y() > 260: pdf.add_page()
 
-                # --- PÁGINA DASHBOARD (AMBOS) ---
+                # --- PÁGINA DASHBOARD ---
                 pdf.add_page()
                 pdf.set_font('Helvetica', 'B', 16); pdf.cell(0, 10, 'REPORTE ESTRATÉGICO INTEGRAL', ln=True, align='C')
                 pdf.set_font('Helvetica', '', 12); pdf.cell(0, 8, f'Evaluado: {lider_sel}', ln=True, align='C')
@@ -409,7 +430,7 @@ if df is not None:
                 pdf.image(save_pdf_chart(generar_fig_barras(v_ind, "", "#2ecc71"), "b2.png", "Evaluacion 360"), x=75, y=y_frec, w=60)
                 pdf.image(save_pdf_chart(generar_fig_barras(v_org, "", "#e74c3c"), "b3.png", "Promedio Organizacional"), x=140, y=y_frec, w=60)
                 
-                pdf.set_y(y_frec + 43); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Resultados Evaluación 360° (Niveles Barrett)', ln=True)
+                pdf.set_y(y_frec + 43); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Resultados Evaluacion 360 (Niveles Barrett)', ln=True)
                 y_relojes_base = pdf.get_y()
                 pdf.image(save_pdf_chart(generar_fig_reloj(v_auto, False), "r1p.png", "Autoevaluacion"), x=35, y=y_relojes_base+3, w=60)
                 pdf.image(save_pdf_chart(generar_fig_reloj(v_ind, False), "r2p.png", "Evaluacion 360"), x=88, y=y_relojes_base+3, w=60)
@@ -420,7 +441,7 @@ if df is not None:
                 for i, txt in enumerate(niv_m): pdf.text(10, y_relojes_base + 10 + (i * 4), txt)
                 pdf.set_text_color(0, 0, 0)
                 
-                pdf.set_y(y_relojes_base + 45); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Alineación de Consciencia e Índice de Equilibrio', ln=True)
+                pdf.set_y(y_relojes_base + 45); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Alineacion de Consciencia e Indice de Equilibrio', ln=True)
                 y_radar = pdf.get_y()
                 pdf.image(save_pdf_chart(fig_radar, "radar.png", ""), x=10, y=y_radar, w=95)
                 pdf.image(save_pdf_chart(fig_dim, "dim.png", ""), x=110, y=y_radar + 5, w=90)
