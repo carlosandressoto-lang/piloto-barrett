@@ -130,6 +130,7 @@ if df is not None:
     if es_confa:
         df_grupo = df[~df['Nombre_Lider'].isin(["CONFA"]) & ~df['Nombre_Lider'].str.startswith("GER_")]
     elif es_gerencia:
+        # Filtrado para obtener todos los integrantes de la gerencia seleccionada
         df_grupo = df[df['GER_LID'] == lider_sel]
     else:
         df_grupo = df[df['Nombre_Lider'] == lider_sel]
@@ -217,6 +218,7 @@ if df is not None:
             fig_nb.add_annotation(x=(x0+x1)/2, y=y1-2.5, text=f"<b>{label}</b>", showarrow=False, font=dict(size=9, color="white"))
         
         if es_confa or es_gerencia:
+            # Mostramos dispersión total en dashboard
             y_norm = df_grupo['IND_POT'].apply(normalizar_potencial)
             fig_nb.add_trace(go.Scatter(
                 x=df_grupo['DES'], 
@@ -224,7 +226,7 @@ if df is not None:
                 mode='markers', 
                 text=df_grupo['Nombre_Lider'],
                 customdata=df_grupo['IND_POT'],
-                hovertemplate="<b>%{text}</b><br>Desempeño: %{x}<br>Potencial: %{customdata:.2f}%<extra></extra>",
+                hovertemplate="<b>%{text}</b><br>Desempeño: %{x}<br>Potencial Real: %{customdata:.2f}%<extra></extra>",
                 marker=dict(size=10, color='red', symbol='diamond', line=dict(width=1, color='white'))
             ))
         else:
@@ -235,7 +237,7 @@ if df is not None:
                 mode='markers+text', 
                 text=[f"({d.DES}, {round(d.IND_POT,1)}%)"], 
                 customdata=[d.IND_POT],
-                hovertemplate="Desempeño: %{x}<br>Potencial: %{customdata:.2f}%<extra></extra>",
+                hovertemplate="Desempeño: %{x}<br>Potencial Real: %{customdata:.2f}%<extra></extra>",
                 textposition="top center", 
                 textfont=dict(color="white", size=11), 
                 marker=dict(size=14, color='red', symbol='diamond', line=dict(width=2, color='white'))
@@ -293,7 +295,7 @@ if df is not None:
             names = df_grupo[df_grupo['Cuadrante'].str.contains("CONFIABLES", na=False)]['Nombre_Lider'].tolist()
             st.markdown(f"<div class='quadrant-box' style='background-color: #3b528b;'><div class='quad-title'>PROF. CONFIABLES</div><div class='name-list'>{'<br>'.join(names) if names else 'Sin registros'}</div></div>", unsafe_allow_html=True)
 
-    # --- BLOQUE IA: PROMPT MAESTRO INTEGRADO ---
+    # --- BLOQUE IA ---
     st.divider()
     if st.button("🚀 GENERAR INFORME"):
         texto_gerencia = ""
@@ -442,12 +444,28 @@ if df is not None:
 
                 if tipo == "GH":
                     pdf.add_page(); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Mapa de Talento NineBox Confa', ln=True)
+                    # LÓGICA DE DISPERSIÓN TOTAL PARA EL PDF
                     fig_nb_pdf = go.Figure()
                     for x0, x1, y0, y1, color, label in quads:
                         fig_nb_pdf.add_shape(type="rect", x0=x0, y0=y0, x1=x1, y1=y1, fillcolor=color, opacity=0.75, line=dict(color="rgba(0,0,0,0.3)", width=1))
                     
-                    y_norm_pdf = normalizar_potencial(d.IND_POT)
-                    fig_nb_pdf.add_trace(go.Scatter(x=[d.DES], y=[y_norm_pdf], mode='markers', marker=dict(size=14, color='red', symbol='diamond')))
+                    if es_confa or es_gerencia:
+                        # Si es grupo, mostramos todos los líderes del grupo en el PDF
+                        y_norm_pdf = df_grupo['IND_POT'].apply(normalizar_potencial)
+                        fig_nb_pdf.add_trace(go.Scatter(
+                            x=df_grupo['DES'], 
+                            y=y_norm_pdf, 
+                            mode='markers', 
+                            marker=dict(size=12, color='red', symbol='diamond', line=dict(width=1, color='white'))
+                        ))
+                    else:
+                        # Si es individual, solo el punto del líder
+                        y_norm_pdf_val = normalizar_potencial(d.IND_POT)
+                        fig_nb_pdf.add_trace(go.Scatter(
+                            x=[d.DES], y=[y_norm_pdf_val], 
+                            mode='markers', marker=dict(size=16, color='red', symbol='diamond')
+                        ))
+
                     fig_nb_pdf.update_layout(
                         xaxis=dict(tickvals=[1,2,3], range=[0.4, 3.6]), 
                         yaxis=dict(tickvals=[0, 33.33, 66.66, 100], ticktext=["0", "60", "83", "100"], range=[-5, 105]),
