@@ -194,12 +194,12 @@ if df is not None:
     with cnb1:
         fig_nb = go.Figure()
         quads = [
-            (0.5, 1.5, 0, 33.33, "#440154", "ICEBERG"), 
-            (1.5, 2.5, 0, 33.33, "#482878", "EFECTIVOS"), 
-            (2.5, 3.5, 0, 33.33, "#3b528b", "PROF. CONFIABLES"), 
-            (0.5, 1.5, 33.33, 66.66, "#31688e", "DILEMA"), 
-            (1.5, 2.5, 33.33, 66.66, "#21918c", "EMPLEADOS CLAVE"), 
-            (2.5, 3.5, 33.33, 66.66, "#5ec962", "FUTURAS ESTRELLAS"), 
+            (0.5, 1.5, 0, 60, "#440154", "ICEBERG"), 
+            (1.5, 2.5, 0, 60, "#482878", "EFECTIVOS"), 
+            (2.5, 3.5, 0, 60, "#3b528b", "PROF. CONFIABLES"), 
+            (0.5, 1.5, 33.33, 83, "#31688e", "DILEMA"), 
+            (1.5, 2.5, 33.33, 83, "#21918c", "EMPLEADOS CLAVE"), 
+            (2.5, 3.5, 33.33, 83, "#5ec962", "FUTURAS ESTRELLAS"), 
             (0.5, 1.5, 66.66, 100, "#b5de2b", "ENIGMA"), 
             (1.5, 2.5, 66.66, 100, "#fde725", "ESTRELLA CREC."), 
             (2.5, 3.5, 66.66, 100, "#f89441", "SUPERESTRELLAS")
