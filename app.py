@@ -66,7 +66,7 @@ df = load_data()
 # --- 4. LÓGICAS VISUALES ---
 def obtener_cuadrante_confa(pot, des):
     if pot < 60: p_label = "BAJO"
-    elif pot < 80: p_label = "ALTO"
+    elif pot < 83: p_label = "ALTO"
     else: p_label = "SUPERIOR"
     if des <= 1: d_label = "BAJO"
     elif des <= 2: d_label = "ALTO"
