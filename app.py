@@ -36,7 +36,7 @@ st.markdown("""
 try:
     api_key_segura = st.secrets["GEMINI_API_KEY"]
     genai.configure(api_key=api_key_segura)
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    model = genai.GenerativeModel('gemini-2.5-flash')
 except Exception as e:
     st.error("Error: Configure su API KEY en los Secrets.")
 
@@ -282,8 +282,26 @@ if df is not None:
     # --- BLOQUE IA ---
     st.divider()
     if st.button("🚀 GENERAR INFORME"):
+        nombre_real = lider_sel
+        seudonimo_ia = "EL_LIDER_EVALUADO"
+        
+        datos_ia = {
+            "Autoevaluacion": v_auto,
+            "Ponderado_Individual": v_ind,
+            "Ponderado_Organizacional": v_org,
+            "Potencial_360": d.IND_POT,
+            "Potencial_Auto": d.AUTO_POT,
+            "Nivel_Desempeno": d.DES,
+            "Conteo": {
+                "Jefe": int(d.CANT_JEFE),
+                "Pares": int(d.CANT_PAR),
+                "Auto": int(d.CANT_AUTO)
+            }
+        }
+
         texto_gerencia = "NOTA: Este es un análisis GRUPAL. No hables de individuos, habla de capacidad instalada del equipo y cultura organizacional de la gerencia." if es_gerencia or es_confa else ""
-        prompt_maestro = f"""Actúa como consultor senior de DESARROLLO DE LIDERAZGO Barrett. Genera un reporte para {lider_sel}. DATOS: {d.to_json()} donde AUTO es Autoevaluación, INDI es Ponderado Individual, ORG es Ponderado organizacional (Promedio de resultados organizacionales) y CANT es cantidad de respuestas o evaluadores. Si alguien tiene todo 0 en AUTO es porque no hizo Autoevalaucion para que lo tengas presente en la comparativa. Si ves que sus resultados INDI son muy bajos, revisa que al menos CANT_JEFE y CANT_PAR sean mínimo 1, si no ahí esta el error y dejaremos en el reporte ese hallazgo de forma obligatoria pues seria un sesgo matemático. Si no encontramos esas inconsistencias no mencionaremos por nada del mundo esta información en el resto del informe, si y solo si se cumplen una de esas restricciones.
+        
+        prompt_maestro = f"""Actúa como consultor senior de DESARROLLO DE LIDERAZGO Barrett. Genera un reporte para {seudonimo_ia}. DATOS: {datos_ia} donde AUTO es Autoevaluación, INDI es Ponderado Individual, ORG es Ponderado organizacional (Promedio de resultados organizacionales) y CANT es cantidad de respuestas o evaluadores. Si alguien tiene todo 0 en AUTO es porque no hizo Autoevalaucion para que lo tengas presente en la comparativa. Si ves que sus resultados INDI son muy bajos, revisa que al menos CANT_JEFE y CANT_PAR sean mínimo 1, si no ahí esta el error y dejaremos en el reporte ese hallazgo de forma obligatoria pues seria un sesgo matemático. Si no encontramos esas inconsistencias no mencionaremos por nada del mundo esta información en el resto del informe, si y solo si se cumplen una de esas restricciones.
         PROHIBIDO USAR ANGLICISMOS. REDACTA TODO EN ESPAÑOL PURO.
         CONTEXTO BARRETT:
         - L1: Gestor de Crisis. Foco en estabilidad y viabilidad operativa. (Supervivencia)
@@ -315,7 +333,7 @@ if df is not None:
         - SI CANT_JEFE es 0: Debes iniciar el informe con una ADVERTENCIA ESTRATÉGICA indicando que el ponderado individual se ve severamente afectado (sesgo a la baja) debido a la ausencia de la valoración del líder directo (40% del peso).
         - SI CANT_PAR es 0: Debes iniciar el informe con una ADVERTENCIA ESTRATÉGICA indicando que el ponderado individual se ve severamente afectado (sesgo a la baja) debido a la ausencia de la valoración del minimo 1 par (20% del peso si tiene colaboradores a cargo, 40% si no tiene colaboradores a cargo).
         - SI CANT_AUTO es 0: Indica que no existe punto de comparación interno.
-        - Si no hay estos ceros, no menciones nada de esto.
+        - REGLA DE PRIVACIDAD: Refiérete al evaluado siempre como {seudonimo_ia}.
 
         ESTRUCTURA informe OBLIGATORIA: Respeta estrictamente los titulos, números y puntos hasta los dos puntos (:), por ejemplo 1. DESCRIPCIÓN POR NIVELES, 2. ANÁLISIS DE AUTOVALORACIÓN
         1. DESCRIPCIÓN POR NIVELES: Lista de L1 a L7 con el nombre de contexto Barret (Ejemplo Nivel 1: Gestor de Crisis). Clasifica cada nivel basándote en el 'Ponderado Individual' usando la rúbrica (Bajo, Medio, Alto, Superior) y las definiciones Barrett anteriores para generar una descripción según el modelo Barret y el nivel de la rubrica del líder. Siempre usa una lista de Nivel 1 a Nivel 7 EN ESTE PUNTO Y no lo hagas en 1 solo párrafo porque confunde
@@ -324,12 +342,20 @@ if df is not None:
         4. PERFIL DE LIDERAZGO: Un párrafo sólido. Define el estilo predominante según el promedio más alto (Liderazgo: {round(liderazgo_prom,1)}%, Transición: {round(transicion_prom,1)}%, Gerencia: {round(gerencia_prom,1)}%) y ofrece 3 recomendaciones de expansión para llegar a un equilibrio de las 3 dimensiones (Liderazgo Transicion and Gerencia) punto seguido.
         5. POSICIONAMIENTO ESTRATÉGICO DE TALENTO (Potencial y NineBox): Un párrafo sólido y técnico. Identifica el cuadrante asignado ({cuadrante}) y utiliza su definición estratégica de Confa (CONTEXTO NINEBOX CONFA) para explicar la situación actual del evaluado. Analiza la brecha o alineación entre la Autoevaluacion de potencial (AUTO_POT ({d.AUTO_POT}%)) and el Resultado de evaluacion de potencial 360° ({d.IND_POT}%), determinando si existe una sobrevaloración o una subvaloración del propio potencial de crecimiento. Establece la 'Tendencia de Transición' evaluando qué tan cerca está de los límites de la rúbrica (Bajo <60, ALto 60-80, Superior >80) and define, basándose en el cruce con Desempeño Organizacional (Nivel {d.DES}), qué acciones de retención, motivación o movilidad interna son imperativas para maximizar su valor en la organización. Si el Resultado de evaluacion de potencial 360° es significativamente más alto que la Autoevaluacion de potencial, resalta el "Talento Oculto"; si es al contrario, analiza la necesidad de un ajuste de expectativas de carrera. Termina con una frase sobre la proyección de este perfil hacia posiciones de mayor jerarquía o roles técnicos expertos según sea el caso.
         """
+
         try:
-            with st.spinner('Analizando...'):
+            with st.spinner('Analizando con IA...'):
                 res = model.generate_content(prompt_maestro)
-                st.session_state.informe_cache[lider_sel] = res.text
-                st.write(res.text)
-        except Exception as e: st.error(e)
+                texto_ia = res.text
+                
+                # --- DES-SEUDONIMIZACIÓN ---
+                # Restauramos el nombre real para que el usuario no vea "EL_LIDER_EVALUADO"
+                informe_final = texto_ia.replace(seudonimo_ia, nombre_real)
+                
+                st.session_state.informe_cache[lider_sel] = informe_final
+                st.write(informe_final)
+        except Exception as e:
+            st.error(f"Error en la generación: {e}")
 
     # --- 6. GENERACIÓN DE REPORTES PDF ---
     if lider_sel in st.session_state.informe_cache:
@@ -384,7 +410,7 @@ if df is not None:
                         x_start = 10
                         max_h_fila = 12
                         for i, txt in enumerate(f):
-                            pdf.set_xy(10 + sum(col_w[:i]), y_pre)
+                            pdf.set_xy(x_start + sum(col_w[:i]), y_pre)
                             pdf.multi_cell(col_w[i], 3.2, txt, 1, 'L')
                             if pdf.get_y() - y_pre > max_h_fila:
                                 max_h_fila = pdf.get_y() - y_pre
