@@ -337,11 +337,12 @@ if df is not None:
         st.divider()
         col_btn1, col_btn2 = st.columns(2)
 
-        def generar_pdf_final(tipo="GH"):
+       def generar_pdf_final(tipo="GH"):
             pdf = FPDF()
             pdf.set_auto_page_break(auto=True, margin=15)
             
             with tempfile.TemporaryDirectory() as tmp_dir:
+               
                 def save_pdf_chart(fig, name, title=""):
                     titulo_limpio = title.replace("📊 ", "").replace("⏳ ", "").replace("🎯 ", "").replace("⚖️ ", "").replace("🟦 ", "").replace("⭐ ", "")
                     fig.update_layout(template="plotly", paper_bgcolor='white', plot_bgcolor='white', font=dict(color='black'), title=dict(text=titulo_limpio, x=0.5, font=dict(size=14), y=0.95), margin=dict(t=60, b=20, l=10, r=10))
@@ -358,7 +359,7 @@ if df is not None:
                     pdf.multi_cell(0, 5, "El liderazgo en Confa se fundamenta en el Modelo de Barrett, un marco diseñado para liberar el potencial humano a través de la comprension de las necesidades y motivaciones que subyacen al comportamiento. Este modelo evalua siete niveles de consciencia, permitiendo a los lideres transitar desde la estabilidad operativa hasta el servicio con vision de futuro.\n\nEl enfoque de esta evaluacion no es punitivo, sino de desarrollo y aprendizaje. Busca identificar fortalezas y oportunidades de expansion para potenciar el bienestar individual y el proposito colectivo de Confa.")
                     pdf.ln(5); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Interpretacion de Niveles de Desarrollo', ln=True); pdf.ln(2)
                     
-filas = [
+                    filas = [
                         ["L7: Visionario (Servicio)", "Oportunidad de fortalecer la visión a largo plazo, conectándola más con el día a día y el propósito de Confa, decidiendo por el bien común y liderando desde la humildad.", "Entiende el propósito y muestra humildad, pero es inconsistente al conectar la visión con el trabajo diario de su área o al inspirar al equipo a superar las expectativas.", "Frecuentemente comparte una visión clara conectada al propósito, toma decisiones pensando en el bien común de la organización e inspira a su equipo liderando con humildad.", "Liderazgo de servicio ejemplar que siempre conecta el propósito diario con la visión, busca constantemente el bien común e inspira al equipo a lograr resultados extraordinarios."],
                         ["L6: Mentor (Hacer la Diferencia)", "Espacio para dedicar más tiempo a la enseñanza, fortalecer el trabajo colaborativo entre áreas y promover un entorno más inclusivo y consciente del impacto social y ambiental.", "Colabora y da retroalimentación de forma ocasional, requiriendo mayor constancia para integrar áreas, fomentar la inclusión y considerar el impacto de sus decisiones en el entorno.", "Frecuentemente dedica tiempo a ser mentor, conecta diferentes áreas para resolver problemas con agilidad y fomenta un ambiente inclusivo considerando el impacto de sus decisiones.", "Mentor y conector excepcional que desarrolla constantemente a otros, crea fuertes alianzas interáreas y siempre prioriza la inclusión y el impacto social y ambiental."],
                         ["L5: Integrador (Cohesión Interna)", "Se sugiere mayor coherencia entre promesas y acciones, explicando más a menudo el propósito de las tareas para fortalecer la conexión con los valores de Confa y mejorar el clima.", "Fomenta un buen ambiente ocasionalmente, pero el equipo se beneficiaría de un ejemplo más constante basado en los valores organizacionales y de mayor claridad en el 'para qué'.", "Frecuentemente lidera con el ejemplo cumpliendo lo que promete, toma decisiones guiadas por los valores de Confa y fomenta un clima positivo que genera orgullo en el equipo.", "Líder altamente coherente que siempre inspira al modelar los valores de Confa, le da gran sentido a cada tarea y mantiene un clima de excelencia y profundo orgullo colectivo."],
@@ -367,32 +368,39 @@ filas = [
                         ["L2: Relaciones (Relación)", "Oportunidad de fortalecer la escucha activa, el trato equitativo y el reconocimiento, además de abordar las conversaciones difíciles de manera directa y oportuna, sin dar vueltas.", "Muestra respeto general, pero su comunicación puede mejorar si reconoce el buen trabajo de forma más constante y afronta los temas complejos a tiempo y con mayor claridad.", "Frecuentemente escucha con apertura, trata a todos con gran respeto, reconoce los logros del equipo tanto en público como en privado y aborda los conflictos con claridad.", "Comunicador impecable que siempre escucha genuinamente, promueve el respeto absoluto sin importar el cargo, reconoce el mérito y maneja los conflictos con total transparencia."],
                         ["L1: Crisis (Supervivencia)", "Ante la presión se requiere mayor calma, optimización de recursos y anticipación de riesgos, además de evitar la revisión excesiva de tareas que resta autonomía al equipo.", "Gestiona lo básico, pero bajo presión le cuesta mantener la tranquilidad, cuidar el bienestar del equipo de forma constante o evitar caer en la microgestión de decisiones.", "Frecuentemente mantiene la calma ante la adversidad, administra bien los recursos, evalúa los riesgos antes de actuar y protege el bienestar sin necesidad de sobre-revisar.", "Pilar de seguridad que siempre mantiene una calma ejemplar, optimiza recursos, prevé riesgos de manera estratégica y confía en su equipo eliminando cualquier microgestión."]
                     ]
-
-                    pdf.set_font('Helvetica', 'B', 7); pdf.set_fill_color(240, 240, 240)
+                    
+                    pdf.set_font('Helvetica', 'B', 7)
+                    pdf.set_fill_color(240, 240, 240)
                     col_w = [30, 40, 40, 40, 40]
                     headers = ["Nivel de Consciencia", "Bajo", "Medio", "Alto", "Superior"]
+                    
+                    y_h = pdf.get_y()
                     for i, h in enumerate(headers):
-                        pdf.set_xy(10 + sum(col_w[:i]), pdf.get_y() if i > 0 else pdf.get_y())
+                        pdf.set_xy(10 + sum(col_w[:i]), y_h)
                         pdf.cell(col_w[i], 10, h, 1, 0, 'C', True)
-                    pdf.ln()
+                    pdf.ln(10)
 
                     pdf.set_font('Helvetica', '', 6)
                     for f in filas:
                         y_pre = pdf.get_y()
+                        x_start = 10
                         max_h_fila = 12
+                        
+                        # Dibujamos cada celda y calculamos la altura máxima
                         for i, txt in enumerate(f):
-                            pdf.set_xy(10 + sum(col_w[:i]), y_pre)
+                            pdf.set_xy(x_start + sum(col_w[:i]), y_pre)
                             pdf.multi_cell(col_w[i], 3.2, txt, 1, 'L')
                             if pdf.get_y() - y_pre > max_h_fila:
                                 max_h_fila = pdf.get_y() - y_pre
                         
+                        # Igualamos altura de todas las celdas de la fila dibujando rectángulos
                         for i in range(len(col_w)):
-                            pdf.rect(10 + sum(col_w[:i]), y_pre, col_w[i], max_h_fila)
+                            pdf.rect(x_start + sum(col_w[:i]), y_pre, col_w[i], max_h_fila)
                             
                         pdf.set_y(y_pre + max_h_fila)
                         if pdf.get_y() > 260: pdf.add_page()
 
-                # --- PÁGINA DASHBOARD ---
+                # --- PÁGINA DASHBOARD (AMBOS) ---
                 pdf.add_page()
                 pdf.set_font('Helvetica', 'B', 16); pdf.cell(0, 10, 'REPORTE ESTRATÉGICO INTEGRAL', ln=True, align='C')
                 pdf.set_font('Helvetica', '', 12); pdf.cell(0, 8, f'Evaluado: {lider_sel}', ln=True, align='C')
