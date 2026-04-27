@@ -323,7 +323,6 @@ if df is not None:
         3. MATRIZ DE MADUREZ: Un párrafo sólido. Analiza sintonía del líder (Ponderado Individual) con el Ponderado Organizacional basándote en la RÚBRICA NIVELES DE BARRET.
         4. PERFIL DE LIDERAZGO: Un párrafo sólido. Define el estilo predominante según el promedio más alto (Liderazgo: {round(liderazgo_prom,1)}%, Transición: {round(transicion_prom,1)}%, Gerencia: {round(gerencia_prom,1)}%) y ofrece 3 recomendaciones de expansión para llegar a un equilibrio de las 3 dimensiones (Liderazgo Transicion and Gerencia) punto seguido.
         5. POSICIONAMIENTO ESTRATÉGICO DE TALENTO (Potencial y NineBox): Un párrafo sólido y técnico. Identifica el cuadrante asignado ({cuadrante}) y utiliza su definición estratégica de Confa (CONTEXTO NINEBOX CONFA) para explicar la situación actual del evaluado. Analiza la brecha o alineación entre la Autoevaluacion de potencial (AUTO_POT ({d.AUTO_POT}%)) and el Resultado de evaluacion de potencial 360° ({d.IND_POT}%), determinando si existe una sobrevaloración o una subvaloración del propio potencial de crecimiento. Establece la 'Tendencia de Transición' evaluando qué tan cerca está de los límites de la rúbrica (Bajo <60, ALto 60-80, Superior >80) and define, basándose en el cruce con Desempeño Organizacional (Nivel {d.DES}), qué acciones de retención, motivación o movilidad interna son imperativas para maximizar su valor en la organización. Si el Resultado de evaluacion de potencial 360° es significativamente más alto que la Autoevaluacion de potencial, resalta el "Talento Oculto"; si es al contrario, analiza la necesidad de un ajuste de expectativas de carrera. Termina con una frase sobre la proyección de este perfil hacia posiciones de mayor jerarquía o roles técnicos expertos según sea el caso.
-
         """
         try:
             with st.spinner('Analizando...'):
@@ -337,12 +336,11 @@ if df is not None:
         st.divider()
         col_btn1, col_btn2 = st.columns(2)
 
-       def generar_pdf_final(tipo="GH"):
+        def generar_pdf_final(tipo="GH"):
             pdf = FPDF()
             pdf.set_auto_page_break(auto=True, margin=15)
             
             with tempfile.TemporaryDirectory() as tmp_dir:
-               
                 def save_pdf_chart(fig, name, title=""):
                     titulo_limpio = title.replace("📊 ", "").replace("⏳ ", "").replace("🎯 ", "").replace("⚖️ ", "").replace("🟦 ", "").replace("⭐ ", "")
                     fig.update_layout(template="plotly", paper_bgcolor='white', plot_bgcolor='white', font=dict(color='black'), title=dict(text=titulo_limpio, x=0.5, font=dict(size=14), y=0.95), margin=dict(t=60, b=20, l=10, r=10))
@@ -385,17 +383,14 @@ if df is not None:
                         y_pre = pdf.get_y()
                         x_start = 10
                         max_h_fila = 12
-                        
-                        # Dibujamos cada celda y calculamos la altura máxima
                         for i, txt in enumerate(f):
-                            pdf.set_xy(x_start + sum(col_w[:i]), y_pre)
+                            pdf.set_xy(10 + sum(col_w[:i]), y_pre)
                             pdf.multi_cell(col_w[i], 3.2, txt, 1, 'L')
                             if pdf.get_y() - y_pre > max_h_fila:
                                 max_h_fila = pdf.get_y() - y_pre
                         
-                        # Igualamos altura de todas las celdas de la fila dibujando rectángulos
                         for i in range(len(col_w)):
-                            pdf.rect(x_start + sum(col_w[:i]), y_pre, col_w[i], max_h_fila)
+                            pdf.rect(10 + sum(col_w[:i]), y_pre, col_w[i], max_h_fila)
                             
                         pdf.set_y(y_pre + max_h_fila)
                         if pdf.get_y() > 260: pdf.add_page()
@@ -451,7 +446,6 @@ if df is not None:
                 pdf.cell(0, 10, 'Analisis Ejecutivo Estrategico', ln=True)
                 pdf.ln(5)
                 
-                # ESTA ES LA LÍNEA CRÍTICA: Quita la negrilla para todo el contenido que sigue
                 pdf.set_font('Helvetica', '', 10) 
                 
                 texto_ia = st.session_state.informe_cache[lider_sel]
