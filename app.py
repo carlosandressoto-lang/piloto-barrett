@@ -411,7 +411,7 @@ if df is not None:
                         max_h_fila = 12
                         for i, txt in enumerate(f):
                             pdf.set_xy(x_start + sum(col_w[:i]), y_pre)
-                            pdf.multi_cell(col_w[i], 3.2, txt, 1, 'L')
+                            pdf.multi_cell(col_w[i], 3.2, txt, 0, 'L')
                             if pdf.get_y() - y_pre > max_h_fila:
                                 max_h_fila = pdf.get_y() - y_pre
                         
