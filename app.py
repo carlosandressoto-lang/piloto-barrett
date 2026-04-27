@@ -395,7 +395,7 @@ if df is not None:
                     
                     pdf.set_font('Helvetica', 'B', 7)
                     pdf.set_fill_color(240, 240, 240)
-                    col_w = [30, 40, 40, 40, 40]
+                    col_w = [60, 130]
                     headers = ["Nivel de Consciencia", "Evaluado"]
                     
                     y_h = pdf.get_y()
