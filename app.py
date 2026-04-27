@@ -36,7 +36,7 @@ st.markdown("""
 try:
     api_key_segura = st.secrets["GEMINI_API_KEY"]
     genai.configure(api_key=api_key_segura)
-    model = genai.GenerativeModel('gemini-2.5-Pro')
+    model = genai.GenerativeModel('gemini-1.5-flash')
 except Exception as e:
     st.error("Error: Configure su API KEY en los Secrets.")
 
