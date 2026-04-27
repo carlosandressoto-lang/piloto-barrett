@@ -358,57 +358,15 @@ if df is not None:
                     pdf.multi_cell(0, 5, "El liderazgo en Confa se fundamenta en el Modelo de Barrett, un marco diseñado para liberar el potencial humano a través de la comprension de las necesidades y motivaciones que subyacen al comportamiento. Este modelo evalua siete niveles de consciencia, permitiendo a los lideres transitar desde la estabilidad operativa hasta el servicio con vision de futuro.\n\nEl enfoque de esta evaluacion no es punitivo, sino de desarrollo y aprendizaje. Busca identificar fortalezas y oportunidades de expansion para potenciar el bienestar individual y el proposito colectivo de Confa.")
                     pdf.ln(5); pdf.set_font('Helvetica', 'B', 11); pdf.cell(0, 10, 'Interpretacion de Niveles de Desarrollo', ln=True); pdf.ln(2)
                     
-filas = [
-    [
-        "L7: Visionario (Servicio)", 
-        "Poca conexión del trabajo diario con la visión y el bien común [1].", 
-        "Entiende el propósito, pero lo comparte de forma intermitente [1].", 
-        "Frecuentemente comparte la visión, decide buscando el bien común y lidera con humildad [1].", 
-        "Siempre conecta con el propósito, inspira y sus decisiones benefician a todos [1]."
-    ],
-    [
-        "L6: Mentor (Hacer la Diferencia)", 
-        "Oportunidad para aumentar la enseñanza, colaboración entre áreas e inclusión [2].", 
-        "Colaboración ocasional; puede promover más la inclusión y consciencia social [2].", 
-        "Frecuentemente enseña, conecta áreas, colabora y promueve un ambiente inclusivo [2].", 
-        "Mentor excepcional; desarrolla a otros y crea alianzas de gran impacto [2]."
-    ],
-    [
-        "L5: Integrador (Cohesión Interna)", 
-        "Requiere mayor esfuerzo para explicar el propósito y modelar los valores [3].", 
-        "Fomenta el clima a veces; requiere constancia en liderar con el ejemplo [3].", 
-        "Frecuentemente da ejemplo, aplica los valores y genera orgullo en el equipo [3].", 
-        "Líder coherente que mantiene un clima excelente y de profundo orgullo [3]."
-    ],
-    [
-        "L4: Facilitador (Transformación)", 
-        "Oportunidad para delegar más, permitir nuevas ideas y cuidar el bienestar [4].", 
-        "Delega y se adapta a veces, pero puede dar más espacio a la innovación [4].", 
-        "Frecuentemente delega con confianza, se adapta rápido y cuida el equilibrio [4].", 
-        "Empodera totalmente; fomenta innovación sin miedo y protege el bienestar [4]."
-    ],
-    [
-        "L3: Organizador (Autoestima)", 
-        "Oportunidad de clarificar metas y reducir trámites que frenan el trabajo [5].", 
-        "Cumple acuerdos, pero el seguimiento o la agilidad es inconsistente [5].", 
-        "Frecuentemente define metas claras, simplifica tareas y hace buen seguimiento [5].", 
-        "Asegura metas claras, elimina burocracia y facilita el trabajo del equipo [5]."
-    ],
-    [
-        "L2: Relaciones (Relación)", 
-        "Oportunidad para mejorar la escucha activa y afrontar temas difíciles [6].", 
-        "Trata con respeto, pero puede mejorar hablando claro en conflictos [6].", 
-        "Frecuentemente escucha, respeta, reconoce el trabajo y aborda conversaciones difíciles [6].", 
-        "Comunicación impecable, respeto absoluto y escucha genuina con todos [6]."
-    ],
-    [
-        "L1: Crisis (Supervivencia)", 
-        "Dificultad para mantener la calma; oportunidad para evitar sobre-revisar todo [7].", 
-        "Cuida lo básico, pero bajo presión puede perder tranquilidad o microgestionar [7].", 
-        "Frecuentemente mantiene la calma, cuida recursos, anticipa riesgos y vela por el equipo [7].", 
-        "Calma ejemplar, optimiza recursos y genera total confianza ante problemas [7]."
-    ]
-]
+                    filas = [
+                        ["L7: Visionario (Servicio)", "Falta de etica o humildad. No conecta el dia a día con el propósito mayor de Confa.", "Perspectiva ocasional. Entiende la visión pero solo la comparte en momentos clave o formales.", "Liderazgo etico. Decide pensando en el bien común y comparte una visión clara seguido.", "Sabiduria y Humildad. Inspira a ir más allá del mínimo esperado y maneja el caos con calma total."],
+                        ["L6: Mentor (Hacer la Diferencia)", "Falta de empatía. Se enfoca solo en sus tareas y no en las relaciones externas o el entorno.", "Relaciones intermitentes. Colabora con otras áreas solo cuando es estrictamente necesario para un proyecto.", "Mentor activo. Dedica tiempo a enseñar y dar retroalimentación útil para resolver mejor y más rápido.", "Socio Estratégico. Maestro en coaching; crea alianzas que generan valor social y ambiental duradero."],
+                        ["L5: Integrador (Cohesión Interna)", "Falta de pasión y visión. No actúa bajo los valores de la organización; genera desconfianza.", "Confianza selectiva. Explica el para qué de las tareas solo a personas de su círculo cercano.", "Valores en acción. Decide con los valores de Confa en mente y mantiene un buen ambiente de equipo.", "Inspirador auténtico. Su ejemplo hace que la gente se sienta profundamente orgullosa de su trabajo."],
+                        ["L4: Facilitador (Transformación)", "Controlador y rígido. Teme al riesgo; se enfoca poco en la innovación o la estrategia de cambio.", "Cautela al cambio. Se adapta a las prioridades pero prefiere los métodos conocidos.", "Facilitador del aprendizaje. Delega con confianza y aprende de los errores para ayudar a otros.", "Evolución Valiente. Empodera a las personas y promueve activamente el equilibrio vida-trabajo."],
+                        ["L3: Organizador (Autoestima)", "Burocrático o estatus. Falla al enfocarse en resultados; seguimiento inconsistente de metas.", "Productividad bajo procesos. Cumple acuerdos pero pone trámites de más que frenan el trabajo.", "Orientado a la excelencia. Define metas claras, usa métricas y busca formas sencillas de trabajar mejor.", "Maestro de la Eficiencia. Domina la complejidad; deja prácticas que funcionan perfectamente sin su presencia."],
+                        ["L2: Relaciones (Relación)", "Conflictivo o evitativo. Evita conversaciones difíciles o da muchas vueltas para hablar.", "Comunicación puntual. Reconoce el buen trabajo pero no de forma constante o pública.", "Constructor de armonía. Gestiona conflictos, habla claro y a tiempo, incluso en temas difíciles.", "Conexión Total. Escucha de verdad, trata a todos con respeto y es accesible para todo el staff."],
+                        ["L1: Crisis (Supervivencia)", "Dictatorial o incapaz de confiar. Descuida la seguridad y bienestar del equipo; malgasta recursos.", "Viabilidad básica. Se mantiene tranquilo ante problemas menores pero se desborda en crisis reales.", "Gestión prudente. Piensa en los riesgos antes de decidir y cuida los recursos como si fueran propios.", "Calma en la Adversidad. Maneja el caos con sabiduría; es el pilar de seguridad y bienestar del equipo."]
+                    ]
                     
                     pdf.set_font('Helvetica', 'B', 7); pdf.set_fill_color(240, 240, 240)
                     col_w = [30, 40, 40, 40, 40]
